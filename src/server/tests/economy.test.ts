@@ -115,4 +115,42 @@ describe("Economy & Gamification Exploit Tests", () => {
     // the user profile XP and Gems should not be updated via UserRepository.updateUserRow
     expect(UserRepository.updateUserRow).not.toHaveBeenCalled();
   });
+
+  // 4. Daily XP Cap Exploit - Rejects addXp when daily limit reached
+  it("should block addXp when daily manual XP cap (200) is already reached", async () => {
+    const todayWib = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Asia/Jakarta",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).format(new Date());
+
+    vi.mocked(db.transaction).mockImplementationOnce(async (cb: any) => {
+      const tx = {
+        select: vi.fn().mockReturnThis(),
+        from: vi.fn().mockReturnThis(),
+        where: vi.fn().mockReturnThis(),
+        for: vi.fn().mockResolvedValue([
+          {
+            id: 1,
+            uid: "user-123",
+            xp: 500,
+            weeklyXp: 200,
+            level: 2,
+            dailyQuizXpCount: 200,
+            lastQuizXpDate: todayWib,
+          },
+        ]),
+        update: vi.fn().mockReturnThis(),
+        set: vi.fn().mockReturnThis(),
+        insert: vi.fn().mockReturnThis(),
+        values: vi.fn().mockReturnThis(),
+      };
+      return cb(tx);
+    });
+
+    await expect(UserService.addXp("user-123", 99999)).rejects.toThrow(
+      "Batas maksimum 200 XP latihan harian telah tercapai"
+    );
+  });
 });

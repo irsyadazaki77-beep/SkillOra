@@ -174,7 +174,7 @@ export class BillingService {
   }
 
   static async confirmOrder(userId: string, orderCode: string) {
-    return await db.transaction(async (tx) => {
+    const txResult = await db.transaction(async (tx) => {
       const [userRow] = await tx.select().from(users).where(eq(users.uid, userId)).for("update");
       if (!userRow) throw new Error("Pengguna tidak ditemukan.");
 
@@ -188,9 +188,7 @@ export class BillingService {
 
       // Idempotency: return cleanly if already settled
       if (order.status === "paid") {
-        const profile = await UserRepository.getFullProfile(userId);
-        const history = await BillingService.getHistory(userId);
-        return { alreadyPaid: true, order, profile, ...history };
+        return { alreadyPaid: true, order };
       }
 
       const product = BILLING_CATALOG.find((p) => p.id === order.productId);
@@ -261,9 +259,11 @@ export class BillingService {
         read: false,
       });
 
-      const profile = await UserRepository.getFullProfile(userId);
-      const history = await BillingService.getHistory(userId);
-      return { alreadyPaid: false, order: paidOrder, profile, ...history };
+      return { alreadyPaid: false, order: paidOrder };
     });
+
+    const profile = await UserRepository.getFullProfile(userId);
+    const history = await BillingService.getHistory(userId);
+    return { alreadyPaid: txResult.alreadyPaid, order: txResult.order, profile, ...history };
   }
 }

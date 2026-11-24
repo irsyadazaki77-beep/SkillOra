@@ -162,6 +162,7 @@ export class ForumService {
         title: data.title.trim(),
         members: [
           {
+            uid: profile.uid,
             name: profile.name,
             role: profile.role || "Project Lead",
             avatar: profile.selectedAvatar || "🦁",
@@ -216,9 +217,29 @@ export class ForumService {
     }));
   }
 
-  static async createTask(roomIdStr: string, data: { title: string; assignee?: string; priority?: string }) {
+  private static async assertRoomMember(userId: string, room: typeof collabRooms.$inferSelect) {
+    const profile = await UserRepository.getFullProfile(userId);
+    const isStaff = ["admin", "mentor"].includes(profile.accountRole) || ["Admin", "Developer"].includes(profile.role);
+    if (isStaff) return profile;
+
+    const members = Array.isArray(room.members) ? (room.members as any[]) : [];
+    const hasScopedMembers = members.some((m) => Boolean(m?.uid));
+    if (!hasScopedMembers) {
+      // Seeded open demo rooms have no uid bindings
+      return profile;
+    }
+
+    const isMember = members.some((m) => m?.uid === profile.uid);
+    if (!isMember) {
+      throw new Error("Akses ditolak: Anda bukan anggota ruang kolaborasi ini.");
+    }
+    return profile;
+  }
+
+  static async createTask(userId: string, roomIdStr: string, data: { title: string; assignee?: string; priority?: string }) {
     const room = await db.query.collabRooms.findFirst({ where: eq(collabRooms.roomId, roomIdStr) });
     if (!room) throw new Error("Ruangan tim tidak ditemukan");
+    await ForumService.assertRoomMember(userId, room);
 
     await db.insert(collabTasks).values({
       taskId: `task_${Date.now()}`,
@@ -244,9 +265,10 @@ export class ForumService {
     }));
   }
 
-  static async updateTaskStatus(roomIdStr: string, taskIdStr: string, status: string) {
+  static async updateTaskStatus(userId: string, roomIdStr: string, taskIdStr: string, status: string) {
     const room = await db.query.collabRooms.findFirst({ where: eq(collabRooms.roomId, roomIdStr) });
     if (!room) throw new Error("Ruangan tim tidak ditemukan");
+    await ForumService.assertRoomMember(userId, room);
 
     await db
       .update(collabTasks)
@@ -268,9 +290,10 @@ export class ForumService {
     }));
   }
 
-  static async submitProject(roomIdStr: string, projectUrl: string) {
+  static async submitProject(userId: string, roomIdStr: string, projectUrl: string) {
     const room = await db.query.collabRooms.findFirst({ where: eq(collabRooms.roomId, roomIdStr) });
     if (!room) throw new Error("Ruangan tim tidak ditemukan");
+    await ForumService.assertRoomMember(userId, room);
 
     await db
       .update(collabRooms)

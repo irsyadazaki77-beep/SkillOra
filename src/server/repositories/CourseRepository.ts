@@ -1,6 +1,6 @@
-import { db } from "../../db/index.ts";
-import { courses, lessons, userProgress, bookmarks, quizAttempts } from "../../db/schema.ts";
-import { ensureSeeded } from "../db/seedData.ts";
+import { db } from "../../db/index.js";
+import { courses, lessons, userProgress, bookmarks, quizAttempts } from "../../db/schema.js";
+import { ensureSeeded } from "../db/seedData.js";
 import { eq, and, asc, desc } from "drizzle-orm";
 
 function mapDbCourseToFrontend(dbCourse: any, completedLessonIds: Set<number>) {

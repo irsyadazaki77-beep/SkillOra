@@ -89,7 +89,7 @@ export function LoginView({ onLoginSuccess, showToast }: LoginViewProps) {
       await updateProfile(result.user, { displayName: regName });
       const token = await result.user.getIdToken();
       
-      const data = await apiClient.post("/auth/sync", { name: regName, email: result.user.email, uid: result.user.uid, role: regRole });
+      const data = await apiClient.post("/auth/sync", { name: regName, email: result.user.email, uid: result.user.uid });
 
       if (data.profile) {
         showToast(`Akun Skillora berhasil dibuat! Selamat datang, ${regName}!`, "success");

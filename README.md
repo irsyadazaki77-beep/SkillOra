@@ -1,58 +1,62 @@
-# 🎓 Portal Belajar Interaktif & Karir
+# 🎓 Skillora — Platform Edukasi Interaktif, Sertifikasi & Karir
 
-Platform pembelajaran dan pengembangan karir berbasis gamifikasi yang dirancang untuk memberikan pengalaman belajar yang interaktif, personal, dan fokus pada tujuan pengguna (kerja, kuliah, upskill, sertifikasi).
+Platform pembelajaran, asesmen adaptif, simulasi wawancara AI, dan penyaluran karir berbasis gamifikasi yang dibangun dengan arsitektur full-stack modern.
 
 ## ✨ Fitur Utama
 
-- **Dashboard Terpusat**: Ringkasan progres harian, target belajar, dan rekomendasi kursus yang dipersonalisasi.
-- **Katalog Kursus**: Temukan berbagai kursus dengan pencarian dan filter berdasarkan level.
-- **Sistem Kuis Interaktif**:
-  - Pertanyaan pilihan ganda dengan waktu (Time Attack).
-  - Mode nyawa (Hearts) untuk memberikan tantangan.
-  - Opsi *Hint* dari AI Mentor.
-  - Riwayat jawaban salah dan opsi untuk mengulang.
-- **Gamifikasi**: Dapatkan XP, tingkatkan level, kumpulkan Gems, dan pertahankan *Streak* belajarmu.
-- **Toko & Hadiah**: Gunakan Gems untuk membeli *Streak Freeze* atau item lainnya.
-- **Komunitas & Forum**: Diskusikan materi, bagikan tips, dan berkolaborasi dengan pelajar lain.
-- **Bursa Kerja**: Cari lowongan pekerjaan yang sesuai dengan keahlian yang telah dipelajari.
+- **LMS & Katalog Kursus**: Materi terstruktur, progres pelajaran, bookmark, dan manajemen kursus (Portal Mentor/Admin).
+- **Sistem Kuis & Asesmen Adaptif (CAT)**: Kuis berbatas waktu, Flash Challenge harian, dan asesmen adaptif berbasis AI.
+- **AI Career Suite**:
+  - **Duo Owl Mentor AI**: Bantuan belajar kontekstual sesuai materi aktif.
+  - **Mock Interview Suara AI (WebSocket + Gemini Live)** & **Simulasi STAR/HRD**.
+  - **CV ATS Builder & Audit AI**: Analisis kecocokan CV terhadap lowongan target.
+  - **Review Proyek & Sertifikat Terverifikasi Publik** (`/verify/:id`).
+- **Gamifikasi & Ekonomi**: XP, Level, Gems, Streak & Streak Freeze, Daily Quests, Toko Hadiah, Wallet Ledger, dan Leaderboard.
+- **Komunitas & Bursa Kerja**: Forum diskusi, ruang kolaborasi tim real-time (WebSocket), event/webinar, beasiswa, mentoring 1-on-1, dan Portal HRD/Recruiter.
 
 ## 🚀 Teknologi
 
-- **Frontend**: React 18 (Vite), TypeScript, Tailwind CSS
-- **Routing**: React Router DOM
-- **Animasi**: Framer Motion
-- **Ikon**: Lucide React
-- **Komponen**: Shadcn UI (terinspirasi, menggunakan gaya Tailwind langsung)
+- **Frontend**: React 19, Vite 6, TypeScript, Tailwind CSS v4, React Router v7, TanStack Query, `motion`, Lucide React, Recharts.
+- **Backend**: Node.js, Express, WebSocket (`ws`), Drizzle ORM, PostgreSQL (`pg`).
+- **Autentikasi & AI**: Firebase Auth / Firebase Admin SDK, Google GenAI SDK (`@google/genai`).
+- **Testing**: Vitest & Supertest.
 
 ## 🛠️ Cara Menjalankan
 
-1. **Install dependensi**:
-   \`\`\`bash
+1. **Salin konfigurasi environment**:
+   ```bash
+   cp .env.example .env
+   ```
+   Isi `GEMINI_API_KEY`, kredensial PostgreSQL (`SQL_HOST`, `SQL_DB_NAME`, `SQL_USER`, `SQL_PASSWORD`), dan `BILLING_WEBHOOK_SECRET`.
+
+2. **Install dependensi**:
+   ```bash
    npm install
-   \`\`\`
+   ```
 
-2. **Jalankan server pengembangan**:
-   \`\`\`bash
+3. **Sinkronisasi migrasi database (Drizzle)**:
+   ```bash
+   npm run db:migrate
+   ```
+
+4. **Jalankan server pengembangan**:
+   ```bash
    npm run dev
-   \`\`\`
-   Aplikasi akan berjalan di \`http://localhost:3000\`.
+   ```
+   Aplikasi berjalan di `http://localhost:3000`.
 
-3. **Build untuk produksi**:
-   \`\`\`bash
+5. **Typecheck, Test, dan Build Produksi**:
+   ```bash
+   npm run lint
+   npm test
    npm run build
    npm start
-   \`\`\`
+   ```
 
 ## 📌 Struktur Folder
 
-- \`/src/components\`: Berisi semua tampilan halaman (Views) dan komponen UI.
-- \`/src/data\`: Dummy data untuk kursus, kuis, forum, pekerjaan, dll.
-- \`/src/types.ts\`: Definisi tipe data TypeScript untuk seluruh aplikasi.
-- \`/server.ts\`: (Jika ada backend/Express) Mengatur endpoint API.
-
-## 🎨 Design System & UX
-
-Aplikasi ini menggunakan sistem desain yang sederhana dan bersih:
-- **Warna Utama**: Biru (\`blue-600\`) untuk aksi utama, dengan aksen Emerald (Sukses) dan Rose (Gagal/Nyawa).
-- **Tipografi**: Inter (Sans) dan display font yang bersih.
-- **Animasi**: Transisi mulus antar halaman dan mikro-interaksi pada tombol dan kuis.
+- `server.ts`: Entry point Express, keamanan (Helmet, CORS, Rate Limiter), API Router (`/api/v1`), dan WebSocket Hub.
+- `src/server/`: Backend berlapis (`routes/`, `controllers/`, `services/`, `repositories/`, `middlewares/`, `wsHub.ts`, `tests/`).
+- `src/db/`: Konfigurasi koneksi PostgreSQL dan skema Drizzle (`schema.ts`).
+- `src/features/` & `src/components/`: Modul tampilan dan UI frontend.
+- `src/api/apiClient.ts`: Klien HTTP terpusat dengan injeksi Firebase ID Token otomatis.

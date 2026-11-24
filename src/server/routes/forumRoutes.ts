@@ -107,22 +107,24 @@ router.post("/collaboration/tasks", requireRegistered, async (req: Authenticated
     if (!roomId || !cleanTitle) {
       return res.status(400).json({ success: false, error: { code: "VALIDATION_ERROR", message: "roomId dan judul tugas wajib diisi" } });
     }
-    const tasks = await ForumService.createTask(roomId, { title: cleanTitle, assignee, priority });
+    const tasks = await ForumService.createTask(req.userId!, roomId, { title: cleanTitle, assignee, priority });
     return res.json({ success: true, data: { tasks } });
   } catch (err: any) {
-    return res.status(400).json({ success: false, error: { code: "BAD_REQUEST", message: err.message } });
+    const status = err.message?.includes("Akses ditolak") ? 403 : 400;
+    return res.status(status).json({ success: false, error: { code: status === 403 ? "FORBIDDEN" : "BAD_REQUEST", message: err.message } });
   }
 });
 
 router.post("/collaboration/task-status", requireRegistered, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { roomId, taskId, status } = req.body;
-    const tasks = await ForumService.updateTaskStatus(roomId, taskId, status);
+    const tasks = await ForumService.updateTaskStatus(req.userId!, roomId, taskId, status);
     return res.json({ success: true, data: { tasks } });
   } catch (err: any) {
-    return res.status(400).json({
+    const status = err.message?.includes("Akses ditolak") ? 403 : 400;
+    return res.status(status).json({
       success: false,
-      error: { code: "BAD_REQUEST", message: err.message }
+      error: { code: status === 403 ? "FORBIDDEN" : "BAD_REQUEST", message: err.message }
     });
   }
 });
@@ -131,12 +133,13 @@ router.post("/collaboration/submit-project", requireRegistered, async (req: Auth
   try {
     const { roomId, projectUrl } = req.body;
     const cleanUrl = sanitizeString(projectUrl, 500);
-    const room = await ForumService.submitProject(roomId, cleanUrl);
+    const room = await ForumService.submitProject(req.userId!, roomId, cleanUrl);
     return res.json({ success: true, data: room });
   } catch (err: any) {
-    return res.status(400).json({
+    const status = err.message?.includes("Akses ditolak") ? 403 : 400;
+    return res.status(status).json({
       success: false,
-      error: { code: "BAD_REQUEST", message: err.message }
+      error: { code: status === 403 ? "FORBIDDEN" : "BAD_REQUEST", message: err.message }
     });
   }
 });

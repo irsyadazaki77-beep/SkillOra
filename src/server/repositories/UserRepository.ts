@@ -1,4 +1,4 @@
-import { db } from "../../db/index.ts";
+import { db } from "../../db/index.js";
 import {
   users,
   companies,
@@ -13,10 +13,10 @@ import {
   projectSubmissions,
   interviewSessions,
   adaptiveAssessments,
-} from "../../db/schema.ts";
+} from "../../db/schema.js";
 import { eq, desc } from "drizzle-orm";
-import { NotificationRepository } from "./NotificationRepository.ts";
-import { safeParse } from "../../utils/safeJson.ts";
+import { NotificationRepository } from "./NotificationRepository.js";
+import { safeParse } from "../../utils/safeJson.js";
 
 export class UserRepository {
   static async getOrCreateUser(uid: string, email: string = "user@skillora.app", name: string = "Siswa") {

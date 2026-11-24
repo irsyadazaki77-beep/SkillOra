@@ -5,6 +5,7 @@ import { interviewSessions, users, userAchievements, notifications } from "../..
 import { UserRepository } from "../repositories/UserRepository.js";
 import { CareerRepository } from "../repositories/CareerRepository.js";
 import { getGeminiClient } from "./aiService.js";
+import { AI_MODELS } from "../config/aiConfig.js";
 import { eq, and, desc } from "drizzle-orm";
 
 export interface TranscriptTurn {
@@ -134,7 +135,7 @@ ${transcriptText}
 Berikan penilaian objektif dalam Bahasa Indonesia dengan 4 skor (0-100): overallScore, communicationScore, starScore, technicalScore, daftar kekuatan (strengths), area perbaikan (improvements), dan summaryFeedback komprehensif.`;
 
     const response = await ai.models.generateContent({
-      model: "gemini-4-hydrogen",
+      model: AI_MODELS.text,
       contents: prompt,
       config: {
         responseMimeType: "application/json",

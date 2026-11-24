@@ -1,4 +1,4 @@
-import { db } from "../../db/index.ts";
+import { db } from "../../db/index.js";
 import {
   jobs,
   companies,
@@ -7,10 +7,10 @@ import {
   users,
   cvDocuments,
   certificates,
-} from "../../db/schema.ts";
-import { ensureSeeded } from "../db/seedData.ts";
+} from "../../db/schema.js";
+import { ensureSeeded } from "../db/seedData.js";
 import { eq, and, desc } from "drizzle-orm";
-import { safeParse } from "../../utils/safeJson.ts";
+import { safeParse } from "../../utils/safeJson.js";
 
 export class CareerRepository {
   static async listActiveJobs() {

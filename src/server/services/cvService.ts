@@ -4,6 +4,7 @@ import { cvDocuments } from "../../db/schema.js";
 import { UserRepository } from "../repositories/UserRepository.js";
 import { CareerRepository } from "../repositories/CareerRepository.js";
 import { getGeminiClient } from "./aiService.js";
+import { AI_MODELS } from "../config/aiConfig.js";
 import { eq, and, desc } from "drizzle-orm";
 
 export interface CvPayload {
@@ -117,7 +118,7 @@ Data CV:
 Berikan skor ATS realistis (0-100), kata kunci yang cocok & yang kurang, revisi ringkasan profesional siap pakai, dan perbaikan bullet point pengalaman.`;
 
     const response = await ai.models.generateContent({
-      model: "gemini-4-hydrogen",
+      model: AI_MODELS.text,
       contents: prompt,
       config: {
         responseMimeType: "application/json",

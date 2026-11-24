@@ -6,10 +6,12 @@ import { UserRepository } from "./repositories/UserRepository.js";
 import { ForumService } from "./services/forumService.js";
 import { InterviewService } from "./services/interviewService.js";
 import { db } from "../db/index.js";
+import { AI_MODELS } from "./config/aiConfig.js";
 import { interviewSessions } from "../db/schema.js";
 import { eq } from "drizzle-orm";
 
 interface AuthenticatedWsIdentity {
+  dbUserId: number;
   uid: string;
   name: string;
   email: string;
@@ -20,8 +22,12 @@ async function resolveWsIdentity(token: string | null): Promise<AuthenticatedWsI
   if (!token) return null;
 
   if (token === "guest-demo-token") {
+    if (process.env.NODE_ENV === "production" && process.env.ALLOW_GUEST_DEMO !== "true") {
+      return null;
+    }
     const userRow = await UserRepository.getOrCreateUser("user-dev-default", "guest@skillora.app", "Tamu Skillora");
     return {
+      dbUserId: userRow.id,
       uid: userRow.uid,
       name: userRow.name,
       email: userRow.email,
@@ -39,6 +45,7 @@ async function resolveWsIdentity(token: string | null): Promise<AuthenticatedWsI
       decoded.name || decoded.email || "Pengguna Skillora"
     );
     return {
+      dbUserId: userRow.id,
       uid: userRow.uid,
       name: userRow.name,
       email: userRow.email,
@@ -97,7 +104,7 @@ export function attachWsHub(httpServer: HttpServer) {
             ws.send(JSON.stringify({ type: "error", message: "Masuk dengan akun terdaftar untuk mengubah status tugas." }));
             return;
           }
-          const tasks = await ForumService.updateTaskStatus(roomId, msg.taskId, msg.status);
+          const tasks = await ForumService.updateTaskStatus(user.uid, roomId, msg.taskId, msg.status);
           broadcastToRoom(roomId, { type: "task:sync", roomId, tasks });
         }
       } catch (err: any) {
@@ -127,6 +134,12 @@ export function attachWsHub(httpServer: HttpServer) {
       where: eq(interviewSessions.sessionId, sessionId),
     });
 
+    if (!sessionRow || sessionRow.userId !== context.user.dbUserId) {
+      clientWs.send(JSON.stringify({ type: "error", message: "Akses ditolak: Sesi wawancara tidak ditemukan atau bukan milik Anda." }));
+      clientWs.close(1008, "Forbidden");
+      return;
+    }
+
     const jobTitle = sessionRow?.jobTitle || "Frontend Engineer";
     const companyName = sessionRow?.companyName || "Perusahaan Mitra Skillora";
 
@@ -148,7 +161,7 @@ ATURAN WAWANCARA:
 
     const sessionPromise = ai.live
       .connect({
-        model: "gemini-3.8-live",
+        model: AI_MODELS.live,
         config: {
           responseModalities: [Modality.AUDIO],
           speechConfig: {
@@ -282,6 +295,11 @@ ATURAN WAWANCARA:
       }
 
       if (pathname === "/ws/interview") {
+        if (user.isGuest) {
+          socket.write("HTTP/1.1 403 Forbidden\r\n\r\n");
+          socket.destroy();
+          return;
+        }
         const sessionId = url.searchParams.get("sessionId");
         if (!sessionId) {
           socket.write("HTTP/1.1 400 Bad Request\r\n\r\n");

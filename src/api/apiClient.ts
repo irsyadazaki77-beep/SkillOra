@@ -208,6 +208,14 @@ export const courseApi = {
     rewardGems: number;
     rewardXP: number;
   }>("/quiz/flash"),
+  claimFlashChallenge: (selectedIdx: number) =>
+    apiClient.post<{
+      correct: boolean;
+      alreadyClaimed: boolean;
+      rewardXP: number;
+      rewardGems: number;
+      profile: Profile;
+    }>("/quiz/flash/claim", { selectedIdx }),
   createCourse: (courseData: Partial<Course>) => apiClient.post<Course>("/courses", courseData),
   updateCourse: (id: string, courseData: Partial<Course>) => apiClient.put<Course>(`/courses/${id}`, courseData),
   deleteCourse: (id: string) => apiClient.delete<any>(`/courses/${id}`),

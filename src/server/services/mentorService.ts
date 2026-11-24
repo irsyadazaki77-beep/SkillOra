@@ -295,8 +295,11 @@ export class MentorService {
         read: false,
       });
 
-      return { booking, profile: await UserRepository.getFullProfile(studentUid) };
-    });
+      return booking;
+    }).then(async (booking) => ({
+      booking,
+      profile: await UserRepository.getFullProfile(studentUid),
+    }));
   }
 
   static async getMyBookings(userId: string) {
@@ -339,9 +342,21 @@ export class MentorService {
     });
   }
 
-  static async updateBooking(bookingId: number, data: { status?: string; mentorNotes?: string; meetingLink?: string }) {
+  static async updateBooking(
+    mentorUid: string,
+    bookingId: number,
+    data: { status?: string; mentorNotes?: string; meetingLink?: string }
+  ) {
     const [existing] = await db.select().from(mentoringBookings).where(eq(mentoringBookings.id, bookingId));
     if (!existing) throw new Error("Data booking tidak ditemukan.");
+
+    const mentorRow = await UserRepository.getOrCreateUser(mentorUid, "mentor@skillora.app", "Mentor");
+    const isAdmin = mentorRow.accountRole === "admin" || ["Admin", "Developer"].includes(mentorRow.role);
+    const [slot] = await db.select().from(mentoringSlots).where(eq(mentoringSlots.id, existing.slotId));
+
+    if (!isAdmin && slot?.mentorUserId && slot.mentorUserId !== mentorRow.id) {
+      throw new Error("Akses ditolak: Anda tidak memiliki izin untuk mengubah booking mentor lain.");
+    }
 
     const [updated] = await db
       .update(mentoringBookings)

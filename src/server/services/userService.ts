@@ -13,6 +13,18 @@ const ROLE_DISPLAY_LABELS: Record<Exclude<AccountRole, "admin">, string> = {
   recruiter: "Recruiter / HRD Partner",
 };
 
+function getJakartaDateStr(): string {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Jakarta",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
+}
+
+const MAX_SINGLE_XP_AWARD = 50;
+const MAX_DAILY_MANUAL_XP = 200;
+
 export class UserService {
   static async getProfile(userId: string) {
     return UserRepository.getFullProfile(userId);
@@ -258,20 +270,22 @@ export class UserService {
   }
 
   static async claimDaily(userId: string) {
-    return await db.transaction(async (tx) => {
+    const rewardXp = 20;
+    const rewardGems = 15;
+    const { levelUp } = await db.transaction(async (tx) => {
       const [userRow] = await tx.select().from(users).where(eq(users.uid, userId)).for("update");
       if (!userRow) throw new Error("Pengguna tidak ditemukan.");
 
-      const todayStr = new Date().toISOString().split("T")[0];
+      const todayStr = getJakartaDateStr();
 
       if (userRow.dailyClaimedLast === todayStr) {
         throw new Error("Anda sudah melakukan Klaim Harian hari ini!");
       }
 
-      const newXp = userRow.xp + 20;
-      const newGems = userRow.gems + 15;
+      const newXp = userRow.xp + rewardXp;
+      const newGems = userRow.gems + rewardGems;
       const newLevel = Math.floor(newXp / 500) + 1;
-      const levelUp = newLevel > userRow.level;
+      const leveledUp = newLevel > userRow.level;
 
       await tx.update(users).set({
         dailyClaimedLast: todayStr,
@@ -284,7 +298,7 @@ export class UserService {
       await tx.insert(walletLedger).values({
         userId: userRow.id,
         currency: "gems",
-        delta: 15,
+        delta: rewardGems,
         balanceAfter: newGems,
         reason: "Klaim Hadiah Harian",
         referenceId: `daily_${todayStr}`,
@@ -292,18 +306,20 @@ export class UserService {
 
       await tx.insert(notifications).values({
         userId: userRow.id,
-        text: "🎁 Klaim Harian Sukses! +20 XP dan +15 Gems ditambahkan!",
+        text: `🎁 Klaim Harian Sukses! +${rewardXp} XP dan +${rewardGems} Gems ditambahkan!`,
         type: "system",
         read: false,
       });
 
-      const profile = await UserRepository.getFullProfile(userId);
-      return { profile, levelUp };
+      return { levelUp: leveledUp };
     });
+
+    const profile = await UserRepository.getFullProfile(userId);
+    return { profile, levelUp, rewardXp, rewardGems };
   }
 
   static async buyItem(userId: string, itemId: string) {
-    return await db.transaction(async (tx) => {
+    await db.transaction(async (tx) => {
       const [userRow] = await tx.select().from(users).where(eq(users.uid, userId)).for("update");
       if (!userRow) throw new Error("Pengguna tidak ditemukan.");
 
@@ -326,9 +342,10 @@ export class UserService {
       const purchasedItems = safeParse<string[]>(userRow.purchasedItems, []);
       const unlockedAvatars = safeParse<string[]>(userRow.unlockedAvatars, ["🦁"]);
 
-      const newGems = userRow.gems - item.price;
+      let finalGems = userRow.gems - item.price;
+      let extraNotification = "";
       const updates: Partial<typeof users.$inferInsert> = {
-        gems: newGems,
+        gems: finalGems,
         updatedAt: new Date(),
       };
 
@@ -343,6 +360,21 @@ export class UserService {
         updates.streakFreezes = userRow.streakFreezes + 1;
       } else if (itemId === "gold-cert") {
         updates.certCredits = (userRow.certCredits ?? 1) + 1;
+      } else if (itemId === "mystery-box") {
+        const bonusXp = 100 + Math.floor(Math.random() * 101); // 100-200 XP
+        const bonusGems = 50 + Math.floor(Math.random() * 101); // 50-150 Gems
+        const newXp = userRow.xp + bonusXp;
+        finalGems += bonusGems;
+        updates.xp = newXp;
+        updates.level = Math.floor(newXp / 500) + 1;
+        updates.gems = finalGems;
+        updates.streakFreezes = userRow.streakFreezes + 1;
+        extraNotification = ` Isi Mystery Box: +${bonusXp} XP, +${bonusGems} Gems & +1 Streak Freeze!`;
+      } else if (itemId === "refill-hearts") {
+        const newXp = userRow.xp + 25;
+        updates.xp = newXp;
+        updates.level = Math.floor(newXp / 500) + 1;
+        extraNotification = " 5 Nyawa latihan dipulihkan penuh (+25 XP bonus semangat)!";
       } else if (itemId === "avatar-owl") {
         if (!unlockedAvatars.includes("🦉")) unlockedAvatars.push("🦉");
         updates.unlockedAvatars = unlockedAvatars;
@@ -359,24 +391,36 @@ export class UserService {
         userId: userRow.id,
         currency: "gems",
         delta: -item.price,
-        balanceAfter: newGems,
+        balanceAfter: userRow.gems - item.price,
         reason: `Pembelian Toko: ${item.name}`,
         referenceId: itemId,
       });
 
+      if (itemId === "mystery-box" && finalGems > userRow.gems - item.price) {
+        const bonusGems = finalGems - (userRow.gems - item.price);
+        await tx.insert(walletLedger).values({
+          userId: userRow.id,
+          currency: "gems",
+          delta: bonusGems,
+          balanceAfter: finalGems,
+          reason: "Hadiah Mystery Box Epik",
+          referenceId: itemId,
+        });
+      }
+
       await tx.insert(notifications).values({
         userId: userRow.id,
-        text: `🛍️ Berhasil membeli '${item.name}' seharga ${item.price} Gems!`,
+        text: `🛍️ Berhasil membeli '${item.name}' seharga ${item.price} Gems!${extraNotification}`,
         type: "system",
         read: false,
       });
-
-      return UserRepository.getFullProfile(userId);
     });
+
+    return UserRepository.getFullProfile(userId);
   }
 
   static async repairStreak(userId: string) {
-    return await db.transaction(async (tx) => {
+    await db.transaction(async (tx) => {
       const [userRow] = await tx.select().from(users).where(eq(users.uid, userId)).for("update");
       if (!userRow) throw new Error("Pengguna tidak ditemukan.");
       const cost = 80;
@@ -415,13 +459,13 @@ export class UserService {
         type: "system",
         read: false,
       });
-
-      return UserRepository.getFullProfile(userId);
     });
+
+    return UserRepository.getFullProfile(userId);
   }
 
   static async claimAchievement(userId: string, achievementId: string) {
-    return await db.transaction(async (tx) => {
+    await db.transaction(async (tx) => {
       const [userRow] = await tx.select().from(users).where(eq(users.uid, userId)).for("update");
       if (!userRow) throw new Error("Pengguna tidak ditemukan.");
 
@@ -467,13 +511,13 @@ export class UserService {
         type: "system",
         read: false,
       });
-
-      return UserRepository.getFullProfile(userId);
     });
+
+    return UserRepository.getFullProfile(userId);
   }
 
   static async claimQuest(userId: string, questId?: string) {
-    return await db.transaction(async (tx) => {
+    await db.transaction(async (tx) => {
       const [userRow] = await tx.select().from(users).where(eq(users.uid, userId)).for("update");
       if (!userRow) throw new Error("Pengguna tidak ditemukan.");
 
@@ -533,9 +577,9 @@ export class UserService {
         type: "system",
         read: false,
       });
-
-      return UserRepository.getFullProfile(userId);
     });
+
+    return UserRepository.getFullProfile(userId);
   }
 
   static async getLeaderboard(userId: string) {
@@ -543,17 +587,29 @@ export class UserService {
   }
 
   static async addXp(userId: string, xpAmount: number) {
-    return await db.transaction(async (tx) => {
+    const safeAmount = Math.min(Math.max(1, Math.floor(xpAmount)), MAX_SINGLE_XP_AWARD);
+    const todayStr = getJakartaDateStr();
+
+    await db.transaction(async (tx) => {
       const [userRow] = await tx.select().from(users).where(eq(users.uid, userId)).for("update");
       if (!userRow) throw new Error("Pengguna tidak ditemukan.");
 
-      const newXp = userRow.xp + xpAmount;
+      const alreadyEarnedToday = userRow.lastQuizXpDate === todayStr ? (userRow.dailyQuizXpCount || 0) : 0;
+      const remainingAllowance = MAX_DAILY_MANUAL_XP - alreadyEarnedToday;
+      if (remainingAllowance <= 0) {
+        throw new Error(`Batas maksimum ${MAX_DAILY_MANUAL_XP} XP latihan harian telah tercapai. Kembali lagi besok!`);
+      }
+
+      const awarded = Math.min(safeAmount, remainingAllowance);
+      const newXp = userRow.xp + awarded;
       const newLevel = Math.floor(newXp / 500) + 1;
 
       const updates: Partial<typeof users.$inferInsert> = {
         xp: newXp,
-        weeklyXp: userRow.weeklyXp + xpAmount,
+        weeklyXp: userRow.weeklyXp + awarded,
         level: newLevel,
+        dailyQuizXpCount: alreadyEarnedToday + awarded,
+        lastQuizXpDate: todayStr,
         updatedAt: new Date(),
       };
 
@@ -567,9 +623,9 @@ export class UserService {
           read: false,
         });
       }
-
-      return UserRepository.getFullProfile(userId);
     });
+
+    return UserRepository.getFullProfile(userId);
   }
 
   static async buyFreeze(userId: string) {
@@ -578,12 +634,17 @@ export class UserService {
 
   static async setAvatar(userId: string, avatar: string) {
     const userRow = await UserRepository.getOrCreateUser(userId, "user@skillora.app", "Siswa");
-    if (avatar) {
-      await UserRepository.updateUserRow(userRow.id, {
-        avatar,
-        updatedAt: new Date(),
-      });
+    if (!avatar || typeof avatar !== "string") {
+      throw new Error("Avatar tidak valid.");
     }
+    const unlockedAvatars = safeParse<string[]>(userRow.unlockedAvatars, ["🦁"]);
+    if (!unlockedAvatars.includes(avatar)) {
+      throw new Error("Aksi ditolak: Avatar belum dibuka. Beli avatar ini di Toko Skillora terlebih dahulu.");
+    }
+    await UserRepository.updateUserRow(userRow.id, {
+      avatar,
+      updatedAt: new Date(),
+    });
     return UserRepository.getFullProfile(userId);
   }
 

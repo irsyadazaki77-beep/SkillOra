@@ -146,9 +146,23 @@ export class JobService {
     return created;
   }
 
-  static async updateRecruiterJob(jobId: string, data: { status?: "active" | "closed"; title?: string; salary?: string; location?: string; description?: string }) {
+  static async updateRecruiterJob(
+    userId: string,
+    jobId: string,
+    data: { status?: "active" | "closed"; title?: string; salary?: string; location?: string; description?: string }
+  ) {
     const existing = await CareerRepository.getJobByJobId(jobId);
     if (!existing) throw new Error("Lowongan tidak ditemukan.");
+
+    const userRow = await UserRepository.getOrCreateUser(userId, "recruiter@skillora.app", "Recruiter HRD");
+    const isAdmin = userRow.accountRole === "admin" || ["Admin", "Developer"].includes(userRow.role);
+    const ownsJob =
+      existing.postedByUserId === userRow.id ||
+      (userRow.companyId !== null && existing.companyId === userRow.companyId);
+
+    if (!isAdmin && !ownsJob) {
+      throw new Error("Akses ditolak: Anda tidak memiliki izin untuk mengubah lowongan ini.");
+    }
 
     const updates: Partial<typeof jobs.$inferInsert> = {};
     if (data.status === "active" || data.status === "closed") updates.status = data.status;
@@ -162,6 +176,7 @@ export class JobService {
   }
 
   static async updateApplicationStatus(
+    userId: string,
     applicationId: number,
     data: { status: string; hrNotes?: string; interviewAt?: string | null }
   ) {
@@ -169,9 +184,24 @@ export class JobService {
     if (!allowed.includes(data.status)) {
       throw new Error("Status pipeline tidak valid.");
     }
+
+    const [existingApp] = await db.select().from(jobApplications).where(eq(jobApplications.id, applicationId));
+    if (!existingApp) throw new Error("Data lamaran tidak ditemukan.");
+
+    const job = await CareerRepository.getJobByJobId(existingApp.jobId);
+    const userRow = await UserRepository.getOrCreateUser(userId, "recruiter@skillora.app", "Recruiter HRD");
+    const isAdmin = userRow.accountRole === "admin" || ["Admin", "Developer"].includes(userRow.role);
+    const ownsJob =
+      job &&
+      (job.postedByUserId === userRow.id ||
+        (userRow.companyId !== null && job.companyId === userRow.companyId));
+
+    if (!isAdmin && !ownsJob) {
+      throw new Error("Akses ditolak: Anda tidak memiliki izin untuk mengubah status lamaran ini.");
+    }
+
     const updated = await CareerRepository.updateApplicationPipeline(applicationId, data);
 
-    const job = await CareerRepository.getJobByJobId(updated.jobId);
     if (data.status === "Ditawarkan") {
       await UserRepository.updateUserRow(updated.userId, { careerStage: "hired", updatedAt: new Date() });
     }

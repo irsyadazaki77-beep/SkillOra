@@ -1,5 +1,5 @@
-import { db } from "../../db/index.ts";
-import { notifications } from "../../db/schema.ts";
+import { db } from "../../db/index.js";
+import { notifications } from "../../db/schema.js";
 import { eq, desc } from "drizzle-orm";
 
 export class NotificationRepository {

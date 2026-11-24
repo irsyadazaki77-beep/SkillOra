@@ -5,6 +5,7 @@ import { CourseRepository } from "../repositories/CourseRepository.js";
 import { eq, and } from "drizzle-orm";
 import crypto from "crypto";
 import { safeParse } from "../../utils/safeJson.js";
+import { fisherYatesShuffle } from "../utils/shuffle.js";
 
 export interface SanitizedQuestion {
   id: string;
@@ -89,19 +90,19 @@ export class QuizService {
         pool = pool.filter((p) => p.difficulty === difficulty);
         if (pool.length < 5) pool = allPool;
       }
-      const shuffled = [...pool].sort(() => 0.5 - Math.random());
+      const shuffled = fisherYatesShuffle(pool);
       selectedQuestions = shuffled.slice(0, questionCount || 5).map((p) => p.question);
       durationSeconds = 180;
     } else if (mode === "simulation") {
       title = "Simulasi Ujian Seleksi Kerja 🎯";
       subtitle = "10 Soal Berbatas Waktu Ketat";
-      const shuffled = [...allPool].sort(() => 0.5 - Math.random());
+      const shuffled = fisherYatesShuffle(allPool);
       selectedQuestions = shuffled.slice(0, questionCount || 10).map((p) => p.question);
       durationSeconds = 600;
     } else if (mode === "wrong") {
       title = "Bank Evaluasi Jawaban Salah 🔄";
       subtitle = "Latih ulang pemahaman konsep yang keliru";
-      const shuffled = [...allPool].sort(() => 0.5 - Math.random());
+      const shuffled = fisherYatesShuffle(allPool);
       selectedQuestions = shuffled.slice(0, questionCount || 8).map((p) => p.question);
       durationSeconds = 480;
     } else if (mode === "topic") {
@@ -115,7 +116,7 @@ export class QuizService {
         }
       }
       if (selectedQuestions.length === 0) {
-        const shuffled = [...allPool].sort(() => 0.5 - Math.random());
+        const shuffled = fisherYatesShuffle(allPool);
         selectedQuestions = shuffled.slice(0, questionCount || 5).map((p) => p.question);
       }
       durationSeconds = Math.max(300, selectedQuestions.length * 90);
@@ -126,7 +127,7 @@ export class QuizService {
     }
 
     if (shuffle) {
-      selectedQuestions = [...selectedQuestions].sort(() => 0.5 - Math.random());
+      selectedQuestions = fisherYatesShuffle(selectedQuestions);
     }
 
     const sessionId = `att_${Date.now()}_${crypto.randomBytes(4).toString("hex")}`;

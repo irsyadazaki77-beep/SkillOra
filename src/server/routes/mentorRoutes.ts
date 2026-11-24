@@ -76,10 +76,12 @@ router.get("/mentoring/my-bookings", requireAuth, async (req: AuthenticatedReque
 router.put("/mentoring/bookings/:id", requireAccountRole("mentor", "admin"), async (req: AuthenticatedRequest, res: Response) => {
   try {
     const id = Number(req.params.id);
-    const updated = await MentorService.updateBooking(id, req.body);
+    if (!id) return res.status(400).json({ success: false, error: { code: "VALIDATION_ERROR", message: "ID booking tidak valid" } });
+    const updated = await MentorService.updateBooking(req.userId!, id, req.body);
     return res.json({ success: true, data: updated });
   } catch (err: any) {
-    return res.status(400).json({ success: false, error: { code: "BAD_REQUEST", message: err.message } });
+    const status = err.message?.includes("Akses ditolak") ? 403 : 400;
+    return res.status(status).json({ success: false, error: { code: status === 403 ? "FORBIDDEN" : "BAD_REQUEST", message: err.message } });
   }
 });
 

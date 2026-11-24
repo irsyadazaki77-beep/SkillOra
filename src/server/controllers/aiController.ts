@@ -85,6 +85,25 @@ export class AIController {
     }
   }
 
+  static async projectAssist(req: AuthenticatedRequest, res: Response) {
+    try {
+      const { courseId } = req.body;
+      if (!courseId) {
+        return res.status(400).json({
+          success: false,
+          error: { code: "VALIDATION_ERROR", message: "courseId wajib diisi." }
+        });
+      }
+      const result = await AIService.projectAssist(String(courseId));
+      return res.json({ success: true, data: result });
+    } catch (err: any) {
+      return res.status(400).json({
+        success: false,
+        error: { code: "BAD_REQUEST", message: err.message }
+      });
+    }
+  }
+
   static async getProjectReviews(req: AuthenticatedRequest, res: Response) {
     try {
       const profile = await UserService.getProfile(req.userId!);

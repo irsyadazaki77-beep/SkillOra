@@ -227,4 +227,42 @@ describe("Security Hardening Regression Tests", () => {
 
     expect(nextFunction).toHaveBeenCalled();
   });
+
+  // 9. Guest Demo Token Blocked in Production
+  it("should reject guest-demo-token when NODE_ENV is production and ALLOW_GUEST_DEMO is not true", async () => {
+    const prevNodeEnv = process.env.NODE_ENV;
+    const prevAllow = process.env.ALLOW_GUEST_DEMO;
+    process.env.NODE_ENV = "production";
+    delete process.env.ALLOW_GUEST_DEMO;
+
+    try {
+      mockReq.headers = { authorization: "Bearer guest-demo-token" };
+      await userContextMiddleware(mockReq as AuthenticatedRequest, mockRes, nextFunction);
+
+      expect(nextFunction).not.toHaveBeenCalled();
+      expect(mockRes.status).toHaveBeenCalledWith(401);
+      expect(mockRes.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          success: false,
+          error: expect.objectContaining({ code: "UNAUTHORIZED" }),
+        })
+      );
+    } finally {
+      process.env.NODE_ENV = prevNodeEnv;
+      if (prevAllow !== undefined) process.env.ALLOW_GUEST_DEMO = prevAllow;
+    }
+  });
+
+  // 10. Locked Avatar Bypass Prevention
+  it("should reject setAvatar if avatar is not in unlockedAvatars", async () => {
+    vi.mocked(UserRepository.getOrCreateUser).mockResolvedValueOnce({
+      id: 12,
+      uid: "user-123",
+      unlockedAvatars: ["🦁"],
+    } as any);
+
+    await expect(UserService.setAvatar("user-123", "🚀")).rejects.toThrow(
+      "Avatar belum dibuka"
+    );
+  });
 });

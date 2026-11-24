@@ -8,7 +8,7 @@ import cors from "cors";
 import dotenv from "dotenv";
 
 import { apiLimiter } from "./src/server/middlewares/rateLimiters.js";
-import { userContextMiddleware, requireAuth } from "./src/server/middlewares/authMiddleware.js";
+import { userContextMiddleware, requireAuth, requireRegistered } from "./src/server/middlewares/authMiddleware.js";
 import userRoutes from "./src/server/routes/userRoutes.js";
 import courseRoutes from "./src/server/routes/courseRoutes.js";
 import quizRoutes from "./src/server/routes/quizRoutes.js";
@@ -24,11 +24,18 @@ import { NotificationRepository } from "./src/server/repositories/NotificationRe
 import { UserService } from "./src/server/services/userService.js";
 import { attachWsHub } from "./src/server/wsHub.js";
 import { ensureSeeded } from "./src/server/db/seedData.js";
+import { globalErrorHandler } from "./src/server/middlewares/errorHandler.js";
+import { pool } from "./src/db/index.js";
 
 dotenv.config();
 
 const app = express();
 app.set("trust proxy", 1);
+
+const allowedOrigins = (process.env.CORS_ORIGINS || process.env.APP_URL || "")
+  .split(",")
+  .map((o) => o.trim())
+  .filter(Boolean);
 
 // Security Middlewares
 app.use(
@@ -36,12 +43,18 @@ app.use(
     contentSecurityPolicy: false,
     crossOriginOpenerPolicy: false,
     crossOriginResourcePolicy: false,
-    xFrameOptions: false,
+    xFrameOptions: { action: "sameorigin" },
+    referrerPolicy: { policy: "strict-origin-when-cross-origin" },
   })
 );
 app.use(
   cors({
-    origin: process.env.NODE_ENV === "production" ? false : "*",
+    origin:
+      process.env.NODE_ENV === "production"
+        ? allowedOrigins.length > 0
+          ? allowedOrigins
+          : false
+        : "*",
     credentials: true,
   })
 );
@@ -83,7 +96,7 @@ apiRouter.get("/notifications", requireAuth, async (req: any, res) => {
   }
 });
 
-apiRouter.post("/notifications/clear", requireAuth, async (req: any, res) => {
+apiRouter.post("/notifications/clear", requireRegistered, async (req: any, res) => {
   try {
     const userRow = await UserRepository.getOrCreateUser(
       req.userId,
@@ -97,7 +110,7 @@ apiRouter.post("/notifications/clear", requireAuth, async (req: any, res) => {
   }
 });
 
-apiRouter.post("/sync", requireAuth, async (req: any, res) => {
+apiRouter.post("/sync", requireRegistered, async (req: any, res) => {
   try {
     if (req.body && req.body.profile) {
       await UserService.syncUser(req.userId, req.body.profile);
@@ -106,6 +119,30 @@ apiRouter.post("/sync", requireAuth, async (req: any, res) => {
     res.json({ success: true, data: { profile } });
   } catch (err: any) {
     res.status(500).json({ success: false, error: { message: err.message } });
+  }
+});
+
+// Health & Readiness Endpoint
+apiRouter.get("/health", async (_req, res) => {
+  try {
+    await pool.query("SELECT 1");
+    return res.json({
+      success: true,
+      data: {
+        status: "ok",
+        database: "connected",
+        uptimeSeconds: Math.floor(process.uptime()),
+        timestamp: new Date().toISOString(),
+      },
+    });
+  } catch (err: any) {
+    return res.status(503).json({
+      success: false,
+      error: {
+        code: "SERVICE_UNAVAILABLE",
+        message: "Database tidak dapat dijangkau.",
+      },
+    });
   }
 });
 
@@ -119,6 +156,8 @@ apiRouter.use((req, res) => {
     },
   });
 });
+
+apiRouter.use(globalErrorHandler);
 
 // Apply rate limiting and mount API Router to both /api/v1 and /api
 app.use("/api/v1", apiLimiter, apiRouter);
@@ -150,6 +189,22 @@ async function startServer() {
   httpServer.listen(PORT, "0.0.0.0", () => {
     console.log(`🚀 Skillora Platform Backend & WebSocket Server running on http://0.0.0.0:${PORT}`);
   });
+
+  const shutdown = (signal: string) => {
+    console.log(`\n${signal} received. Shutting down Skillora gracefully...`);
+    httpServer.close(async () => {
+      try {
+        await pool.end();
+      } catch {
+        // ignore pool close errors on shutdown
+      }
+      process.exit(0);
+    });
+    setTimeout(() => process.exit(1), 10000).unref();
+  };
+
+  process.on("SIGTERM", () => shutdown("SIGTERM"));
+  process.on("SIGINT", () => shutdown("SIGINT"));
 }
 
 if (!process.env.VITEST) {

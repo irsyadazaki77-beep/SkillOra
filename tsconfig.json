@@ -26,12 +26,6 @@
   },
   "exclude": [
     "node_modules",
-    "fix.js",
-    "fix-all.js",
-    "fix-bad-sed.js",
-    "fix-comment.js",
-    "patch.js",
-    "patch_layout.js",
-    "revert.js"
+    "dist"
   ]
 }

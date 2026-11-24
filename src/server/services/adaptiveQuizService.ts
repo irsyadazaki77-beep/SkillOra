@@ -5,6 +5,7 @@ import { adaptiveAssessments, questionsBank, users, walletLedger, notifications 
 import { ensureSeeded } from "../db/seedData.js";
 import { UserRepository } from "../repositories/UserRepository.js";
 import { getGeminiClient } from "./aiService.js";
+import { AI_MODELS } from "../config/aiConfig.js";
 import { eq, and, desc } from "drizzle-orm";
 
 interface AdaptiveQuestionPayload {
@@ -50,7 +51,7 @@ Tingkat Kesulitan: Level ${difficulty} dari 5 (1 = sangat dasar, 5 = studi kasus
 Pastikan ada tepat 4 opsi jawaban yang masuk akal, 1 answerIndex (0-3), pembahasan jelas, dan competencyTag singkat.`;
 
     const response = await ai.models.generateContent({
-      model: "gemini-4-hydrogen",
+      model: AI_MODELS.text,
       contents: promptText,
       config: {
         responseMimeType: "application/json",
@@ -209,7 +210,7 @@ Benar: ${historyArr.filter((h) => h.isCorrect).length}/${historyArr.length}
 Topik Lemah: ${wrongTags.join(", ") || "Tidak ada, penguasaan merata"}
 Level kesulitan puncak: ${Math.max(...historyArr.map((h) => h.difficulty))}/5.`;
         const diagRes = await ai.models.generateContent({
-          model: "gemini-4-hydrogen",
+          model: AI_MODELS.text,
           contents: diagPrompt,
           config: { maxOutputTokens: 250 },
         });

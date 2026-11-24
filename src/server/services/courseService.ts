@@ -1,8 +1,32 @@
+import { db } from "../../db/index.js";
+import { users, walletLedger, notifications } from "../../db/schema.js";
+import { eq } from "drizzle-orm";
 import { UserRepository } from "../repositories/UserRepository.js";
 import { CourseRepository } from "../repositories/CourseRepository.js";
 import { NotificationRepository } from "../repositories/NotificationRepository.js";
 
+function getJakartaDateStr(): string {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Jakarta",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
+}
+
 export class CourseService {
+  private static async assertCourseOwnership(userId: string, courseId: string) {
+    const profile = await UserRepository.getFullProfile(userId);
+    const existing = await CourseRepository.getCourseByCourseId(courseId);
+    if (!existing) throw new Error("Kursus tidak ditemukan.");
+
+    const isAdmin = profile.accountRole === "admin" || ["Admin", "Developer"].includes(profile.role);
+    if (!isAdmin && existing.authorUserId && existing.authorUserId !== profile.id) {
+      throw new Error("Akses ditolak: Anda hanya dapat mengelola kursus yang Anda buat.");
+    }
+    return { profile, existing };
+  }
+
   static async getCourses(userId?: string, includeDrafts = false) {
     if (!userId) {
       return CourseRepository.getCourses(0, includeDrafts);
@@ -25,7 +49,8 @@ export class CourseService {
     return created;
   }
 
-  static async updateCourse(courseId: string, body: any) {
+  static async updateCourse(userId: string, courseId: string, body: any) {
+    await CourseService.assertCourseOwnership(userId, courseId);
     const updates: Record<string, any> = {};
     if (body.title !== undefined) updates.title = String(body.title).trim();
     if (body.description !== undefined) updates.description = String(body.description).trim();
@@ -44,11 +69,13 @@ export class CourseService {
     return CourseRepository.updateCourse(courseId, updates);
   }
 
-  static async deleteCourse(courseId: string) {
+  static async deleteCourse(userId: string, courseId: string) {
+    await CourseService.assertCourseOwnership(userId, courseId);
     return CourseRepository.deleteCourse(courseId);
   }
 
-  static async addLesson(courseId: string, body: any) {
+  static async addLesson(userId: string, courseId: string, body: any) {
+    await CourseService.assertCourseOwnership(userId, courseId);
     if (!body?.title || typeof body.title !== "string") {
       throw new Error("Judul materi wajib diisi.");
     }
@@ -97,6 +124,79 @@ export class CourseService {
       explanation: "useEffect memungkinkan kita menjalankan efek samping seperti sinkronisasi, subscription, atau fetch data setelah komponen di-render.",
       rewardGems: 15,
       rewardXP: 10
+    };
+  }
+
+  static async claimFlashChallenge(userId: string, selectedIdx: number) {
+    const challenge = CourseService.getFlashChallenge();
+    const isCorrect = selectedIdx === challenge.correctIdx;
+    if (!isCorrect) {
+      return {
+        correct: false,
+        alreadyClaimed: false,
+        rewardXP: 0,
+        rewardGems: 0,
+        profile: await UserRepository.getFullProfile(userId),
+      };
+    }
+
+    const todayStr = getJakartaDateStr();
+    const refId = `flash_${todayStr}`;
+
+    const result = await db.transaction(async (tx) => {
+      const [userRow] = await tx.select().from(users).where(eq(users.uid, userId)).for("update");
+      if (!userRow) throw new Error("Pengguna tidak ditemukan.");
+
+      const existing = await tx
+        .select()
+        .from(walletLedger)
+        .where(eq(walletLedger.userId, userRow.id));
+
+      if (existing.some((entry) => entry.referenceId === refId)) {
+        return { alreadyClaimed: true };
+      }
+
+      const newXp = userRow.xp + challenge.rewardXP;
+      const newGems = userRow.gems + challenge.rewardGems;
+      const newLevel = Math.floor(newXp / 500) + 1;
+
+      await tx
+        .update(users)
+        .set({
+          xp: newXp,
+          weeklyXp: userRow.weeklyXp + challenge.rewardXP,
+          gems: newGems,
+          level: newLevel,
+          updatedAt: new Date(),
+        })
+        .where(eq(users.id, userRow.id));
+
+      await tx.insert(walletLedger).values({
+        userId: userRow.id,
+        currency: "gems",
+        delta: challenge.rewardGems,
+        balanceAfter: newGems,
+        reason: "Hadiah Flash Challenge Harian",
+        referenceId: refId,
+      });
+
+      await tx.insert(notifications).values({
+        userId: userRow.id,
+        text: `⚡ Flash Challenge selesai! +${challenge.rewardXP} XP dan +${challenge.rewardGems} Gems ditambahkan!`,
+        type: "system",
+        read: false,
+      });
+
+      return { alreadyClaimed: false };
+    });
+
+    const profile = await UserRepository.getFullProfile(userId);
+    return {
+      correct: true,
+      alreadyClaimed: result.alreadyClaimed,
+      rewardXP: result.alreadyClaimed ? 0 : challenge.rewardXP,
+      rewardGems: result.alreadyClaimed ? 0 : challenge.rewardGems,
+      profile,
     };
   }
 }
