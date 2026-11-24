@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 160" width="520" height="160" fill="none">
+  <!-- ICON GROUP -->
+  <g id="SkilloraIcon">
+    <!-- Book Base (Navy #0B1938) -->
+    <path d="M 20 128 C 20 128 55 116 95 132 L 95 152 C 55 134 20 148 20 148 Z" fill="#0B1938" />
+    <!-- White text lines on left page -->
+    <path d="M 32 131 C 50 125 72 127 85 132" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" opacity="0.4" />
+    <path d="M 36 137 C 52 132 72 134 85 138" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" opacity="0.3" />
+    <path d="M 42 143 C 56 139 72 140 82 143" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" opacity="0.2" />
+
+    <!-- Right page block -->
+    <path d="M 95 132 C 135 116 170 128 170 128 L 170 148 C 170 148 135 134 95 152 Z" fill="#0B1938" />
+
+    <!-- Emerald S Pathway (#00B074) -->
+    <path d="M 95 132 C 70 120 40 98 40 70 C 40 40 75 22 118 22 C 134 22 152 28 160 35 L 148 48 C 140 43 128 38 116 38 C 88 38 62 50 62 68 C 62 86 85 102 108 114 Z" fill="#00B074" />
+             
+    <!-- Arrow & Upper Extension -->
+    <path d="M 108 114 C 128 102 152 78 158 56 L 172 68 L 162 34 L 128 46 L 140 54 C 134 72 114 92 95 104 Z" fill="#00B074" />
+
+    <!-- Ladder Rungs (White steps across green pathway) -->
+    <line x1="50" y1="68" x2="62" y2="62" stroke="#FFFFFF" stroke-width="3.5" stroke-linecap="round" />
+    <line x1="62" y1="52" x2="76" y2="47" stroke="#FFFFFF" stroke-width="3.5" stroke-linecap="round" />
+    <line x1="82" y1="40" x2="98" y2="38" stroke="#FFFFFF" stroke-width="3.5" stroke-linecap="round" />
+    <line x1="106" y1="37" x2="122" y2="39" stroke="#FFFFFF" stroke-width="3.5" stroke-linecap="round" />
+    <line x1="126" y1="48" x2="140" y2="56" stroke="#FFFFFF" stroke-width="3.5" stroke-linecap="round" />
+    <line x1="118" y1="74" x2="134" y2="86" stroke="#FFFFFF" stroke-width="3.5" stroke-linecap="round" />
+
+    <!-- Gold 4-Point Sparkle Star (#F5A623) -->
+    <path d="M 166 8 C 166 16 172 22 180 22 C 172 22 166 28 166 36 C 166 28 160 22 152 22 C 160 22 166 16 166 8 Z" fill="#F5A623" />
+
+    <!-- Small Green Sparkle Star (#00B074) -->
+    <path d="M 146 26 C 146 31 150 34 155 34 C 150 34 146 37 146 42 C 146 37 142 34 137 34 C 142 34 146 31 146 26 Z" fill="#00B074" />
+  </g>
+
+  <!-- WORDMARK TEXT -->
+  <text x="200" y="112" font-family="'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, sans-serif" font-size="82" font-weight="800" letter-spacing="-2px">
+    <tspan fill="#0B1938">Skill</tspan>
+    <tspan fill="#00B074">ora</tspan>
+  </text>
+</svg>

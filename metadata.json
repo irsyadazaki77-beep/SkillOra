@@ -1,0 +1,6 @@
+{
+  "name": "Skillora: Persiapan Karir & Bank Soal Seleksi Kerja Mahasiswa",
+  "description": "Platform interaktif mengasah skill dunia kerja, latihan soal rekrutmen (TKD BUMN, TPA, Psikotes, SJT, Wawancara HR), dan sertifikasi kompetensi industri untuk mahasiswa & fresh graduate.",
+  "requestFramePermissions": ["camera", "microphone"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
