@@ -10,6 +10,7 @@ import { RecommendedNextActions } from "../features/learning/components/Recommen
 import { RecommendedCoursesSection } from "../features/learning/components/RecommendedCoursesSection";
 import { DashboardSidebar } from "../features/learning/components/DashboardSidebar";
 import { NewUserOnboardingCard } from "../features/learning/components/NewUserOnboardingCard";
+import { CareerJourneyStepper } from "../features/learning/components/CareerJourneyStepper";
 
 const AutoCvModal = lazy(() => import("./AutoCvModal").then(m => ({ default: m.AutoCvModal })));
 const CareerReadinessCalculator = lazy(() => import("./CareerReadinessCalculator").then(m => ({ default: m.CareerReadinessCalculator })));
@@ -171,7 +172,13 @@ export function BelajarView({
         )}
       </AnimatePresence>
 
-      {/* 2. PROGRESS METRICS (3-4 KPI BERSIH) */}
+      {/* 2. PANDUAN ALUR 4 LANGKAH (BELAJAR -> SERTIFIKAT -> CV/INTERVIEW -> KERJA) */}
+      <CareerJourneyStepper
+        profile={profile}
+        hasActiveOrCompletedCourse={activeCourses.length > 0 || completedCoursesCount > 0}
+      />
+
+      {/* 3. PROGRESS METRICS (3-4 KPI BERSIH) */}
       <BelajarMetricsStrip
         activeCourses={activeCourses}
         primaryActiveCourse={primaryActiveCourse}

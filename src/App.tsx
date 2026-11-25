@@ -384,7 +384,27 @@ export default function App() {
                   <span>←</span> Kembali
                 </button>
                 <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-                  {location.pathname.startsWith("/karier") ? "Bursa Kerja" : location.pathname === "/profil/toko" ? "Toko Gems" : location.pathname === "/profil/analitik" ? "Analisis" : location.pathname.split("/").pop()?.replace("-", " ")}
+                  {location.pathname.startsWith("/belajar/kursus")
+                    ? "Detail Kursus"
+                    : location.pathname.startsWith("/belajar/proyek")
+                      ? "Proyek & Sertifikat"
+                      : location.pathname.startsWith("/belajar/latihan")
+                        ? "Latihan & Kuis"
+                        : location.pathname.startsWith("/belajar/katalog")
+                          ? "Katalog Kursus"
+                          : location.pathname === "/karier/cv-ats"
+                            ? "CV ATS Builder"
+                            : location.pathname === "/karier/mock-interview"
+                              ? "Mock Interview"
+                              : location.pathname === "/karier/asesmen-adaptif"
+                                ? "Asesmen Adaptif"
+                                : location.pathname.startsWith("/karier")
+                                  ? "Bursa Kerja"
+                                  : location.pathname === "/profil/toko"
+                                    ? "Toko Gems"
+                                    : location.pathname === "/profil/analitik"
+                                      ? "Analitik"
+                                      : location.pathname.split("/").pop()?.replace("-", " ")}
                 </span>
               </motion.div>
             )}

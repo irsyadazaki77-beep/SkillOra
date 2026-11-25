@@ -9,7 +9,7 @@ interface MobileBottomNavProps {
 
 const MOBILE_TABS = [
   { id: ROUTES.learning.root, name: "Beranda", icon: BookOpen },
-  { id: ROUTES.learning.catalog, name: "Belajar", icon: Compass },
+  { id: ROUTES.learning.catalog, name: "Kursus", icon: Compass },
   { id: ROUTES.career.jobs, name: "Karier", icon: Briefcase },
   { id: ROUTES.community.root, name: "Komunitas", icon: Users },
   { id: ROUTES.profile.root, name: "Profil", icon: UserCircle },

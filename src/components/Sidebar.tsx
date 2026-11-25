@@ -58,26 +58,31 @@ export const Sidebar = memo(function Sidebar({ profile, onLogout }: SidebarProps
 
   const navGroups: Array<{
     title: string;
-    items: Array<{ id: string; label: string; icon: any }>;
+    items: Array<{ id: string; label: string; icon: any; badge?: string }>;
   }> = [
     {
-      title: "PEMBELAJARAN",
+      title: "1. TAHAP BELAJAR",
       items: [
-        { id: ROUTES.learning.root, label: "Beranda Belajar", icon: BookOpen },
+        { id: ROUTES.learning.root, label: "Beranda & Alur", icon: BookOpen },
         { id: ROUTES.learning.catalog, label: "Katalog Kursus", icon: Compass },
         { id: ROUTES.learning.practice, label: "Latihan & Kuis", icon: Zap },
         { id: ROUTES.learning.project, label: "Proyek & Sertifikat", icon: Award },
       ],
     },
     {
-      title: "KARIER & AI SUITE",
+      title: "2. PERSIAPAN AI & KARIER",
+      items: [
+        { id: ROUTES.career.cvBuilder, label: "CV ATS Builder", icon: FileText },
+        { id: ROUTES.career.adaptive, label: "Asesmen AI Adaptif", icon: BrainCircuit },
+        { id: ROUTES.career.voiceInterview, label: "Mock Interview Suara", icon: Mic },
+        { id: ROUTES.career.simulation, label: "Simulasi BUMN & STAR", icon: Building2 },
+      ],
+    },
+    {
+      title: "3. PENYALURAN KERJA",
       items: [
         { id: ROUTES.career.jobs, label: "Bursa Kerja", icon: Briefcase },
         { id: `${ROUTES.career.jobs}?tab=lamaran`, label: "Lamaran Saya", icon: Bookmark },
-        { id: ROUTES.career.adaptive, label: "Asesmen AI Adaptif", icon: BrainCircuit },
-        { id: ROUTES.career.cvBuilder, label: "CV ATS Builder", icon: FileText },
-        { id: ROUTES.career.voiceInterview, label: "Mock Interview Suara", icon: Mic },
-        { id: ROUTES.career.simulation, label: "Simulasi BUMN & STAR", icon: Building2 },
         { id: ROUTES.career.scholarship, label: "Pusat Beasiswa", icon: GraduationCap },
       ],
     },

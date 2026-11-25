@@ -67,7 +67,7 @@ export function RecommendedNextActions({
       iconBg: "bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400",
       badge: { label: "Tantangan Harian", variant: "warning" as const },
       title: "Asah Pemahaman Kilat Hari Ini",
-      description: "Jawab 1 soal acak untuk menjaga konsistensi streak dan klaim bonus +50 XP harian.",
+      description: "Jawab 1 soal kilat untuk menjaga konsistensi streak dan klaim bonus +10 XP & +15 Gems.",
       ctaText: "Mulai Tantangan",
       ctaVariant: "accent" as const,
       onClick: onGetFlashChallenge
@@ -85,7 +85,7 @@ export function RecommendedNextActions({
       description: `Kesiapan industri kamu saat ini ${skillGapPercentage}%. Cek materi yang perlu dipelajari untuk menutup gap.`,
       ctaText: "Evaluasi Skill",
       ctaVariant: "secondary" as const,
-      onClick: onOpenSkillGapModal || (() => onNavigateToCourse(primaryActiveCourse?.id || "1"))
+      onClick: onOpenSkillGapModal || (() => primaryActiveCourse ? onNavigateToCourse(primaryActiveCourse.id) : onNavigateToSertifikasi())
     });
   } else {
     actions.push({
