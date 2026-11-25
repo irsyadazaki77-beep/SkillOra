@@ -16,7 +16,7 @@ interface SertifikasiViewProps {
   studentCodeNotes: string;
   setStudentCodeNotes: (notes: string) => void;
   submittingProject: boolean;
-  handleProjectSubmit: (courseId: string) => void;
+  handleProjectSubmit: (courseId: string, overrideNotes?: string) => void;
   projectBoilerplate: string | null;
   setProjectBoilerplate: (boilerplate: string | null) => void;
   loadingBoilerplate: boolean;
@@ -51,7 +51,9 @@ export function SertifikasiView({
   const [lookupResult, setLookupResult] = useState<any | null>(null);
   const [lookupSearched, setLookupSearched] = useState(false);
 
-  // Portfolio Projects State (Feature 6)
+  // Portfolio & Submission Controlled Fields
+  const [liveDemoUrl, setLiveDemoUrl] = useState("");
+  const [techStackInput, setTechStackInput] = useState("");
   const [showPortfolioForm, setShowPortfolioForm] = useState(false);
   const [portTitle, setPortTitle] = useState("");
   const [portCategory, setPortCategory] = useState("Frontend App");
@@ -340,13 +342,10 @@ export function SertifikasiView({
                 </div>
                 <div>
                   <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Live Demo URL</label>
-                  <input aria-label="Input field"
+                  <input aria-label="Live Demo URL"
                     type="text"
-                    onChange={(e) => {
-                       // We append this to studentCodeNotes or handle it locally. For simplicity, we can store it in a local state or just append to notes before submit.
-                       // Actually, we'll store all extra fields in a local state and combine them on submit.
-                    }}
-                    id="local-demo-url"
+                    value={liveDemoUrl}
+                    onChange={(e) => setLiveDemoUrl(e.target.value)}
                     placeholder="https://myproject.vercel.app"
                     className="w-full mt-1 p-2.5 text-xs bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl"
                   />
@@ -354,18 +353,20 @@ export function SertifikasiView({
               </div>
               
               <div>
-                <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Tech Stack & Skills</label>
+                <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Tech Stack &amp; Skills</label>
                 <input
+                  aria-label="Tech Stack"
                   type="text"
-                  id="local-tech-stack"
+                  value={techStackInput}
+                  onChange={(e) => setTechStackInput(e.target.value)}
                   placeholder="React, Node.js, Tailwind CSS..."
                   className="w-full mt-1 p-2.5 text-xs bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl"
                 />
               </div>
 
               <div>
-                <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Deskripsi Proyek & Penjelasan</label>
-                <textarea aria-label="Input field"
+                <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Deskripsi Proyek &amp; Penjelasan</label>
+                <textarea aria-label="Deskripsi Proyek"
                   value={studentCodeNotes}
                   onChange={(e) => setStudentCodeNotes(e.target.value)}
                   rows={3}
@@ -376,11 +377,15 @@ export function SertifikasiView({
 
               <button
                 onClick={() => {
-                  const demo = (document.getElementById("local-demo-url") as HTMLInputElement)?.value || "";
-                  const tech = (document.getElementById("local-tech-stack") as HTMLInputElement)?.value || "";
-                  const combinedNotes = `${studentCodeNotes}\n\nTech Stack: ${tech}\nLive Demo: ${demo}`;
+                  const combinedNotes = [
+                    studentCodeNotes.trim(),
+                    techStackInput.trim() ? `Tech Stack: ${techStackInput.trim()}` : "",
+                    liveDemoUrl.trim() ? `Live Demo: ${liveDemoUrl.trim()}` : "",
+                  ]
+                    .filter(Boolean)
+                    .join("\n\n");
                   setStudentCodeNotes(combinedNotes);
-                  handleProjectSubmit(activeCourse.id);
+                  handleProjectSubmit(activeCourse.id, combinedNotes);
                 }}
                 disabled={submittingProject || !projectUrl}
                 className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-bold text-xs rounded-xl shadow-md flex items-center justify-center gap-2 cursor-pointer"
@@ -531,40 +536,55 @@ export function SertifikasiView({
                 </div>
                 <button
                   onClick={() => {
-                    if (!portTitle) return;
-                    if (showToast) showToast("Proyek portofolio berhasil ditambahkan & diverifikasi!", "success");
+                    if (!portTitle.trim() || !portGithub.trim()) {
+                      showToast?.("Isi Judul Proyek dan GitHub URL terlebih dahulu.", "error");
+                      return;
+                    }
+                    const combined = `${portTitle.trim()}: ${portDesc.trim()}\nTech Stack: ${portTech}\nLive Demo: ${portDemo}`;
+                    setProjectUrl(portGithub.trim());
+                    setStudentCodeNotes(combined);
                     setShowPortfolioForm(false);
                     setPortTitle("");
+                    handleProjectSubmit(activeCourse.id, combined);
                   }}
-                  className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl cursor-pointer"
+                  disabled={submittingProject}
+                  className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-bold rounded-xl cursor-pointer"
                 >
-                  Simpan Proyek Portofolio
+                  {submittingProject ? "Menyimpan & Mengevaluasi..." : "Simpan & Evaluasi ke PostgreSQL"}
                 </button>
               </div>
             )}
 
-            {/* Default Sample Portfolio Items */}
+            {/* Verified Project Submissions from Database */}
             <div className="space-y-2">
-              {[
-                { title: "React E-Commerce Showcase", status: "Verified & Passed", tech: ["React", "Tailwind CSS", "Vite"], link: "https://github.com/demo/react-shop" },
-                { title: "Node.js REST API Backend", status: "Verified & Passed", tech: ["Node.js", "Express", "PostgreSQL"], link: "https://github.com/demo/backend-api" }
-              ].map((item, idx) => (
-                <div key={idx} className="p-3.5 bg-slate-50 dark:bg-slate-900/60 rounded-2xl border border-slate-200 dark:border-slate-700 flex items-center justify-between text-xs">
-                  <div>
-                    <div className="font-bold text-slate-900 dark:text-white">{item.title}</div>
-                    <div className="flex gap-1 mt-1">
-                      {item.tech.map((t, i) => (
-                        <span key={i} className="px-2 py-0.5 rounded bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 text-xs font-bold">
-                          {t}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                  <span className="px-2.5 py-1 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 text-xs font-black">
-                    ✓ {item.status}
-                  </span>
+              {Object.keys(reviews || {}).length === 0 ? (
+                <div className="p-4 rounded-2xl border border-dashed border-slate-200 dark:border-slate-700 text-center text-xs text-slate-500">
+                  Belum ada proyek portofolio tersimpan. Kirim proyek GitHub di atas untuk tercatat di portofolio terverifikasi.
                 </div>
-              ))}
+              ) : (
+                Object.entries(reviews || {}).map(([cId, rev]) => {
+                  const matchedCourse = safeCourses.find((c) => c.id === cId);
+                  return (
+                    <div key={cId} className="p-3.5 bg-slate-50 dark:bg-slate-900/60 rounded-2xl border border-slate-200 dark:border-slate-700 flex items-center justify-between text-xs gap-3">
+                      <div className="min-w-0">
+                        <div className="font-bold text-slate-900 dark:text-white truncate">
+                          {matchedCourse?.project?.title || matchedCourse?.title || cId}
+                        </div>
+                        <p className="text-[11px] text-slate-500 truncate mt-0.5">{rev.mentorFeedbackText}</p>
+                      </div>
+                      <span
+                        className={`px-2.5 py-1 rounded-full text-xs font-black shrink-0 ${
+                          rev.status === "PASS"
+                            ? "bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300"
+                            : "bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300"
+                        }`}
+                      >
+                        {rev.status === "PASS" ? `✓ PASS (${rev.score})` : `RETRY (${rev.score})`}
+                      </span>
+                    </div>
+                  );
+                })
+              )}
             </div>
           </div>
         </div>

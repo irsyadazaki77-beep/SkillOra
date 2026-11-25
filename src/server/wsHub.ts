@@ -10,7 +10,7 @@ import { ensureSeeded } from "./db/seedData.js";
 import { db } from "../db/index.js";
 import { AI_MODELS } from "./config/aiConfig.js";
 import { fisherYatesShuffle } from "./utils/shuffle.js";
-import { arenaMatches, interviewSessions, questionsBank, users } from "../db/schema.js";
+import { arenaMatches, collabRooms, interviewSessions, questionsBank, users } from "../db/schema.js";
 import { eq } from "drizzle-orm";
 
 interface AuthenticatedWsIdentity {
@@ -539,6 +539,20 @@ export function attachWsHub(httpServer: HttpServer) {
 
   collabWss.on("connection", async (ws: WebSocket, _req: IncomingMessage, context: { roomId: string; user: AuthenticatedWsIdentity }) => {
     const { roomId, user } = context;
+    try {
+      const existingRoom = await db.query.collabRooms.findFirst({
+        where: eq(collabRooms.roomId, roomId),
+      });
+      if (!existingRoom) {
+        ws.send(JSON.stringify({ type: "error", message: "Ruang kolaborasi tidak ditemukan." }));
+        ws.close(1008, "Room not found");
+        return;
+      }
+    } catch {
+      ws.close(1011, "Room check failed");
+      return;
+    }
+
     if (!roomSubscribers.has(roomId)) {
       roomSubscribers.set(roomId, new Set());
     }

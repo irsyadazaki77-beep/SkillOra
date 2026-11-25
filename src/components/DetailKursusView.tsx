@@ -29,8 +29,10 @@ import {
   RotateCcw,
   UserPlus,
 } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Course, CourseTrainingOverview, Lesson, Profile } from "../types";
-import { apiClient, courseApi, trainingApi } from "../api/apiClient";
+import { apiClient, courseApi, studyApi, trainingApi } from "../api/apiClient";
+import { queryKeys } from "../lib/queryKeys";
 import { getCourseProgress, getStructuredModules } from "../utils/courseUtils";
 import { resolveCourseImage } from "../utils/resolveAsset";
 import defaultCourseImg from "../assets/images/course_tech_engineering_1794974031663.jpg";
@@ -60,6 +62,7 @@ export function DetailKursusView({
 }: DetailKursusViewProps) {
   const { id } = useParams();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const course = courses.find((c) => c.id === id);
 
   const [activeStage, setActiveStage] = useState<TrainingStage>("modules");
@@ -77,12 +80,35 @@ export function DetailKursusView({
     setLocalEnrolledCount(course?.enrolledCount || 0);
   }, [course?.id, course?.isEnrolled, course?.enrolledCount]);
 
-  // Lesson note modal state
+  // Lesson note modal state backed by PostgreSQL Cloud Notes
   const [activeNoteLesson, setActiveNoteLesson] = useState<Lesson | null>(null);
   const [noteContent, setNoteContent] = useState<string>("");
+  const [cloudNotesMap, setCloudNotesMap] = useState<Record<string, string>>({});
+  const [savingNote, setSavingNote] = useState(false);
   const [bookmarkedLessons, setBookmarkedLessons] = useState<string[]>(
     () => profile?.bookmarkedLessons || []
   );
+
+  useEffect(() => {
+    if (!course?.id) return;
+    let active = true;
+    studyApi
+      .listNotes()
+      .then((notesList) => {
+        if (!active || !Array.isArray(notesList)) return;
+        const nextMap: Record<string, string> = {};
+        for (const n of notesList) {
+          if (n.courseId === course.id && n.content) {
+            nextMap[n.lessonId] = n.content;
+          }
+        }
+        setCloudNotesMap(nextMap);
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, [course?.id]);
 
   useEffect(() => {
     if (profile?.bookmarkedLessons) {
@@ -206,24 +232,43 @@ export function DetailKursusView({
   const handleOpenNoteModal = (lesson: Lesson, e: React.MouseEvent) => {
     e.stopPropagation();
     setActiveNoteLesson(lesson);
-    const savedNote =
-      localStorage.getItem(`skillora_note_${course.id}_${lesson.id}`) || lesson.notes || "";
+    const savedNote = cloudNotesMap[lesson.id] || lesson.notes || "";
     setNoteContent(savedNote);
   };
 
-  const handleSaveNote = () => {
+  const handleSaveNote = async () => {
     if (!activeNoteLesson) return;
-    localStorage.setItem(`skillora_note_${course.id}_${activeNoteLesson.id}`, noteContent);
-    showToast?.("Catatan materi tersimpan.", "success");
-    setActiveNoteLesson(null);
+    setSavingNote(true);
+    try {
+      await studyApi.saveNote(course.id, activeNoteLesson.id, noteContent, false);
+      setCloudNotesMap((prev) => ({ ...prev, [activeNoteLesson.id]: noteContent }));
+      showToast?.("Catatan materi tersimpan ke Cloud PostgreSQL.", "success");
+      setActiveNoteLesson(null);
+    } catch (err: any) {
+      showToast?.(err?.message || "Gagal menyimpan catatan cloud.", "error");
+    } finally {
+      setSavingNote(false);
+    }
   };
 
-  const handleDeleteNote = () => {
+  const handleDeleteNote = async () => {
     if (!activeNoteLesson) return;
-    localStorage.removeItem(`skillora_note_${course.id}_${activeNoteLesson.id}`);
-    setNoteContent("");
-    showToast?.("Catatan materi dihapus.", "info");
-    setActiveNoteLesson(null);
+    setSavingNote(true);
+    try {
+      await studyApi.deleteNote(course.id, activeNoteLesson.id);
+      setCloudNotesMap((prev) => {
+        const next = { ...prev };
+        delete next[activeNoteLesson.id];
+        return next;
+      });
+      setNoteContent("");
+      showToast?.("Catatan materi dihapus dari cloud.", "info");
+      setActiveNoteLesson(null);
+    } catch (err: any) {
+      showToast?.(err?.message || "Gagal menghapus catatan.", "error");
+    } finally {
+      setSavingNote(false);
+    }
   };
 
   const courseDesc =
@@ -427,6 +472,7 @@ export function DetailKursusView({
                     const res = await courseApi.enrollCourse(course.id);
                     setLocalEnrolled(true);
                     setLocalEnrolledCount(res.enrolledCount);
+                    queryClient.invalidateQueries({ queryKey: queryKeys.courses.list() });
                     showToast?.(
                       res.alreadyEnrolled
                         ? `Anda sudah terdaftar pada "${course.title}".`
@@ -809,9 +855,7 @@ export function DetailKursusView({
                       {mod.lessons.map(
                         ({ lesson, indexInCourse, isCompleted: isLesCompleted, isCurrent, isLocked }) => {
                           const isLessonSaved = bookmarkedLessons.includes(lesson.id);
-                          const hasSavedNote = Boolean(
-                            localStorage.getItem(`skillora_note_${course.id}_${lesson.id}`)
-                          );
+                          const hasSavedNote = Boolean(cloudNotesMap[lesson.id]);
                           const checkCount = lesson.inlineChecks?.length || 0;
                           const cardCount = lesson.flashcards?.length || 0;
 
@@ -1036,16 +1080,14 @@ export function DetailKursusView({
                     <StickyNote className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                     Catatan Materi Saya
                   </h3>
-                  {course.lessons.filter((l) =>
-                    localStorage.getItem(`skillora_note_${course.id}_${l.id}`)
-                  ).length === 0 ? (
+                  {course.lessons.filter((l) => Boolean(cloudNotesMap[l.id])).length === 0 ? (
                     <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">
                       Belum ada catatan tersimpan. Gunakan ikon catatan di daftar sesi atau Catatan Cloud saat membaca materi.
                     </p>
                   ) : (
                     <div className="space-y-2">
                       {course.lessons.map((lesson) => {
-                        const saved = localStorage.getItem(`skillora_note_${course.id}_${lesson.id}`);
+                        const saved = cloudNotesMap[lesson.id];
                         if (!saved) return null;
                         return (
                           <div
@@ -1288,8 +1330,9 @@ export function DetailKursusView({
             <div className="flex items-center justify-between pt-1">
               <button
                 type="button"
+                disabled={savingNote}
                 onClick={handleDeleteNote}
-                className="px-3 py-1.5 text-rose-600 dark:text-rose-400 hover:underline text-xs font-semibold flex items-center gap-1 cursor-pointer"
+                className="px-3 py-1.5 text-rose-600 dark:text-rose-400 hover:underline text-xs font-semibold flex items-center gap-1 cursor-pointer disabled:opacity-50"
               >
                 <Trash2 className="w-3.5 h-3.5" /> Hapus
               </button>
@@ -1300,10 +1343,11 @@ export function DetailKursusView({
                 <Button
                   variant="primary"
                   size="sm"
+                  disabled={savingNote}
                   onClick={handleSaveNote}
                   leftIcon={<Save className="w-3.5 h-3.5" />}
                 >
-                  Simpan Catatan
+                  {savingNote ? "Menyimpan..." : "Simpan ke Cloud"}
                 </Button>
               </div>
             </div>

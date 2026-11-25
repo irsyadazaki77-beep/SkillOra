@@ -300,21 +300,24 @@ export function useAppHandlers({
     navigate(`/belajar/kursus/${course.id}/latihan/${lesson.id}`);
   };
 
-  const handleProjectSubmit = async (courseId: string) => {
+  const handleProjectSubmit = async (courseId: string, overrideNotes?: string) => {
     if (!projectUrl.trim()) return;
     setSubmittingProject(true);
     try {
-      const data = await aiApi.submitProject(courseId, projectUrl, studentCodeNotes);
+      const notesPayload = overrideNotes !== undefined ? overrideNotes : studentCodeNotes;
+      const data = await aiApi.submitProject(courseId, projectUrl, notesPayload);
       if (data?.review) {
         setReviews((prev) => ({ ...prev, [courseId]: data.review }));
         setProfile(data.profile);
         triggerConfetti("certification");
         setProjectUrl("");
         setStudentCodeNotes("");
+        showToast("Proyek berhasil dievaluasi! Cek hasil & sertifikat Anda.", "success");
         loadData();
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
+      showToast(err?.message || "Gagal mengirimkan proyek untuk evaluasi.", "error");
     } finally {
       setSubmittingProject(false);
     }

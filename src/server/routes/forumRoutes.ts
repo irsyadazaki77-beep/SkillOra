@@ -49,7 +49,7 @@ router.post("/forum/:id/reply", requireRegistered, async (req: AuthenticatedRequ
   }
 });
 
-router.post("/forum/:id/upvote", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+router.post("/forum/:id/upvote", requireRegistered, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const posts = await ForumService.upvotePost(req.userId!, req.params.id);
     return res.json({ success: true, data: posts });

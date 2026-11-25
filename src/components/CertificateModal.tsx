@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { Course, Profile } from "../types";
 import { Award, ShieldCheck, QrCode, Download, X, Printer, Sparkles, Layers, CheckCircle2, BadgePercent, GraduationCap, Clock } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
+import { escapeHtml } from "../utils/htmlUtils";
 
 interface CertificateModalProps {
   activeCertificate: Course | null;
@@ -51,6 +52,17 @@ export function CertificateModal({
   const generateInteractiveHtml = () => {
     if (!activeCertificate) return "";
 
+    const safeName = escapeHtml(profile.name);
+    const safeCourseTitle = escapeHtml(activeCertificate.title);
+    const safePartner = escapeHtml(activeCertificate.partner);
+    const safeCertId = escapeHtml(finalCertId);
+    const safeIssueDate = escapeHtml(issueDate);
+    const safeVerifyUrl = escapeHtml(verificationUrl);
+    const qrSvgHtml =
+      (typeof document !== "undefined" &&
+        document.querySelector("#printable-certificate svg")?.outerHTML) ||
+      "";
+
     const isClassic = themeMode === "classic";
     const isObsidian = themeMode === "obsidian";
     const isRoyal = themeMode === "royal";
@@ -90,22 +102,31 @@ export function CertificateModal({
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sertifikat Kelulusan Skillora - ${profile.name}</title>
+  <title>Sertifikat Kelulusan SkillOra - ${safeName}</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=JetBrains+Mono:wght@700&display=swap');
-    
     body {
-      font-family: 'Inter', sans-serif;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      margin: 0;
+      padding: 24px;
+      background: #020617;
+      color: #f8fafc;
       -webkit-print-color-adjust: exact !important;
       print-color-adjust: exact !important;
     }
     .font-display {
-      font-family: 'Playfair Display', serif;
+      font-family: Georgia, 'Playfair Display', serif;
     }
     .font-mono {
-      font-family: 'JetBrains Mono', monospace;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    }
+    #cert-card {
+      max-width: 1024px;
+      margin: 0 auto;
+      border-radius: 12px;
+      border: 4px solid;
+      padding: 32px;
+      box-sizing: border-box;
     }
     
     @media print {
@@ -144,7 +165,7 @@ export function CertificateModal({
         🎓
       </div>
       <div class="text-left">
-        <h4 class="text-base font-black tracking-wide">KREDENSIAL RESMI SKILLORA PRO</h4>
+        <h4 class="text-base font-black tracking-wide">KREDENSIAL RESMI SKILLORA ACADEMY (100% GRATIS)</h4>
         <p class="text-base text-slate-400">Sertifikat terverifikasi ini dapat disimpan sebagai PDF fisik atau dicetak langsung.</p>
       </div>
     </div>
@@ -203,14 +224,14 @@ export function CertificateModal({
           </div>
         </div>
 
-        <!-- Secure blockchain QR -->
+        <!-- Secure verification QR (works offline via embedded SVG) -->
         <div class="w-full">
           <div class="flex items-center gap-2 bg-white/5 border border-white/10 p-3 rounded-lg">
-            <div id="qrcode-canvas" class="p-1 px-1.5 bg-white rounded-xl shrink-0 shadow-sm flex items-center justify-center"></div>
+            <div class="p-1 px-1.5 bg-white rounded-xl shrink-0 shadow-sm flex items-center justify-center" style="min-width:48px;min-height:48px;">${qrSvgHtml}</div>
             <div class="text-left">
               <span class="block text-[8px] font-black uppercase tracking-widest ${isClassic ? 'text-slate-500' : 'text-slate-400'}">VERIFIED DIGITAL</span>
-              <span class="font-mono text-base font-bold text-emerald-500">ID: ${finalCertId}</span>
-              <span class="block text-[7px] ${isClassic ? 'text-slate-400' : 'text-slate-500'} font-semibold mt-1">Scan for validation</span>
+              <span class="font-mono text-base font-bold text-emerald-500">ID: ${safeCertId}</span>
+              <span class="block text-[7px] ${isClassic ? 'text-slate-400' : 'text-slate-500'} font-semibold mt-1">${safeVerifyUrl}</span>
             </div>
           </div>
         </div>
@@ -240,7 +261,7 @@ export function CertificateModal({
           <!-- Name in gorgeous Display Typography -->
           <div class="my-6">
             <h1 class="font-display text-4xl sm:text-5xl font-bold tracking-tight" style="${isClassic ? 'color: #0f172a;' : isObsidian ? 'background: linear-gradient(to right, #fde047, #f59e0b, #fef08a); -webkit-background-clip: text; -webkit-text-fill-color: transparent;' : 'background: linear-gradient(to right, #ffffff, #c7d2fe, #ddd6fe); -webkit-background-clip: text; -webkit-text-fill-color: transparent;'}">
-              ${profile.name}
+              ${safeName}
             </h1>
             <div class="h-1 w-44 mx-auto md:mx-0 mt-3 rounded-full from-amber-500 to-yellow-400"></div>
           </div>
@@ -257,14 +278,14 @@ export function CertificateModal({
           <div class="mt-4 mb-3 p-4 rounded-lg relative overflow-hidden border" style="${cardStyle}">
             <div class="absolute left-0 top-0 bottom-0 w-1.5 bg-gradient-to-b from-amber-500 to-yellow-400"></div>
             <h2 class="font-display text-base sm:text-base font-bold ${isClassic ? 'text-slate-800' : 'text-white'}">
-              &ldquo;${activeCertificate.title}&rdquo;
+              &ldquo;${safeCourseTitle}&rdquo;
             </h2>
             <div class="mt-4 flex flex-wrap items-center justify-center md:justify-start gap-2.5 text-base font-extrabold">
               <span class="px-2.5 py-1 rounded-lg border border-slate-500/10 bg-slate-500/5">
-                KREDENSIAL: <span class="font-mono text-emerald-500 font-bold">${finalCertId}</span>
+                KREDENSIAL: <span class="font-mono text-emerald-500 font-bold">${safeCertId}</span>
               </span>
               <span class="px-2.5 py-1 bg-emerald-500/10 text-emerald-400 rounded-lg border border-emerald-500/20 uppercase tracking-wider flex items-center gap-1">
-                ✓ Endorsed by ${activeCertificate.partner}
+                ✓ Endorsed by ${safePartner}
               </span>
             </div>
           </div>
@@ -274,7 +295,7 @@ export function CertificateModal({
         <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 text-base border-t border-slate-500/15 pt-5 text-left">
           <div>
             <span class="font-black uppercase tracking-widest text-[8px] mb-1 text-slate-400">Tanggal Terbit / Issue Date</span>
-            <span class="font-semibold text-base ${isClassic ? 'text-slate-800' : 'text-slate-200'}">${issueDate}</span>
+            <span class="font-semibold text-base ${isClassic ? 'text-slate-800' : 'text-slate-200'}">${safeIssueDate}</span>
           </div>
           <div>
             <span class="font-black uppercase tracking-widest text-[8px] mb-1 text-slate-400">Nilai Evaluasi / Performance</span>
@@ -294,7 +315,7 @@ export function CertificateModal({
             <p class="text-[7px] text-slate-400">Dekan Riset Skillora AI</p>
           </div>
           <div class="text-center space-y-1.5">
-            <p class="italic font-serif text-base ${isClassic ? 'text-slate-950' : 'text-white'}">${activeCertificate.partner} Board</p>
+            <p class="italic font-serif text-base ${isClassic ? 'text-slate-950' : 'text-white'}">${safePartner} Board</p>
             <div class="w-20 h-px bg-slate-500/30 mx-auto"></div>
             <p class="text-[7px] text-slate-400">Direktur Program Industri</p>
           </div>
@@ -305,20 +326,6 @@ export function CertificateModal({
     </div>
 
   </div>
-
-  <script>
-    // Generate QR code on DOM ready
-    window.addEventListener('DOMContentLoaded', () => {
-      new QRCode(document.getElementById("qrcode-canvas"), {
-        text: "${verificationUrl}",
-        width: 52,
-        height: 52,
-        colorDark : "#020617",
-        colorLight : "#ffffff",
-        correctLevel : QRCode.CorrectLevel.M
-      });
-    });
-  </script>
 
 </body>
 </html>`;

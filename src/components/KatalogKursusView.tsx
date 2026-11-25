@@ -11,9 +11,11 @@ import {
   ArrowRight,
   Award,
 } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { Course, LearningPathRecord, Profile } from "../types";
 import { courseApi } from "../api/apiClient";
+import { queryKeys } from "../lib/queryKeys";
 import { CourseCard } from "./CourseCard";
 import { useDebounce } from "../hooks/useDebounce";
 import { getCourseProgress } from "../utils/courseUtils";
@@ -27,6 +29,7 @@ interface KatalogKursusViewProps {
 
 export function KatalogKursusView({ courses, profile, onBookmarkToggle }: KatalogKursusViewProps) {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 250);
@@ -146,6 +149,7 @@ export function KatalogKursusView({ courses, profile, onBookmarkToggle }: Katalo
     setEnrollingPathSlug(slug);
     try {
       await courseApi.enrollLearningPath(slug);
+      await queryClient.invalidateQueries({ queryKey: queryKeys.courses.list() });
       const fresh = await courseApi.getLearningPaths();
       if (Array.isArray(fresh)) setDbPaths(fresh);
     } catch {
