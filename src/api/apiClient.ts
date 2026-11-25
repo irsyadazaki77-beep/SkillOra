@@ -18,6 +18,23 @@ import {
   MentoringBooking,
   ScholarshipItem,
   EventItem,
+  LabChallenge,
+  LabSubmissionRecord,
+  LessonNoteRecord,
+  StudyRoadmapRecord,
+  LeagueOverview,
+  TryoutPackage,
+  TryoutAttemptRecord,
+  TalentMatchJob,
+  PublicPortfolioData,
+  CampusCohortItem,
+  Question,
+  CourseTrainingOverview,
+  CourseExamRecord,
+  FlashcardQueueItem,
+  TrainingAssignmentRecord,
+  SimulationAttemptRecord,
+  StarEvaluationResult,
 } from "../types";
 import { auth } from "../lib/firebase";
 
@@ -426,4 +443,232 @@ export const quizApi = {
     }>("/quiz/submit", { attemptId, answers, timeSpentSeconds }),
 
   getHistory: () => apiClient.get<any[]>("/quiz/history")
+};
+
+// --- Skillora 2.0 Upgrade APIs ---
+export const labApi = {
+  list: () => apiClient.get<LabChallenge[]>("/labs"),
+  getSubmissions: (challengeId?: string) =>
+    apiClient.get<LabSubmissionRecord[]>(
+      challengeId ? `/labs/submissions?challengeId=${encodeURIComponent(challengeId)}` : "/labs/submissions"
+    ),
+  evaluate: (payload: {
+    challengeId: string;
+    codeOrAnswer: string;
+    testPassedCount?: number;
+    testTotalCount?: number;
+    testReport?: Array<{ label: string; passed: boolean; details?: string }>;
+  }) => apiClient.post<{ submission: LabSubmissionRecord; profile: Profile }>("/labs/evaluate", payload),
+};
+
+export const studyApi = {
+  getNote: (courseId: string, lessonId: string) =>
+    apiClient.get<LessonNoteRecord | null>(
+      `/notes?courseId=${encodeURIComponent(courseId)}&lessonId=${encodeURIComponent(lessonId)}`
+    ),
+  listNotes: () => apiClient.get<LessonNoteRecord[]>("/notes"),
+  saveNote: (courseId: string, lessonId: string, content: string, isPinned = false) =>
+    apiClient.post<LessonNoteRecord>("/notes", { courseId, lessonId, content, isPinned }),
+  deleteNote: (courseId: string, lessonId: string) =>
+    apiClient.delete<{ deleted: boolean }>(
+      `/notes?courseId=${encodeURIComponent(courseId)}&lessonId=${encodeURIComponent(lessonId)}`
+    ),
+  getRoadmap: () => apiClient.get<StudyRoadmapRecord | null>("/roadmap"),
+  generateRoadmap: (targetRole: string, hoursPerWeek: number) =>
+    apiClient.post<StudyRoadmapRecord>("/roadmap/generate", { targetRole, hoursPerWeek }),
+  toggleRoadmapTask: (roadmapId: number, taskId: string) =>
+    apiClient.post<StudyRoadmapRecord>("/roadmap/toggle", { roadmapId, taskId }),
+  copilotChat: (
+    message: string,
+    context?: {
+      pagePath?: string;
+      courseTitle?: string;
+      lessonTitle?: string;
+      labTitle?: string;
+      codeSnippet?: string;
+    }
+  ) => apiClient.post<{ response: string }>("/ai/copilot", { message, context }),
+};
+
+export const arenaApi = {
+  getLeague: (tier?: string) =>
+    apiClient.get<LeagueOverview>(tier ? `/arena/league?tier=${encodeURIComponent(tier)}` : "/arena/league"),
+  listTryouts: () => apiClient.get<TryoutPackage[]>("/arena/tryouts"),
+  submitTryout: (tryoutId: string, answers: Record<string, number>, durationSeconds: number) =>
+    apiClient.post<{
+      attempt: TryoutAttemptRecord;
+      reviewItems: Array<{
+        id: string;
+        prompt: string;
+        selectedOption: number;
+        correctOption: number;
+        isCorrect: boolean;
+        explanation: string;
+        competencyTag: string;
+      }>;
+      earnedXp: number;
+      earnedGems: number;
+      profile: Profile;
+    }>("/arena/tryouts/submit", { tryoutId, answers, durationSeconds }),
+  getRecentMatches: () =>
+    apiClient.get<
+      Array<{
+        id: number;
+        roomCode: string;
+        topic: string;
+        mode: string;
+        participants: Array<{ name: string; score: number; correctCount: number; avatar?: string }>;
+        winnerName: string | null;
+        questionCount: number;
+        finishedAt: string;
+      }>
+    >("/arena/matches"),
+};
+
+export const careerExpansionApi = {
+  getTalentMatch: () => apiClient.get<TalentMatchJob[]>("/career/talent-match"),
+  updatePortfolioSettings: (payload: {
+    portfolioSlug?: string;
+    portfolioPublic?: boolean;
+    portfolioHeadline?: string;
+    campusName?: string;
+    majorName?: string;
+    bio?: string;
+  }) => apiClient.put<{ profile: Profile }>("/portfolio/settings", payload),
+  listCampusCohorts: () => apiClient.get<CampusCohortItem[]>("/career/campus"),
+  joinCampusCohort: (cohortId: string, majorName?: string) =>
+    apiClient.post<{ profile: Profile; cohorts: CampusCohortItem[] }>("/career/campus/join", {
+      cohortId,
+      majorName,
+    }),
+};
+
+export async function fetchPublicPortfolio(slug: string): Promise<PublicPortfolioData> {
+  const res = await fetch(`/api/v1/public/portfolio/${encodeURIComponent(slug)}`);
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok || json.success === false) {
+    throw new Error(json.error?.message || "Portofolio tidak ditemukan.");
+  }
+  return json.data as PublicPortfolioData;
+}
+
+// --- Training Engine 3.0 APIs ---
+export const trainingApi = {
+  getCourseOverview: (courseId: string) =>
+    apiClient.get<CourseTrainingOverview>(`/training/course/${encodeURIComponent(courseId)}/overview`),
+
+  getExamQuestions: (courseId: string, examType: "pretest" | "final") =>
+    apiClient.get<{
+      courseId: string;
+      courseTitle: string;
+      examType: "pretest" | "final";
+      passingScore: number;
+      durationSeconds: number;
+      questions: Array<{
+        id: string;
+        lessonId: string;
+        lessonTitle: string;
+        text: string;
+        options: string[];
+        competencyTag: string;
+      }>;
+    }>(`/training/course/${encodeURIComponent(courseId)}/exam/${examType}`),
+
+  submitCourseExam: (
+    courseId: string,
+    payload: {
+      examType: "pretest" | "final";
+      answers: Record<string, number>;
+      questionIds: string[];
+      durationSeconds: number;
+    }
+  ) =>
+    apiClient.post<{
+      exam: CourseExamRecord;
+      reviewItems: Array<{
+        id: string;
+        text: string;
+        lessonId: string;
+        lessonTitle: string;
+        selectedOption: number;
+        correctOption: number;
+        isCorrect: boolean;
+        explanation: string;
+        competencyTag: string;
+      }>;
+      certificateIssued: boolean;
+      profile: Profile;
+    }>(`/training/course/${encodeURIComponent(courseId)}/exam/submit`, payload),
+
+  getFlashcardQueue: (courseId?: string) =>
+    apiClient.get<{
+      totalCount: number;
+      dueCount: number;
+      masteredCount: number;
+      cards: FlashcardQueueItem[];
+    }>(courseId ? `/training/flashcards?courseId=${encodeURIComponent(courseId)}` : "/training/flashcards"),
+
+  reviewFlashcard: (payload: {
+    courseId: string;
+    lessonId: string;
+    cardId: string;
+    quality: "again" | "hard" | "good" | "easy";
+  }) =>
+    apiClient.post<{
+      cardId: string;
+      easeFactor: number;
+      intervalDays: number;
+      repetitions: number;
+      lastQuality: string;
+      nextReviewAt: string;
+      earnedXp: number;
+      profile: Profile;
+    }>("/training/flashcards/review", payload),
+
+  submitAssignment: (courseId: string, answerText: string) =>
+    apiClient.post<{ assignment: TrainingAssignmentRecord; profile: Profile }>(
+      `/training/course/${encodeURIComponent(courseId)}/assignment`,
+      { answerText }
+    ),
+
+  getAdaptiveDrill: (count = 8) =>
+    apiClient.get<{
+      weakTopics: string[];
+      prioritizedCount: number;
+      questions: Array<
+        Question & {
+          courseId: string;
+          courseTitle: string;
+          lessonId: string;
+          lessonTitle: string;
+          category: string;
+        }
+      >;
+    }>(`/training/adaptive-drill?count=${count}`),
+
+  getSimulationHistory: (simType?: "tkd" | "kraepelin" | "decision" | "star") =>
+    apiClient.get<SimulationAttemptRecord[]>(
+      simType
+        ? `/training/simulations/history?simType=${encodeURIComponent(simType)}`
+        : "/training/simulations/history"
+    ),
+
+  recordSimulation: (payload: {
+    simType: "tkd" | "kraepelin" | "decision" | "star";
+    title: string;
+    score: number;
+    metrics: Record<string, any>;
+    aiFeedback?: string;
+    earnedXp?: number;
+  }) =>
+    apiClient.post<{ attempt: SimulationAttemptRecord; profile: Profile }>(
+      "/training/simulations/record",
+      payload
+    ),
+
+  evaluateStar: (payload: { question: string; answer: string; role?: string }) =>
+    apiClient.post<{ evaluation: StarEvaluationResult; profile: Profile }>(
+      "/training/simulations/star-evaluate",
+      payload
+    ),
 };

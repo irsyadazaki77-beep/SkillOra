@@ -87,6 +87,10 @@ const PortalHrdView = lazyWithRetry(() => import("./components/PortalHrdView").t
 const AdaptiveAssessmentView = lazyWithRetry(() => import("./components/AdaptiveAssessmentView").then(m => ({ default: m.AdaptiveAssessmentView || (m as any).default })));
 const CvAtsBuilderView = lazyWithRetry(() => import("./components/CvAtsBuilderView").then(m => ({ default: m.CvAtsBuilderView || (m as any).default })));
 const VoiceInterviewView = lazyWithRetry(() => import("./components/VoiceInterviewView").then(m => ({ default: m.VoiceInterviewView || (m as any).default })));
+const InteractiveLabView = lazyWithRetry(() => import("./components/InteractiveLabView").then(m => ({ default: m.InteractiveLabView || (m as any).default })));
+const ArenaView = lazyWithRetry(() => import("./components/ArenaView").then(m => ({ default: m.ArenaView || (m as any).default })));
+const PublicPortfolioView = lazyWithRetry(() => import("./components/PublicPortfolioView").then(m => ({ default: m.PublicPortfolioView || (m as any).default })));
+import type { CopilotContextInfo } from "./components/MentorChatSidebar";
 
 export default function App() {
   // Navigation & UI States
@@ -171,9 +175,21 @@ export default function App() {
       "/simulasi": "Simulasi Kerja",
       "/faq": "Bantuan & FAQ",
       "/verify": "Verifikasi Sertifikat",
+      "/lab": "Interactive Coding & Case Lab",
+      "/arena": "Arena Battle Quiz, Tryout & Liga",
+      "/karier/portofolio": "Portofolio Publik",
+      "/karier/kampus": "Campus & Cohort Hub",
     };
 
-    const routeTitle = pathMap[location.pathname] || (location.pathname.startsWith("/katalog/") ? "Detail Kursus" : "Skillora - Platform Edukasi");
+    const routeTitle =
+      pathMap[location.pathname] ||
+      (location.pathname.startsWith("/lab/")
+        ? "Workspace Interactive Lab"
+        : location.pathname.startsWith("/portfolio/")
+        ? "Portofolio Terverifikasi"
+        : location.pathname.startsWith("/katalog/")
+        ? "Detail Kursus"
+        : "Skillora - Platform Edukasi & Karier");
     document.title = `${routeTitle} | Skillora`;
   }, [location.pathname]);
 
@@ -207,8 +223,14 @@ export default function App() {
   };
 
   const [mentorChatOpen, setMentorChatOpen] = useState(false);
+  const [copilotContext, setCopilotContext] = useState<CopilotContextInfo | undefined>(undefined);
   const [activeCertificate, setActiveCertificate] = useState<Course | null>(null);
   const [showScrollTop, setShowScrollTop] = useState(false);
+
+  const openCopilotWithContext = (ctx?: CopilotContextInfo) => {
+    setCopilotContext(ctx);
+    setMentorChatOpen(true);
+  };
 
   const {
     currentQuizCourse,
@@ -281,15 +303,17 @@ export default function App() {
     return () => mainEl.removeEventListener("scroll", handleScroll);
   }, [location.pathname]);
 
-  const isVerifyRoute = location.pathname.startsWith("/verify/");
+  const isPublicRoute =
+    location.pathname.startsWith("/verify/") || location.pathname.startsWith("/portfolio/");
 
-  if (isVerifyRoute) {
+  if (isPublicRoute) {
     return (
       <>
         <ToastNotification toast={toast} setToast={setToast} />
         <Suspense fallback={<LoadingScreen />}>
           <Routes>
             <Route path="/verify/:certificateId" element={<PublicCertificateVerifyView />} />
+            <Route path="/portfolio/:slug" element={<PublicPortfolioView />} />
           </Routes>
         </Suspense>
       </>
@@ -341,7 +365,7 @@ export default function App() {
   return (
     <>
       <NetworkStatusBanner />
-      <div className="flex h-[100dvh] bg-white dark:bg-slate-950 relative overflow-hidden text-slate-900 dark:text-slate-100 transition-colors duration-300">
+      <div className="flex h-[100dvh] bg-[#fafafa] dark:bg-[#09090b] relative overflow-hidden text-zinc-950 dark:text-zinc-100 transition-colors duration-200">
         
         {/* NEW DESKTOP SIDEBAR */}
         <Sidebar profile={profile} onLogout={handleLogout} />
@@ -352,6 +376,8 @@ export default function App() {
           <div className="relative z-40">
           <TopNavbar
             profile={profile}
+            courses={courses}
+            jobs={jobs}
             darkMode={darkMode}
             setDarkMode={setDarkMode}
             showNotifications={showNotifications}
@@ -363,12 +389,12 @@ export default function App() {
             handleClaimDaily={handleClaimDaily}
             onLogout={handleLogout}
             handleBuyFreeze={handleBuyFreeze}
-            onOpenMentorChat={() => setMentorChatOpen(true)}
+            onOpenMentorChat={() => openCopilotWithContext(undefined)}
           />
         </div>
 
         {/* EXPANDED FULL-WIDTH MAIN CONTENT AREA */}
-        <main id="main-content" className="flex-1 overflow-y-auto bg-slate-50/40 dark:bg-slate-950/40 flex flex-col relative w-full scroll-smooth z-10 transition-colors duration-300" tabIndex={-1}>
+        <main id="main-content" className="flex-1 overflow-y-auto bg-[#fafafa] dark:bg-[#09090b] flex flex-col relative w-full scroll-smooth z-10 transition-colors duration-200" tabIndex={-1}>
           <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-5 sm:py-8 pb-28 lg:pb-10 flex-1">
             {/* Elegant Sub-Tab Back Header for Mobile */}
             {location.pathname !== "/belajar" && location.pathname !== "/jelajahi" && location.pathname !== "/karier" && location.pathname !== "/komunitas" && (
@@ -466,6 +492,32 @@ export default function App() {
                       profile={profile!} 
                       onProfileUpdate={setProfile}
                       showToast={showToast}
+                      onOpenCopilot={openCopilotWithContext}
+                    />
+                  } />
+                  {/* Flagship: Interactive Coding & Case Lab */}
+                  <Route path="/lab" element={
+                    <InteractiveLabView
+                      profile={profile}
+                      onProfileUpdate={setProfile}
+                      showToast={showToast}
+                      onOpenCopilot={openCopilotWithContext}
+                    />
+                  } />
+                  <Route path="/lab/:id" element={
+                    <InteractiveLabView
+                      profile={profile}
+                      onProfileUpdate={setProfile}
+                      showToast={showToast}
+                      onOpenCopilot={openCopilotWithContext}
+                    />
+                  } />
+                  {/* Competitive Arena: Battle Quiz, Tryout Akbar & Weekly League */}
+                  <Route path="/arena" element={
+                    <ArenaView
+                      profile={profile}
+                      onProfileUpdate={setProfile}
+                      showToast={showToast}
                     />
                   } />
                   <Route path="/belajar/kursus/:id/latihan/:lessonId" element={
@@ -513,6 +565,48 @@ export default function App() {
                       <CareerView
                         jobs={jobs}
                         profile={profile}
+                        onProfileUpdate={setProfile}
+                        showToast={showToast}
+                        handleApplyJob={handleApplyJob}
+                        handleBookmarkJob={handleBookmarkJob}
+                        handleStartInterview={handleStartInterview}
+                        activeInterviewJob={activeInterviewJob}
+                        setActiveInterviewJob={setActiveInterviewJob}
+                        interviewChat={interviewChat}
+                        interviewInput={interviewInput}
+                        setInterviewInput={setInterviewInput}
+                        handleSendInterviewMessage={handleSendInterviewMessage}
+                        loadingInterview={loadingInterview}
+                      />
+                    ) : <Navigate to="/" />
+                  } />
+                  <Route path="/karier/portofolio" element={
+                    profile ? (
+                      <CareerView
+                        jobs={jobs}
+                        profile={profile}
+                        onProfileUpdate={setProfile}
+                        showToast={showToast}
+                        handleApplyJob={handleApplyJob}
+                        handleBookmarkJob={handleBookmarkJob}
+                        handleStartInterview={handleStartInterview}
+                        activeInterviewJob={activeInterviewJob}
+                        setActiveInterviewJob={setActiveInterviewJob}
+                        interviewChat={interviewChat}
+                        interviewInput={interviewInput}
+                        setInterviewInput={setInterviewInput}
+                        handleSendInterviewMessage={handleSendInterviewMessage}
+                        loadingInterview={loadingInterview}
+                      />
+                    ) : <Navigate to="/" />
+                  } />
+                  <Route path="/karier/kampus" element={
+                    profile ? (
+                      <CareerView
+                        jobs={jobs}
+                        profile={profile}
+                        onProfileUpdate={setProfile}
+                        showToast={showToast}
                         handleApplyJob={handleApplyJob}
                         handleBookmarkJob={handleBookmarkJob}
                         handleStartInterview={handleStartInterview}
@@ -530,6 +624,8 @@ export default function App() {
                     profile ? (
                       <LatihanSimulasiKerjaView 
                         profile={profile} 
+                        onProfileUpdate={setProfile}
+                        showToast={showToast}
                         onAddXp={async (xp) => {
                           try {
                             const data = await apiClient.post("/user/add-xp", { xp });
@@ -728,6 +824,7 @@ export default function App() {
           <MentorChatSidebar 
             open={mentorChatOpen} 
             onClose={() => setMentorChatOpen(false)} 
+            copilotContext={copilotContext}
           />
         </Suspense>
       )}

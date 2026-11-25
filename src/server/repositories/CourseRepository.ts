@@ -19,6 +19,8 @@ function mapDbCourseToFrontend(dbCourse: any, completedLessonIds: Set<number>) {
     logo: dbCourse.logo || "🎓",
     image: dbCourse.image || "/src/assets/images/course_tech_engineering_1794974031663.jpg",
     skills: Array.isArray(dbCourse.skills) ? dbCourse.skills : [],
+    linkedLabIds: Array.isArray(dbCourse.linkedLabIds) ? dbCourse.linkedLabIds : [],
+    casePrompt: dbCourse.casePrompt || null,
     status: dbCourse.status || "published",
     isProOnly: Boolean(dbCourse.isProOnly),
     authorUserId: dbCourse.authorUserId || null,
@@ -40,6 +42,8 @@ function mapDbCourseToFrontend(dbCourse: any, completedLessonIds: Set<number>) {
         ? [{ id: `cb_${les.lessonId}`, type: "text" as const, content: les.contentMarkdown }]
         : [],
       questions: Array.isArray(les.questionsData) ? les.questionsData : [],
+      inlineChecks: Array.isArray(les.inlineChecks) ? les.inlineChecks : [],
+      flashcards: Array.isArray(les.flashcards) ? les.flashcards : [],
     })),
   };
 }

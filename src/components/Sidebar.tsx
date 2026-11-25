@@ -1,26 +1,20 @@
 import React, { memo } from "react";
 import {
+  LayoutDashboard,
+  Terminal,
   BookOpen,
+  Trophy,
   Briefcase,
   Users,
-  LogOut,
-  Building2,
-  Compass,
-  Award,
-  ShoppingBag,
-  MessageSquare,
-  Zap,
-  Sparkles,
-  UserCircle,
-  BarChart2,
-  Bookmark,
-  BrainCircuit,
-  FileText,
-  Mic,
-  GraduationCap,
-  Calendar,
-  Layers,
   ShieldCheck,
+  Building2,
+  Layers,
+  LogOut,
+  Sparkles,
+  FileText,
+  Award,
+  Zap,
+  MessageSquare,
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { Profile } from "../types";
@@ -38,139 +32,84 @@ export const Sidebar = memo(function Sidebar({ profile, onLogout }: SidebarProps
   const isPro = profile.subscriptionTier === "pro";
 
   const isActive = (path: string) => {
-    const params = new URLSearchParams(location.search);
-
     if (path === ROUTES.learning.root) {
       return location.pathname === ROUTES.learning.root || location.pathname === "/";
     }
+    if (path === ROUTES.lab.root) {
+      return location.pathname.startsWith("/lab");
+    }
+    if (path === ROUTES.arena.root) {
+      return location.pathname.startsWith("/arena");
+    }
+    if (path === ROUTES.learning.catalog) {
+      return (
+        location.pathname.startsWith("/belajar/katalog") ||
+        location.pathname.startsWith("/belajar/kursus")
+      );
+    }
     if (path === ROUTES.career.jobs) {
-      if (params.get("tab") === "lamaran") return false;
       return location.pathname === ROUTES.career.jobs;
-    }
-    if (path === `${ROUTES.career.jobs}?tab=lamaran`) {
-      return location.pathname === ROUTES.career.jobs && params.get("tab") === "lamaran";
-    }
-    if (path === ROUTES.profile.root) {
-      return location.pathname === ROUTES.profile.root;
     }
     return location.pathname.startsWith(path);
   };
 
-  const navGroups: Array<{
-    title: string;
-    items: Array<{ id: string; label: string; icon: any; badge?: string }>;
-  }> = [
-    {
-      title: "1. TAHAP BELAJAR",
-      items: [
-        { id: ROUTES.learning.root, label: "Beranda & Alur", icon: BookOpen },
-        { id: ROUTES.learning.catalog, label: "Katalog Kursus", icon: Compass },
-        { id: ROUTES.learning.practice, label: "Latihan & Kuis", icon: Zap },
-        { id: ROUTES.learning.project, label: "Proyek & Sertifikat", icon: Award },
-      ],
-    },
-    {
-      title: "2. PERSIAPAN AI & KARIER",
-      items: [
-        { id: ROUTES.career.cvBuilder, label: "CV ATS Builder", icon: FileText },
-        { id: ROUTES.career.adaptive, label: "Asesmen AI Adaptif", icon: BrainCircuit },
-        { id: ROUTES.career.voiceInterview, label: "Mock Interview Suara", icon: Mic },
-        { id: ROUTES.career.simulation, label: "Simulasi BUMN & STAR", icon: Building2 },
-      ],
-    },
-    {
-      title: "3. PENYALURAN KERJA",
-      items: [
-        { id: ROUTES.career.jobs, label: "Bursa Kerja", icon: Briefcase },
-        { id: `${ROUTES.career.jobs}?tab=lamaran`, label: "Lamaran Saya", icon: Bookmark },
-        { id: ROUTES.career.scholarship, label: "Pusat Beasiswa", icon: GraduationCap },
-      ],
-    },
-    {
-      title: "KOMUNITAS & MENTOR",
-      items: [
-        { id: ROUTES.community.forum, label: "Forum Diskusi", icon: Users },
-        { id: ROUTES.community.collaboration, label: "Ruang Kolaborasi", icon: MessageSquare },
-        { id: ROUTES.community.event, label: "Event & Webinar", icon: Calendar },
-        { id: ROUTES.career.mentoring, label: "Mentoring 1-on-1", icon: UserCircle },
-      ],
-    },
+  const primaryPillars = [
+    { id: ROUTES.learning.root, label: "Beranda & Roadmap", icon: LayoutDashboard },
+    { id: ROUTES.lab.root, label: "Lab Interaktif AI", icon: Terminal },
+    { id: ROUTES.learning.catalog, label: "Belajar & Kursus", icon: BookOpen },
+    { id: ROUTES.arena.root, label: "Arena & Liga", icon: Trophy },
+    { id: ROUTES.career.jobs, label: "Karier & Portofolio", icon: Briefcase },
   ];
 
-  const partnerItems: Array<{ id: string; label: string; icon: any }> = [];
-  if (accountRole === "mentor" || accountRole === "admin") {
-    partnerItems.push({ id: ROUTES.mentor.root, label: "Portal Mentor & Review", icon: ShieldCheck });
-    partnerItems.push({ id: ROUTES.lms, label: "Kelola Kurikulum LMS", icon: Layers });
-  }
-  if (accountRole === "recruiter" || accountRole === "admin") {
-    partnerItems.push({ id: ROUTES.recruiter.root, label: "Portal HRD & Rekrutmen", icon: Building2 });
-  }
-  if (partnerItems.length > 0) {
-    navGroups.push({
-      title: "PORTAL MITRA",
-      items: partnerItems,
-    });
-  }
+  const workspaceShortcuts = [
+    { id: ROUTES.learning.practice, label: "Latihan & Bank Soal", icon: Zap },
+    { id: ROUTES.learning.project, label: "Proyek & Sertifikat", icon: Award },
+    { id: ROUTES.career.cvBuilder, label: "CV ATS & Interview AI", icon: FileText },
+    { id: ROUTES.community.forum, label: "Forum Komunitas", icon: Users },
+    { id: ROUTES.community.collaboration, label: "Ruang Kolaborasi", icon: MessageSquare },
+  ];
 
-  navGroups.push({
-    title: "AKUN & BILLING",
-    items: [
-      { id: ROUTES.profile.root, label: "Profil & Peran", icon: UserCircle },
-      { id: ROUTES.profile.analytics, label: "Analitik & Leaderboard", icon: BarChart2 },
-      { id: ROUTES.profile.shop, label: "Toko Gems", icon: ShoppingBag },
-      { id: ROUTES.upgrade, label: isPro ? "Skillora PRO Aktif" : "Upgrade Pro & Billing", icon: Sparkles },
-    ],
-  });
+  const partnerItems: Array<{ id: string; label: string; icon: React.ComponentType<{ className?: string; strokeWidth?: number }> }> = [];
+  if (accountRole === "mentor" || accountRole === "admin" || profile.role?.toLowerCase() === "developer") {
+    partnerItems.push({ id: ROUTES.mentor.root, label: "Portal Mentor", icon: ShieldCheck });
+    partnerItems.push({ id: ROUTES.lms, label: "Kelola Kurikulum", icon: Layers });
+  }
+  if (accountRole === "recruiter" || accountRole === "admin" || profile.role?.toLowerCase() === "developer") {
+    partnerItems.push({ id: ROUTES.recruiter.root, label: "Portal HRD", icon: Building2 });
+  }
 
   const roleText =
     accountRole === "recruiter"
       ? "Recruiter HRD"
       : accountRole === "mentor"
-      ? "Mentor / Dosen"
+      ? "Mentor"
       : accountRole === "admin"
-      ? "Admin LMS"
+      ? "Admin"
       : "Mahasiswa";
 
   return (
-    <div className="hidden lg:flex w-[256px] flex-col border-r border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900/95 z-40 h-full relative">
-      {/* Brand */}
-      <div className="h-16 flex items-center justify-between px-5 border-b border-slate-100 dark:border-slate-800">
-        <Link to={ROUTES.learning.root} className="flex items-center cursor-pointer group" aria-label="Skillora Dashboard">
-          <SkilloraLogo variant="full" size="md" />
+    <aside className="hidden lg:flex w-[240px] shrink-0 flex-col border-r border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 h-full relative z-30">
+      {/* Brand Header */}
+      <div className="h-14 flex items-center justify-between px-4 border-b border-zinc-200/80 dark:border-zinc-800/80">
+        <Link to={ROUTES.learning.root} className="flex items-center cursor-pointer" aria-label="Skillora Beranda">
+          <SkilloraLogo variant="full" size="sm" />
         </Link>
         {isPro && (
-          <span className="text-[11px] font-bold tracking-wide text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 px-2 py-0.5 rounded-md">
+          <span className="text-[11px] font-mono font-semibold tracking-wide text-emerald-700 dark:text-emerald-400">
             PRO
           </span>
         )}
       </div>
 
-      {/* User Mini Profile */}
-      <div className="px-4 py-3 border-b border-slate-100 dark:border-slate-800">
-        <Link
-          to={ROUTES.profile.root}
-          className="flex items-center gap-3 p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/70 dark:border-slate-700/60 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-        >
-          <div className="w-9 h-9 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-lg overflow-hidden shrink-0 border border-white dark:border-slate-600">
-            {profile.selectedAvatar || profile.avatar || "🦁"}
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="font-bold text-slate-900 dark:text-white truncate text-xs font-display">{profile.name}</p>
-            <p className="text-xs text-slate-500 dark:text-slate-400 truncate font-medium tabular-nums">
-              {roleText} • Lv. {profile.level || 1}
-            </p>
-          </div>
-        </Link>
-      </div>
-
-      {/* Navigation Groups */}
-      <div className="flex-1 overflow-y-auto px-3 py-4 space-y-5">
-        {navGroups.map((group) => (
-          <div key={group.title} className="space-y-1">
-            <div className="px-3 mb-1.5 text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
-              {group.title}
-            </div>
-            {group.items.map((item) => {
+      {/* Navigation Body */}
+      <div className="flex-1 overflow-y-auto px-3 py-4 space-y-6">
+        {/* 5 Core Pillars */}
+        <div>
+          <p className="px-2.5 mb-2 text-[11px] font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
+            Ruang Utama
+          </p>
+          <nav className="space-y-0.5" aria-label="Navigasi Utama">
+            {primaryPillars.map((item) => {
               const active = isActive(item.id);
               const Icon = item.icon;
               return (
@@ -178,43 +117,138 @@ export const Sidebar = memo(function Sidebar({ profile, onLogout }: SidebarProps
                   key={item.id}
                   to={item.id}
                   aria-current={active ? "page" : undefined}
-                  className={`relative flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold transition-colors group ${
+                  className={`flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] transition-colors ${
                     active
-                      ? "text-emerald-700 dark:text-emerald-300 bg-emerald-50/90 dark:bg-emerald-950/40 border border-emerald-200/60 dark:border-emerald-900/60 font-bold"
-                      : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/70 dark:hover:bg-slate-800/60"
+                      ? "bg-zinc-100 dark:bg-zinc-900 text-zinc-950 dark:text-white font-semibold"
+                      : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-950 dark:hover:text-zinc-100 hover:bg-zinc-50 dark:hover:bg-zinc-900/60 font-medium"
                   }`}
                 >
                   <Icon
                     className={`w-4 h-4 shrink-0 ${
-                      active
-                        ? "text-emerald-600 dark:text-emerald-400"
-                        : "text-slate-400 dark:text-slate-500 group-hover:text-slate-700 dark:group-hover:text-slate-200"
+                      active ? "text-emerald-600 dark:text-emerald-400" : "text-zinc-400 dark:text-zinc-500"
                     }`}
-                    strokeWidth={active ? 2.4 : 1.9}
+                    strokeWidth={active ? 2.2 : 1.8}
                   />
                   <span className="truncate">{item.label}</span>
                 </Link>
               );
             })}
+          </nav>
+        </div>
+
+        {/* Workspace Shortcuts */}
+        <div>
+          <p className="px-2.5 mb-2 text-[11px] font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
+            Alat & Komunitas
+          </p>
+          <nav className="space-y-0.5" aria-label="Alat dan Komunitas">
+            {workspaceShortcuts.map((item) => {
+              const active = isActive(item.id);
+              const Icon = item.icon;
+              return (
+                <Link
+                  key={item.id}
+                  to={item.id}
+                  aria-current={active ? "page" : undefined}
+                  className={`flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-[13px] transition-colors ${
+                    active
+                      ? "bg-zinc-100 dark:bg-zinc-900 text-zinc-950 dark:text-white font-semibold"
+                      : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-950 dark:hover:text-zinc-100 hover:bg-zinc-50 dark:hover:bg-zinc-900/60 font-medium"
+                  }`}
+                >
+                  <Icon
+                    className={`w-4 h-4 shrink-0 ${
+                      active ? "text-emerald-600 dark:text-emerald-400" : "text-zinc-400 dark:text-zinc-500"
+                    }`}
+                    strokeWidth={active ? 2.2 : 1.8}
+                  />
+                  <span className="truncate">{item.label}</span>
+                </Link>
+              );
+            })}
+          </nav>
+        </div>
+
+        {/* Conditional Partner Portals */}
+        {partnerItems.length > 0 && (
+          <div>
+            <p className="px-2.5 mb-2 text-[11px] font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
+              Portal Mitra
+            </p>
+            <nav className="space-y-0.5" aria-label="Portal Mitra">
+              {partnerItems.map((item) => {
+                const active = isActive(item.id);
+                const Icon = item.icon;
+                return (
+                  <Link
+                    key={item.id}
+                    to={item.id}
+                    aria-current={active ? "page" : undefined}
+                    className={`flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-[13px] transition-colors ${
+                      active
+                        ? "bg-zinc-100 dark:bg-zinc-900 text-zinc-950 dark:text-white font-semibold"
+                        : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-950 dark:hover:text-zinc-100 hover:bg-zinc-50 dark:hover:bg-zinc-900/60 font-medium"
+                    }`}
+                  >
+                    <Icon
+                      className={`w-4 h-4 shrink-0 ${
+                        active ? "text-emerald-600 dark:text-emerald-400" : "text-zinc-400 dark:text-zinc-500"
+                      }`}
+                      strokeWidth={active ? 2.2 : 1.8}
+                    />
+                    <span className="truncate">{item.label}</span>
+                  </Link>
+                );
+              })}
+            </nav>
           </div>
-        ))}
+        )}
       </div>
 
-      {/* Bottom Actions */}
-      <div className="p-3.5 border-t border-slate-100 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/60">
-        <button
-          onClick={onLogout}
-          aria-label="Keluar dari Akun"
-          className="flex items-center gap-3 w-full px-3 py-2 rounded-xl text-slate-500 dark:text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors font-semibold text-xs cursor-pointer"
-        >
-          <LogOut className="w-4 h-4" />
-          <span>Keluar Aplikasi</span>
-        </button>
+      {/* Clean Footer: Upgrade + Profile + Logout */}
+      <div className="p-3 border-t border-zinc-200/80 dark:border-zinc-800/80 space-y-2">
+        {!isPro && (
+          <Link
+            to={ROUTES.upgrade}
+            className="flex items-center justify-between px-2.5 py-2 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 hover:border-emerald-500/50 transition-colors text-xs font-semibold text-zinc-800 dark:text-zinc-200"
+          >
+            <span className="flex items-center gap-2">
+              <Sparkles className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+              Upgrade Pro
+            </span>
+            <span className="text-[11px] text-zinc-400">→</span>
+          </Link>
+        )}
+
+        <div className="flex items-center justify-between gap-2 px-1.5 pt-1">
+          <Link
+            to={ROUTES.profile.root}
+            className="flex items-center gap-2.5 min-w-0 flex-1 hover:opacity-85 transition-opacity"
+          >
+            <div className="w-8 h-8 rounded-full bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 flex items-center justify-center text-sm shrink-0">
+              {profile.selectedAvatar || profile.avatar || "🦁"}
+            </div>
+            <div className="min-w-0">
+              <p className="text-xs font-semibold text-zinc-900 dark:text-zinc-100 truncate">
+                {profile.name}
+              </p>
+              <p className="text-[11px] text-zinc-500 dark:text-zinc-400 truncate tabular-nums">
+                {roleText} · Lv.{profile.level || 1}
+              </p>
+            </div>
+          </Link>
+          <button
+            onClick={onLogout}
+            aria-label="Keluar dari akun"
+            title="Keluar"
+            className="p-1.5 text-zinc-400 hover:text-rose-600 dark:hover:text-rose-400 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-900 transition-colors cursor-pointer shrink-0"
+          >
+            <LogOut className="w-4 h-4" />
+          </button>
+        </div>
       </div>
-    </div>
+    </aside>
   );
 });
 
 export default Sidebar;
-
-

@@ -13,9 +13,17 @@ import {
   mentoringSlots,
   scholarships,
   events,
+  labChallenges,
+  campusCohorts,
 } from "../../db/schema.ts";
 import { defaultCourses } from "../data/coursesData.ts";
-import { count } from "drizzle-orm";
+import {
+  COURSE_ENRICHMENTS,
+  NEW_INDUSTRY_COURSES,
+  NEW_INTERACTIVE_LABS,
+  buildEnrichedLessonAssets,
+} from "../data/trainingExpansionData.ts";
+import { count, eq } from "drizzle-orm";
 
 let seedPromise: Promise<void> | null = null;
 
@@ -36,127 +44,101 @@ export async function ensureSeeded(): Promise<void> {
 }
 
 async function runSeed() {
-  // 1. Seed Courses & Lessons if courses table lacks full metadata or is empty
-  const [{ value: courseCount }] = await db.select({ value: count() }).from(courses);
-  if (Number(courseCount) === 0) {
-    for (const item of defaultCourses) {
-      const [insertedCourse] = await db
-        .insert(courses)
-        .values({
-          courseId: item.id,
-          title: item.title,
-          description: (item as any).description || item.title,
-          category: (item as any).category || "Teknologi & Data",
-          difficulty: item.difficulty,
-          duration: item.duration,
-          xpReward: item.xpReward,
-          partner: item.partner,
-          logo: item.logo || "🎓",
-          image: mapCourseImage(item.id),
+  // 1. Idempotent Upsert of All 16 Enriched Training Courses, Lessons, Inline Checks & Flashcards
+  const allSeedCourses: any[] = [...defaultCourses, ...NEW_INDUSTRY_COURSES];
+  for (const item of allSeedCourses) {
+    const enrichment = COURSE_ENRICHMENTS[item.id];
+    const resolvedImage = enrichment?.image || (item as any).image || mapCourseImage(item.id);
+    const resolvedLabs = enrichment?.linkedLabIds || (item as any).linkedLabIds || [];
+    const resolvedCasePrompt = enrichment?.casePrompt || (item as any).casePrompt || null;
+
+    const [upsertedCourse] = await db
+      .insert(courses)
+      .values({
+        courseId: item.id,
+        title: item.title,
+        description: (item as any).description || item.title,
+        category: (item as any).category || "Teknologi & Data",
+        difficulty: item.difficulty,
+        duration: item.duration,
+        xpReward: item.xpReward,
+        partner: item.partner,
+        logo: item.logo || "🎓",
+        image: resolvedImage,
+        skills: item.skills || [],
+        projectTitle: item.project?.title || "Proyek Portofolio Akhir",
+        projectDescription: item.project?.description || "Selesaikan proyek industri terverifikasi.",
+        projectRubric: item.project?.rubric || "Kualitas arsitektur, kebersihan kode, dan pemenuhan studi kasus.",
+        linkedLabIds: resolvedLabs,
+        casePrompt: resolvedCasePrompt,
+        status: "published",
+        isProOnly: false,
+      })
+      .onConflictDoUpdate({
+        target: courses.courseId,
+        set: {
+          image: resolvedImage,
           skills: item.skills || [],
+          linkedLabIds: resolvedLabs,
+          casePrompt: resolvedCasePrompt,
           projectTitle: item.project?.title || "Proyek Portofolio Akhir",
           projectDescription: item.project?.description || "Selesaikan proyek industri terverifikasi.",
           projectRubric: item.project?.rubric || "Kualitas arsitektur, kebersihan kode, dan pemenuhan studi kasus.",
-          status: "published",
-          isProOnly: false,
-        })
-        .onConflictDoNothing()
-        .returning();
+        },
+      })
+      .returning();
 
-      const targetCourseId = insertedCourse?.id;
-      if (targetCourseId && Array.isArray(item.lessons)) {
-        let idx = 0;
-        for (const les of item.lessons) {
-          const mdContent = Array.isArray((les as any).contentBlocks)
+    const targetCourseId = upsertedCourse?.id;
+    if (!targetCourseId) continue;
+
+    const combinedLessons: any[] = [
+      ...(Array.isArray(item.lessons) ? item.lessons : []),
+      ...(Array.isArray(enrichment?.extraLessons) ? enrichment.extraLessons : []),
+    ];
+
+    let idx = 0;
+    for (const les of combinedLessons) {
+      const mdContent =
+        typeof les.contentMarkdown === "string" && les.contentMarkdown.trim()
+          ? les.contentMarkdown
+          : Array.isArray((les as any).contentBlocks)
             ? (les as any).contentBlocks.map((b: any) => b.content).join("\n\n")
             : (les as any).notes || `Materi pembelajaran terstruktur untuk ${les.title}.`;
 
-          await db
-            .insert(lessons)
-            .values({
-              lessonId: les.id,
-              courseId: targetCourseId,
-              title: les.title,
-              type: "quiz",
-              orderIndex: idx++,
-              xpReward: les.xp || 100,
-              contentMarkdown: mdContent,
-              estimatedMinutes: (les as any).estimatedMinutes || 15,
-              questionsData: les.questions || [],
-            })
-            .onConflictDoNothing();
-        }
-      }
-    }
-  } else {
-    // Sync rich columns onto existing seeded courses/lessons if questionsData or image is null
-    const existingCourses = await db.select().from(courses);
-    for (const item of defaultCourses) {
-      const existing = existingCourses.find((c) => c.courseId === item.id);
-      if (existing && (!existing.image || !existing.skills)) {
-        await db
-          .insert(courses)
-          .values({
-            courseId: item.id,
-            title: item.title,
-            description: (item as any).description || item.title,
-            category: (item as any).category || "Teknologi & Data",
-            difficulty: item.difficulty,
-            duration: item.duration,
-            xpReward: item.xpReward,
-            partner: item.partner,
-            logo: item.logo || "🎓",
-            image: mapCourseImage(item.id),
-            skills: item.skills || [],
-            projectTitle: item.project?.title || "Proyek Portofolio Akhir",
-            projectDescription: item.project?.description || "Selesaikan proyek industri terverifikasi.",
-            projectRubric: item.project?.rubric || "Kualitas arsitektur, kebersihan kode, dan pemenuhan studi kasus.",
-            status: "published",
-            isProOnly: false,
-          })
-          .onConflictDoUpdate({
-            target: courses.courseId,
-            set: {
-              logo: item.logo || "🎓",
-              image: mapCourseImage(item.id),
-              skills: item.skills || [],
-              projectTitle: item.project?.title || "Proyek Portofolio Akhir",
-              projectDescription: item.project?.description || "Selesaikan proyek industri terverifikasi.",
-              projectRubric: item.project?.rubric || "Kualitas arsitektur, kebersihan kode, dan pemenuhan studi kasus.",
-            },
-          });
+      const { inlineChecks, flashcards } = buildEnrichedLessonAssets(
+        item.id,
+        item.skills || [],
+        les,
+        idx
+      );
 
-        if (Array.isArray(item.lessons)) {
-          let idx = 0;
-          for (const les of item.lessons) {
-            const mdContent = Array.isArray((les as any).contentBlocks)
-              ? (les as any).contentBlocks.map((b: any) => b.content).join("\n\n")
-              : (les as any).notes || `Materi pembelajaran terstruktur untuk ${les.title}.`;
-
-            await db
-              .insert(lessons)
-              .values({
-                lessonId: les.id,
-                courseId: existing.id,
-                title: les.title,
-                type: "quiz",
-                orderIndex: idx++,
-                xpReward: les.xp || 100,
-                contentMarkdown: mdContent,
-                estimatedMinutes: (les as any).estimatedMinutes || 15,
-                questionsData: les.questions || [],
-              })
-              .onConflictDoUpdate({
-                target: lessons.lessonId,
-                set: {
-                  contentMarkdown: mdContent,
-                  estimatedMinutes: (les as any).estimatedMinutes || 15,
-                  questionsData: les.questions || [],
-                },
-              });
-          }
-        }
-      }
+      await db
+        .insert(lessons)
+        .values({
+          lessonId: les.id,
+          courseId: targetCourseId,
+          title: les.title,
+          type: "quiz",
+          orderIndex: idx,
+          xpReward: les.xp || 120,
+          contentMarkdown: mdContent,
+          estimatedMinutes: (les as any).estimatedMinutes || 18,
+          questionsData: les.questions || [],
+          inlineChecks,
+          flashcards,
+        })
+        .onConflictDoUpdate({
+          target: lessons.lessonId,
+          set: {
+            orderIndex: idx,
+            contentMarkdown: mdContent,
+            estimatedMinutes: (les as any).estimatedMinutes || 18,
+            questionsData: les.questions || [],
+            inlineChecks,
+            flashcards,
+          },
+        });
+      idx++;
     }
   }
 
@@ -708,5 +690,439 @@ async function runSeed() {
         description: "Cara menulis bullet point pencapaian terukur agar lolos sistem penyaringan ATS perusahaan teknologi dan multinasional.",
       },
     ]);
+  }
+
+  // 9. Seed Interactive Coding & Case Labs (Skillora 2.0 Flagship)
+  const [{ value: labCount }] = await db.select({ value: count() }).from(labChallenges);
+  if (Number(labCount) === 0) {
+    await db.insert(labChallenges).values([
+      {
+        challengeId: "lab-fe-search-filter",
+        title: "Filter & Deduplikasi Katalog Produk Marketplace",
+        track: "frontend",
+        difficulty: "Pemula",
+        estimatedMinutes: 20,
+        language: "javascript",
+        summary: "Bangun fungsi murni untuk menyaring, menghapus duplikasi berdasarkan ID, dan mengurutkan produk berdasarkan rating tertinggi.",
+        promptMarkdown: `### Konteks Kasus
+Tim Frontend E-Commerce menerima gabungan respons produk dari dua layanan pencarian yang terkadang menghasilkan **ID produk duplikat**. Anda diminta membuat fungsi \`normalizeCatalog(items, minRating)\`.
+
+### Spesifikasi Fungsi
+1. Hapus produk duplikat berdasarkan \`id\` (pertahankan entri dengan \`rating\` lebih tinggi; jika sama, pertahankan yang pertama muncul).
+2. Saring hanya produk yang memiliki \`inStock === true\` dan \`rating >= minRating\`.
+3. Urutkan hasil akhir secara menurun berdasarkan \`rating\` tertinggi, lalu \`price\` termurah jika rating sama.
+4. Kembalikan array baru tanpa memutasi array input asli.`,
+        starterCode: `function normalizeCatalog(items, minRating = 4.0) {
+  // Tulis solusi bersih dan efisien Anda di sini
+  if (!Array.isArray(items)) return [];
+
+  const uniqueMap = new Map();
+  for (const item of items) {
+    const existing = uniqueMap.get(item.id);
+    if (!existing || item.rating > existing.rating) {
+      uniqueMap.set(item.id, item);
+    }
+  }
+
+  return Array.from(uniqueMap.values())
+    .filter((item) => item.inStock && item.rating >= minRating)
+    .sort((a, b) => b.rating - a.rating || a.price - b.price);
+}`,
+        hints: [
+          "Gunakan struktur data Map agar deduplikasi berjalan dalam kompleksitas waktu O(n).",
+          "Pastikan kondisi sorting memakai tie-breaker harga termurah: b.rating - a.rating || a.price - b.price.",
+          "Tangani kasus array kosong atau input bukan array dengan mengembalikan []."
+        ],
+        testCases: [
+          {
+            id: "tc-1",
+            label: "Deduplikasi ID & pilih rating tertinggi",
+            expression: `normalizeCatalog([{id:'p1',price:100,rating:4.2,inStock:true},{id:'p1',price:100,rating:4.8,inStock:true}], 4.0).map(x => x.id + ':' + x.rating)`,
+            expected: ["p1:4.8"]
+          },
+          {
+            id: "tc-2",
+            label: "Filter stok habis & ambang rating",
+            expression: `normalizeCatalog([{id:'a',price:50,rating:4.9,inStock:false},{id:'b',price:80,rating:3.9,inStock:true},{id:'c',price:90,rating:4.5,inStock:true}], 4.0).map(x => x.id)`,
+            expected: ["c"]
+          },
+          {
+            id: "tc-3",
+            label: "Urut rating tertinggi lalu harga termurah",
+            expression: `normalizeCatalog([{id:'x',price:200,rating:4.7,inStock:true},{id:'y',price:120,rating:4.7,inStock:true},{id:'z',price:300,rating:4.9,inStock:true}], 4.0).map(x => x.id)`,
+            expected: ["z", "y", "x"]
+          }
+        ],
+        rubricCriteria: [
+          { id: "r1", title: "Kebenaran Logika & Edge Cases", weight: 40, description: "Semua kasus deduplikasi, filter stok, dan urutan terpenuhi akurat." },
+          { id: "r2", title: "Kompleksitas & Performa", weight: 30, description: "Menghindari nested loop O(n^2) dan tidak memutasi input." },
+          { id: "r3", title: "Keterbacaan & Kualitas Kode", weight: 30, description: "Penamaan variabel jelas, ringkas, dan mudah dirawat tim." }
+        ],
+        skills: ["JavaScript", "TypeScript", "React", "Data Transformation"],
+        xpReward: 180,
+        gemsReward: 25,
+      },
+      {
+        challengeId: "lab-fe-checkout-promo",
+        title: "Mesin Kalkulasi Diskon Bertingkat Checkout",
+        track: "frontend",
+        difficulty: "Menengah",
+        estimatedMinutes: 25,
+        language: "javascript",
+        summary: "Implementasikan kalkulator checkout yang menghitung subtotal, diskon voucher dengan batas maksimum, dan pembulatan rupiah yang akurat.",
+        promptMarkdown: `### Konteks Kasus
+Halaman checkout membutuhkan fungsi \`calculateCheckout(cart, voucher)\` yang bebas dari kesalahan pembulatan dan menolak input negatif.
+
+### Spesifikasi Fungsi
+1. Setiap item di \`cart\` memiliki \`{ price, qty }\`. Abaikan item dengan \`qty <= 0\` atau \`price < 0\`.
+2. Hitung \`subtotal\` seluruh item valid.
+3. Jika \`voucher\` tersedia dan \`subtotal >= (voucher.minSpend || 0)\`:
+   - Jika \`voucher.type === 'percent'\`, hitung \`Math.floor(subtotal * voucher.value / 100)\`, lalu batasi dengan \`voucher.maxDiscount\` jika diset.
+   - Jika \`voucher.type === 'flat'\`, diskon = \`Math.min(subtotal, voucher.value)\`.
+4. Kembalikan objek \`{ subtotal, discount, total }\` dengan \`total = Math.max(0, subtotal - discount)\`.`,
+        starterCode: `function calculateCheckout(cart, voucher = null) {
+  // Implementasikan kalkulator checkout yang aman dan presisi
+  const subtotal = (Array.isArray(cart) ? cart : []).reduce((sum, item) => {
+    if (!item || item.qty <= 0 || item.price < 0) return sum;
+    return sum + item.price * item.qty;
+  }, 0);
+
+  let discount = 0;
+  if (voucher && subtotal >= (voucher.minSpend || 0)) {
+    if (voucher.type === "percent") {
+      const raw = Math.floor((subtotal * voucher.value) / 100);
+      discount = voucher.maxDiscount ? Math.min(raw, voucher.maxDiscount) : raw;
+    } else if (voucher.type === "flat") {
+      discount = Math.min(subtotal, voucher.value);
+    }
+  }
+
+  return {
+    subtotal,
+    discount,
+    total: Math.max(0, subtotal - discount),
+  };
+}`,
+        hints: [
+          "Selalu validasi item.qty > 0 dan item.price >= 0 agar tidak terjadi total negatif.",
+          "Gunakan Math.floor untuk diskon persentase agar tidak menghasilkan angka desimal rupiah.",
+          "Periksa syarat minSpend sebelum menerapkan voucher."
+        ],
+        testCases: [
+          {
+            id: "tc-1",
+            label: "Diskon persen dengan batas maksimum (cap)",
+            expression: `calculateCheckout([{price:100000,qty:3}], {type:'percent',value:20,minSpend:200000,maxDiscount:40000})`,
+            expected: { subtotal: 300000, discount: 40000, total: 260000 }
+          },
+          {
+            id: "tc-2",
+            label: "Voucher tidak berlaku jika di bawah minSpend",
+            expression: `calculateCheckout([{price:50000,qty:1}], {type:'flat',value:20000,minSpend:100000})`,
+            expected: { subtotal: 50000, discount: 0, total: 50000 }
+          },
+          {
+            id: "tc-3",
+            label: "Abaikan item dengan qty negatif/nol",
+            expression: `calculateCheckout([{price:40000,qty:2},{price:99000,qty:0},{price:-5000,qty:3}], null)`,
+            expected: { subtotal: 80000, discount: 0, total: 80000 }
+          }
+        ],
+        rubricCriteria: [
+          { id: "r1", title: "Akurasi Aturan Bisnis & Cap", weight: 45, description: "Perhitungan subtotal, minSpend, flat, dan maxDiscount tepat." },
+          { id: "r2", title: "Keamanan & Validasi Input", weight: 30, description: "Tahan terhadap qty nol/negatif dan voucher null." },
+          { id: "r3", title: "Kebersihan Struktur Kode", weight: 25, description: "Mudah dibaca dan bebas side-effect." }
+        ],
+        skills: ["JavaScript", "TypeScript", "E-Commerce Logic", "Testing"],
+        xpReward: 220,
+        gemsReward: 30,
+      },
+      {
+        challengeId: "lab-be-rate-limiter",
+        title: "Sliding Window API Rate Limiter",
+        track: "backend_sql",
+        difficulty: "Lanjutan",
+        estimatedMinutes: 30,
+        language: "javascript",
+        summary: "Rancang mekanisme pembatasan permintaan API berbasis jendela waktu geser (sliding window) untuk melindungi endpoint pembayaran.",
+        promptMarkdown: `### Konteks Kasus
+Layanan API Fintech perlu mencegah lonjakan trafik berbahaya dengan algoritma **Sliding Window Log**. Buat fungsi \`evaluateRequests(timestamps, limit, windowMs)\`.
+
+### Spesifikasi Fungsi
+1. Parameter \`timestamps\` adalah array angka milidetik yang sudah terurut menaik.
+2. Permintaan pada waktu \`t\` **diizinkan (true)** jika jumlah permintaan yang diizinkan sebelumnya dalam rentang \`(t - windowMs, t]\` masih kurang dari \`limit\`.
+3. Jika diizinkan, catat \`t\` ke dalam jendela aktif; jika ditolak (**false**), jangan catat ke jendela aktif.
+4. Kembalikan array boolean sepanjang \`timestamps\`.`,
+        starterCode: `function evaluateRequests(timestamps, limit, windowMs) {
+  // Implementasikan sliding window rate limiter
+  const accepted = [];
+  const results = [];
+
+  for (const ts of timestamps) {
+    while (accepted.length > 0 && accepted[0] <= ts - windowMs) {
+      accepted.shift();
+    }
+    if (accepted.length < limit) {
+      accepted.push(ts);
+      results.push(true);
+    } else {
+      results.push(false);
+    }
+  }
+
+  return results;
+}`,
+        hints: [
+          "Gunakan antrean (queue) berisi timestamp yang sudah disetujui; buang elemen di depan jika <= ts - windowMs.",
+          "Ingat: request yang ditolak tidak masuk ke jendela kuota.",
+          "Untuk skala jutaan request, pointer indeks kepala (head index) lebih cepat daripada Array.shift()."
+        ],
+        testCases: [
+          {
+            id: "tc-1",
+            label: "Batas 2 request per 1000ms",
+            expression: `evaluateRequests([100, 200, 300, 1100, 1250], 2, 1000)`,
+            expected: [true, true, false, true, true]
+          },
+          {
+            id: "tc-2",
+            label: "Batas tepat di tepi jendela (eksklusif batas bawah)",
+            expression: `evaluateRequests([0, 500, 1000], 1, 1000)`,
+            expected: [true, false, true]
+          }
+        ],
+        rubricCriteria: [
+          { id: "r1", title: "Ketepatan Algoritma Sliding Window", weight: 45, description: "Kondisi batas (t - windowMs) dan pencatatan request valid akurat." },
+          { id: "r2", title: "Efisiensi Memori & Kompleksitas", weight: 35, description: "Menghindari pemindaian ulang seluruh riwayat di tiap request." },
+          { id: "r3", title: "Kesiapan Produksi", weight: 20, description: "Kode defensif dan jelas untuk tim backend." }
+        ],
+        skills: ["Node.js", "REST API", "Algorithms", "System Design"],
+        xpReward: 260,
+        gemsReward: 40,
+      },
+      {
+        challengeId: "lab-sql-merchant-retention",
+        title: "Query SQL Analitik Top Merchant & Retensi Bulanan",
+        track: "backend_sql",
+        difficulty: "Menengah",
+        estimatedMinutes: 25,
+        language: "sql",
+        summary: "Tulis kueri PostgreSQL teroptimasi untuk menghitung GMV bersih per merchant, jumlah pembeli unik, dan peringkat kontribusi 30 hari terakhir.",
+        promptMarkdown: `### Skema Tabel PostgreSQL
+- \`orders(id, merchant_id, buyer_id, amount_idr, status, created_at)\`
+- \`merchants(id, name, category, city)\`
+
+### Tugas Anda
+Tulis satu kueri PostgreSQL (menggunakan CTE & Window Function) yang menampilkan **10 merchant teratas dalam 30 hari terakhir** khusus transaksi dengan \`status = 'paid'\`, berisi kolom:
+1. \`merchant_name\`, \`category\`
+2. \`total_gmv\` (SUM \`amount_idr\`)
+3. \`unique_buyers\` (COUNT DISTINCT \`buyer_id\`)
+4. \`avg_order_value\` (dibulatkan ke integer)
+5. \`gmv_rank\` menggunakan \`DENSE_RANK()\`
+6. Sertakan juga saran 1 indeks komposit yang tepat di komentar SQL.`,
+        starterCode: `-- Tulis kueri PostgreSQL lengkap beserta rekomendasi index komposit
+WITH paid_recent AS (
+  SELECT
+    o.merchant_id,
+    o.buyer_id,
+    o.amount_idr
+  FROM orders o
+  WHERE o.status = 'paid'
+    AND o.created_at >= NOW() - INTERVAL '30 days'
+)
+SELECT
+  m.name AS merchant_name,
+  m.category,
+  SUM(p.amount_idr) AS total_gmv,
+  COUNT(DISTINCT p.buyer_id) AS unique_buyers,
+  ROUND(AVG(p.amount_idr))::int AS avg_order_value,
+  DENSE_RANK() OVER (ORDER BY SUM(p.amount_idr) DESC) AS gmv_rank
+FROM paid_recent p
+JOIN merchants m ON m.id = p.merchant_id
+GROUP BY m.id, m.name, m.category
+ORDER BY total_gmv DESC
+LIMIT 10;
+
+-- Rekomendasi indeks:
+-- CREATE INDEX idx_orders_status_created_merchant ON orders (status, created_at DESC, merchant_id) INCLUDE (amount_idr, buyer_id);`,
+        hints: [
+          "Filter status = 'paid' dan rentang 30 hari di dalam CTE sebelum melakukan JOIN ke tabel merchants.",
+          "Gunakan DENSE_RANK() OVER (ORDER BY SUM(...) DESC) untuk peringkat tanpa lompatan angka.",
+          "Pertimbangkan composite index (status, created_at, merchant_id) agar PostgreSQL bisa melakukan Index Scan."
+        ],
+        testCases: [],
+        rubricCriteria: [
+          { id: "r1", title: "Ketepatan Sintaks & Agregasi PostgreSQL", weight: 40, description: "CTE, JOIN, GROUP BY, dan DENSE_RANK() benar tanpa ambiguitas." },
+          { id: "r2", title: "Optimasi Performa & Indexing", weight: 35, description: "Filter sebelum join dan rekomendasi composite index tepat sasaran." },
+          { id: "r3", title: "Kejelasan & Standar Analitik", weight: 25, description: "Alias kolom rapi, pembulatan akurat, mudah diaudit." }
+        ],
+        skills: ["PostgreSQL", "SQL", "Data Analytics", "Query Optimization"],
+        xpReward: 240,
+        gemsReward: 35,
+      },
+      {
+        challengeId: "lab-data-funnel-drop",
+        title: "Audit Penurunan Konversi Funnel & A/B Experiment",
+        track: "data",
+        difficulty: "Menengah",
+        estimatedMinutes: 25,
+        language: "case_markdown",
+        summary: "Analisis data penurunan konversi checkout sebesar 18% pada pengguna mobile dan susun hipotesis eksperimen berbasis metrik.",
+        promptMarkdown: `### Data Insiden Produk
+Minggu lalu, aplikasi mencatat penurunan konversi dari halaman **Keranjang -> Pembayaran Sukses** sebesar **18% khusus di Android**.
+- Trafik kunjungan naik +12% dari kampanye promo.
+- Waktu muat halaman checkout naik dari 1,4 detik menjadi 3,9 detik.
+- Tingkat kegagalan metode QRIS naik dari 1,2% menjadi 6,8%.
+
+### Deliverable Analisis Anda
+Susun laporan ringkas terstruktur berisi:
+1. **Akar Masalah Utama (Root Cause)** yang paling berdampak terhadap penurunan 18%.
+2. **3 Metrik Diagnostik** tambahan yang perlu dicek di dashboard sebelum mengambil keputusan.
+3. **Rencana Aksi Prioritas (Quick Win vs Jangka Menengah)** beserta target angka keberhasilan (KPI).`,
+        starterCode: `## 1. Diagnosis Akar Masalah (Root Cause)
+- ...
+
+## 2. Metrik Diagnostik Tambahan
+- ...
+
+## 3. Rencana Aksi & Eksperimen A/B
+- Quick Win (48 jam): ...
+- Jangka Menengah (2 minggu): ...
+- Target KPI: ...`,
+        hints: [
+          "Bedakan efek komposisi trafik (promo membawa pengunjung eksploratif) vs masalah teknis nyata (latensi 3,9 detik & gagal QRIS 6,8%).",
+          "Pecah metrik berdasarkan versi aplikasi Android, jaringan, dan gateway pembayaran.",
+          "Sertakan metrik guardrail (seperti error rate dan waktu respon p95) pada desain A/B test."
+        ],
+        testCases: [],
+        rubricCriteria: [
+          { id: "r1", title: "Ketajaman Root Cause Analysis", weight: 40, description: "Mampu memisahkan anomali teknis dan pergeseran trafik secara kuantitatif." },
+          { id: "r2", title: "Pemilihan Metrik & Eksperimen", weight: 35, description: "Metrik primer, sekunder, dan guardrail logis dan terukur." },
+          { id: "r3", title: "Prioritas Dampak Bisnis", weight: 25, description: "Rencana eksekusi realistis dengan pembagian quick win dan jangka menengah." }
+        ],
+        skills: ["Data Analytics", "Product Metrics", "Problem Solving"],
+        xpReward: 210,
+        gemsReward: 30,
+      },
+      {
+        challengeId: "lab-bumn-case-akhlak",
+        title: "Studi Kasus Manajemen Operasional & Nilai AKHLAK BUMN",
+        track: "bumn_case",
+        difficulty: "Pemula",
+        estimatedMinutes: 20,
+        language: "case_markdown",
+        summary: "Latihan studi kasus wawancara user & FGD BUMN: menyelesaikan antrean layanan cabang dan konflik tim dengan kerangka STAR & AKHLAK.",
+        promptMarkdown: `### Skenario Kasus BUMN
+Anda ditugaskan sebagai **Officer Development Program (ODP)** di sebuah kantor cabang BUMN layanan publik.
+- Rata-rata waktu tunggu nasabah naik menjadi **47 menit** (target SLA maksimal 15 menit).
+- 40% antrean sebenarnya bisa diselesaikan melalui aplikasi mobile, tetapi petugas loket senior enggan mengarahkan nasabah karena khawatir target transaksi loket turun.
+
+### Tugas Anda
+Tulis rekomendasi strategis yang mencakup:
+1. **Analisis Situasi & Akar Konflik** (proses layanan & psikologis tim).
+2. **Solusi Konkret 30 Hari** berbasis nilai **AKHLAK** (minimal sebutkan penerapan *Adaptif*, *Kolaboratif*, dan *Amanah*).
+3. **Indikator Keberhasilan (SLA & Adopsi Digital)** yang dapat dipresentasikan ke Kepala Cabang.`,
+        starterCode: `## 1. Analisis Situasi & Akar Masalah
+- ...
+
+## 2. Rencana Implementasi 30 Hari (Berbasis AKHLAK)
+- Adaptif: ...
+- Kolaboratif: ...
+- Amanah: ...
+
+## 3. Target KPI & Mitigasi Risiko
+- ...`,
+        hints: [
+          "Ubah insentif atau KPI petugas loket agar keberhasilan aktivasi digital ikut dihitung sebagai kinerja mereka.",
+          "Tempatkan duta digital di area antrean untuk menyaring transaksi sederhana sebelum masuk loket.",
+          "Gunakan angka target terukur, misalnya penurunan waktu tunggu dari 47 menit ke <18 menit dalam 30 hari."
+        ],
+        testCases: [],
+        rubricCriteria: [
+          { id: "r1", title: "Penerapan Nilai AKHLAK Otentik", weight: 35, description: "Nilai AKHLAK diterjemahkan ke tindakan manajerial nyata, bukan jargon." },
+          { id: "r2", title: "Solusi Operasional & Manajemen Perubahan", weight: 40, description: "Menangani resistensi tim senior sekaligus memperbaiki alur layanan." },
+          { id: "r3", title: "Ketajaman KPI & Komunikasi Eksekutif", weight: 25, description: "Terstruktur, ringkas, dan menggunakan target angka terukur." }
+        ],
+        skills: ["Core Values AKHLAK", "Leadership", "Penalaran Logis", "STAR Method"],
+        xpReward: 190,
+        gemsReward: 25,
+      },
+    ]).onConflictDoNothing();
+  }
+
+  // Always ensure Training Engine 3.0 additional Interactive Labs (6 new labs -> 12 total) are seeded
+  await db.insert(labChallenges).values(NEW_INTERACTIVE_LABS).onConflictDoNothing();
+
+  // 10. Seed Campus & Cohort Hubs
+  const [{ value: cohortCount }] = await db.select({ value: count() }).from(campusCohorts);
+  if (Number(cohortCount) === 0) {
+    await db.insert(campusCohorts).values([
+      {
+        cohortId: "cohort-ui-tech",
+        campusName: "Universitas Indonesia",
+        city: "Depok, Jawa Barat",
+        programTitle: "UI Career Accelerator · Software & Data",
+        targetRole: "Frontend & Fullstack Engineer",
+        activeStudents: 428,
+        avgReadiness: 86,
+        certifiedCount: 194,
+        featuredLabs: ["lab-fe-search-filter", "lab-be-rate-limiter"],
+      },
+      {
+        cohortId: "cohort-itb-eng",
+        campusName: "Institut Teknologi Bandung",
+        city: "Bandung, Jawa Barat",
+        programTitle: "ITB Digital Systems & Architecture Track",
+        targetRole: "Backend & Data Engineer",
+        activeStudents: 382,
+        avgReadiness: 88,
+        certifiedCount: 176,
+        featuredLabs: ["lab-be-rate-limiter", "lab-sql-merchant-retention"],
+      },
+      {
+        cohortId: "cohort-ugm-bumn",
+        campusName: "Universitas Gadjah Mada",
+        city: "Yogyakarta",
+        programTitle: "UGM Leadership & ODP BUMN Readiness",
+        targetRole: "Management Trainee & BUMN",
+        activeStudents: 512,
+        avgReadiness: 84,
+        certifiedCount: 230,
+        featuredLabs: ["lab-bumn-case-akhlak", "lab-data-funnel-drop"],
+      },
+      {
+        cohortId: "cohort-its-product",
+        campusName: "Institut Teknologi Sepuluh Nopember",
+        city: "Surabaya, Jawa Timur",
+        programTitle: "ITS Full-Stack & Product Analytics Cohort",
+        targetRole: "Software Engineer & Analyst",
+        activeStudents: 345,
+        avgReadiness: 83,
+        certifiedCount: 158,
+        featuredLabs: ["lab-fe-checkout-promo", "lab-sql-merchant-retention"],
+      },
+      {
+        cohortId: "cohort-binus-web",
+        campusName: "BINUS University",
+        city: "Jakarta Barat",
+        programTitle: "BINUS Industry Portfolio & Startup Sprint",
+        targetRole: "Frontend Engineer & UI/UX",
+        activeStudents: 460,
+        avgReadiness: 82,
+        certifiedCount: 211,
+        featuredLabs: ["lab-fe-search-filter", "lab-fe-checkout-promo"],
+      },
+      {
+        cohortId: "cohort-telkom-digital",
+        campusName: "Telkom University",
+        city: "Bandung, Jawa Barat",
+        programTitle: "Tel-U Digital Talent & BUMN Synergy",
+        targetRole: "Cloud, Data & Digital BUMN",
+        activeStudents: 396,
+        avgReadiness: 81,
+        certifiedCount: 164,
+        featuredLabs: ["lab-sql-merchant-retention", "lab-bumn-case-akhlak"],
+      },
+    ]).onConflictDoNothing();
   }
 }

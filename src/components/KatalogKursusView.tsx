@@ -1,26 +1,17 @@
 import React, { useState, useMemo } from "react";
-import { 
-  Search, 
-  Clock, 
-  BarChart, 
-  Heart, 
-  Grid, 
-  List, 
-  Filter, 
-  RefreshCw, 
-  Layers, 
-  X, 
-  BookOpen, 
-  Sparkles, 
-  Award,
-  SlidersHorizontal
+import {
+  Search,
+  Heart,
+  Grid,
+  List,
+  RefreshCw,
+  X,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Course, Profile } from "../types";
 import { CourseCard } from "./CourseCard";
 import { useDebounce } from "../hooks/useDebounce";
 import { getCourseProgress } from "../utils/courseUtils";
-import { Badge } from "./ui/Badge";
 import { Button } from "./ui/Button";
 
 interface KatalogKursusViewProps {
@@ -31,22 +22,21 @@ interface KatalogKursusViewProps {
 
 export function KatalogKursusView({ courses, profile, onBookmarkToggle }: KatalogKursusViewProps) {
   const navigate = useNavigate();
-  
-  // Search & Filter state
+
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 250);
   const [selectedCategory, setSelectedCategory] = useState("Semua");
   const [selectedDifficulty, setSelectedDifficulty] = useState("Semua");
-  const [selectedStatus, setSelectedStatus] = useState<"Semua" | "Belum Dimulai" | "Sedang Dipelajari" | "Selesai">("Semua");
+  const [selectedStatus, setSelectedStatus] = useState<
+    "Semua" | "Belum Dimulai" | "Sedang Dipelajari" | "Selesai"
+  >("Semua");
   const [selectedSort, setSelectedSort] = useState<"Populer" | "Terbaru" | "Durasi">("Populer");
   const [showOnlyBookmarked, setShowOnlyBookmarked] = useState(false);
   const [layout, setLayout] = useState<"grid" | "list">("grid");
-  const [showMobileFilterModal, setShowMobileFilterModal] = useState(false);
 
-  // Derive unique categories with course count
   const categoryCounts = useMemo(() => {
     const counts: Record<string, number> = { Semua: courses.length };
-    courses.forEach(c => {
+    courses.forEach((c) => {
       if (c.category) {
         counts[c.category] = (counts[c.category] || 0) + 1;
       }
@@ -54,45 +44,37 @@ export function KatalogKursusView({ courses, profile, onBookmarkToggle }: Katalo
     return counts;
   }, [courses]);
 
-  const categories = useMemo(() => {
-    return Object.keys(categoryCounts);
-  }, [categoryCounts]);
+  const categories = useMemo(() => Object.keys(categoryCounts), [categoryCounts]);
 
   const difficulties = ["Semua", "Pemula", "Menengah", "Lanjutan"];
   const bookmarkedCourses = profile.bookmarkedCourses || [];
 
-  // Filter courses
   const filteredCourses = useMemo(() => {
     const safeList = Array.isArray(courses) ? courses : [];
-    const filtered = safeList.filter(c => {
-      // 1. Search by title, skills or partner
+    const filtered = safeList.filter((c) => {
       const searchLower = debouncedSearch.toLowerCase().trim();
-      const matchSearch = !searchLower || 
-        c.title.toLowerCase().includes(searchLower) || 
+      const matchSearch =
+        !searchLower ||
+        c.title.toLowerCase().includes(searchLower) ||
         c.partner.toLowerCase().includes(searchLower) ||
-        (c.skills && c.skills.some(skill => skill.toLowerCase().includes(searchLower)));
+        (c.category && c.category.toLowerCase().includes(searchLower)) ||
+        (c.skills && c.skills.some((skill) => skill.toLowerCase().includes(searchLower)));
 
-      // 2. Category
       const matchCategory = selectedCategory === "Semua" || c.category === selectedCategory;
-
-      // 3. Difficulty
       const matchDifficulty = selectedDifficulty === "Semua" || c.difficulty === selectedDifficulty;
 
-      // 4. Progress status
-      const { percentage, status } = getCourseProgress(c);
-      const matchStatus = 
-        selectedStatus === "Semua" || 
+      const { percentage } = getCourseProgress(c);
+      const matchStatus =
+        selectedStatus === "Semua" ||
         (selectedStatus === "Belum Dimulai" && percentage === 0) ||
         (selectedStatus === "Sedang Dipelajari" && percentage > 0 && percentage < 100) ||
         (selectedStatus === "Selesai" && percentage === 100);
 
-      // 5. Bookmark
       const matchBookmark = !showOnlyBookmarked || bookmarkedCourses.includes(c.id);
 
       return matchSearch && matchCategory && matchDifficulty && matchStatus && matchBookmark;
     });
-    
-    // Sort logic
+
     if (selectedSort === "Populer") {
       filtered.sort((a, b) => {
         const ratingA = a.rating || 4.8;
@@ -101,35 +83,29 @@ export function KatalogKursusView({ courses, profile, onBookmarkToggle }: Katalo
         return (b.xpReward || 0) - (a.xpReward || 0);
       });
     } else if (selectedSort === "Terbaru") {
-      // Keep natural list order or id
       filtered.sort((a, b) => b.id.localeCompare(a.id));
     } else if (selectedSort === "Durasi") {
       filtered.sort((a, b) => (a.lessons?.length || 0) - (b.lessons?.length || 0));
     }
 
     return filtered;
-  }, [courses, debouncedSearch, selectedCategory, selectedDifficulty, selectedStatus, selectedSort, showOnlyBookmarked, bookmarkedCourses]);
+  }, [
+    courses,
+    debouncedSearch,
+    selectedCategory,
+    selectedDifficulty,
+    selectedStatus,
+    selectedSort,
+    showOnlyBookmarked,
+    bookmarkedCourses,
+  ]);
 
-  // Active filters for tags
-  const activeFilters = useMemo(() => {
-    const list: { key: string; label: string; value: string; onClear: () => void }[] = [];
-    if (search) {
-      list.push({ key: "search", label: "Pencarian", value: `"${search}"`, onClear: () => setSearch("") });
-    }
-    if (selectedCategory !== "Semua") {
-      list.push({ key: "category", label: "Kategori", value: selectedCategory, onClear: () => setSelectedCategory("Semua") });
-    }
-    if (selectedDifficulty !== "Semua") {
-      list.push({ key: "difficulty", label: "Tingkat", value: selectedDifficulty, onClear: () => setSelectedDifficulty("Semua") });
-    }
-    if (selectedStatus !== "Semua") {
-      list.push({ key: "status", label: "Status", value: selectedStatus, onClear: () => setSelectedStatus("Semua") });
-    }
-    if (showOnlyBookmarked) {
-      list.push({ key: "bookmarked", label: "Filter", value: "Favorit Tersimpan", onClear: () => setShowOnlyBookmarked(false) });
-    }
-    return list;
-  }, [search, selectedCategory, selectedDifficulty, selectedStatus, showOnlyBookmarked]);
+  const hasActiveFilters =
+    Boolean(search) ||
+    selectedCategory !== "Semua" ||
+    selectedDifficulty !== "Semua" ||
+    selectedStatus !== "Semua" ||
+    showOnlyBookmarked;
 
   const handleResetFilters = () => {
     setSearch("");
@@ -141,48 +117,43 @@ export function KatalogKursusView({ courses, profile, onBookmarkToggle }: Katalo
   };
 
   return (
-    <div className="w-full py-1 sm:py-2 font-sans space-y-5 sm:space-y-6 relative z-10 animate-in fade-in duration-300">
+    <div className="w-full py-1 sm:py-2 space-y-5 relative z-10">
       {/* Header */}
-      <header className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+      <header className="flex flex-col md:flex-row md:items-end md:justify-between gap-3 border-b border-zinc-200 dark:border-zinc-800 pb-4">
         <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            <h1 className="text-xl md:text-2xl font-display font-bold tracking-tight text-slate-900 dark:text-white">
-              Katalog Kursus
-            </h1>
-            <Badge variant="neutral" size="sm">
-              {courses.length} Kursus
-            </Badge>
-          </div>
-          <p className="text-slate-500 dark:text-slate-400 font-medium text-xs sm:text-sm max-w-2xl">
-            Pilih jalur belajar bersertifikat industri dan bangun portofolio karier Anda dengan materi terstruktur.
+          <p className="text-xs font-mono uppercase tracking-wider text-emerald-700 dark:text-emerald-400 font-semibold">
+            {courses.length} Jalur Pelatihan · Pra-Tes · Modul · Lab AI · Sertifikasi
+          </p>
+          <h1 className="text-2xl sm:text-3xl font-display font-bold tracking-tight text-zinc-950 dark:text-white">
+            Katalog Pelatihan Industri
+          </h1>
+          <p className="text-zinc-600 dark:text-zinc-400 text-sm max-w-2xl">
+            Setiap pelatihan dilengkapi Pra-Tes Diagnostik, materi dengan Cek Paham & Flashcard SM-2, studi kasus berevaluasi AI, dan Ujian Sertifikasi Akhir.
           </p>
         </div>
 
-        {/* Action button controls */}
-        <div className="flex items-center gap-2 self-start md:self-auto">
-          {/* Bookmark filter toggle */}
+        <div className="flex items-center gap-2 self-start md:self-auto shrink-0">
           <button
             type="button"
             onClick={() => setShowOnlyBookmarked(!showOnlyBookmarked)}
-            className={`px-3 py-2 rounded-xl border text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+            className={`px-3 py-2 rounded-lg border text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer whitespace-nowrap ${
               showOnlyBookmarked
-                ? "bg-rose-50 dark:bg-rose-950/40 border-rose-200 dark:border-rose-900/50 text-rose-600 dark:text-rose-400 shadow-2xs"
-                : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/80"
+                ? "bg-rose-50 dark:bg-rose-950/30 border-rose-200 dark:border-rose-900/50 text-rose-700 dark:text-rose-300"
+                : "bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800"
             }`}
           >
             <Heart className={`w-3.5 h-3.5 ${showOnlyBookmarked ? "fill-rose-500 text-rose-500" : ""}`} />
             <span>Tersimpan ({bookmarkedCourses.length})</span>
           </button>
 
-          {/* Grid/List layout toggle */}
-          <div className="flex items-center bg-slate-100 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80 rounded-xl p-1 gap-1">
+          <div className="flex items-center bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-0.5">
             <button
               type="button"
               onClick={() => setLayout("grid")}
-              className={`p-1.5 rounded-lg transition-all cursor-pointer ${
+              className={`p-1.5 rounded-md transition-colors cursor-pointer ${
                 layout === "grid"
-                  ? "bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-2xs font-bold"
-                  : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
+                  ? "bg-white dark:bg-zinc-800 text-zinc-950 dark:text-white"
+                  : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200"
               }`}
               title="Tampilan Grid"
               aria-label="Tampilan Grid"
@@ -192,10 +163,10 @@ export function KatalogKursusView({ courses, profile, onBookmarkToggle }: Katalo
             <button
               type="button"
               onClick={() => setLayout("list")}
-              className={`p-1.5 rounded-lg transition-all cursor-pointer ${
+              className={`p-1.5 rounded-md transition-colors cursor-pointer ${
                 layout === "list"
-                  ? "bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-2xs font-bold"
-                  : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
+                  ? "bg-white dark:bg-zinc-800 text-zinc-950 dark:text-white"
+                  : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200"
               }`}
               title="Tampilan List"
               aria-label="Tampilan List"
@@ -206,8 +177,8 @@ export function KatalogKursusView({ courses, profile, onBookmarkToggle }: Katalo
         </div>
       </header>
 
-      {/* Category Pills Strip */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-1 hide-scrollbar">
+      {/* Category Tabs */}
+      <div className="flex items-center gap-1.5 overflow-x-auto pb-1 hide-scrollbar">
         {categories.map((cat) => {
           const isSelected = selectedCategory === cat;
           const count = categoryCounts[cat] || 0;
@@ -216,45 +187,37 @@ export function KatalogKursusView({ courses, profile, onBookmarkToggle }: Katalo
               key={cat}
               type="button"
               onClick={() => setSelectedCategory(cat)}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex items-center gap-1.5 cursor-pointer shrink-0 ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap shrink-0 transition-colors cursor-pointer flex items-center gap-1.5 ${
                 isSelected
-                  ? "bg-slate-900 dark:bg-white text-white dark:text-slate-900 shadow-2xs"
-                  : "bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border border-slate-200/80 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700"
+                  ? "bg-zinc-950 dark:bg-zinc-100 text-white dark:text-zinc-950"
+                  : "bg-white dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700"
               }`}
             >
               <span>{cat}</span>
-              <span
-                className={`text-xs px-1.5 py-0.2 rounded-full font-extrabold ${
-                  isSelected
-                    ? "bg-slate-700 dark:bg-slate-200 text-white dark:text-slate-900"
-                    : "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400"
-                }`}
-              >
-                {count}
-              </span>
+              <span className="font-mono text-[11px] opacity-75 tabular-nums">{count}</span>
             </button>
           );
         })}
       </div>
 
-      {/* Filter & Search Bar */}
-      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-3.5 sm:p-4 space-y-3.5">
+      {/* Filter & Search Toolbar */}
+      <div className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-3.5 space-y-3">
         <div className="flex flex-col sm:flex-row gap-2.5 items-stretch sm:items-center justify-between">
-          {/* Search Input */}
-          <div className="relative flex-1 group">
-            <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-500 transition-colors" />
-            <input aria-label="Cari kursus, topik, materi, atau mitra..."
+          <div className="relative flex-1">
+            <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400" />
+            <input
+              aria-label="Cari pelatihan, topik, kompetensi, atau mitra"
               type="text"
-              placeholder="Cari kursus, topik, materi, atau mitra..."
+              placeholder="Cari pelatihan, topik, kompetensi, atau mitra..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-10 pr-9 py-2 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 rounded-xl focus:bg-white dark:focus:bg-slate-800 focus:ring-3 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all placeholder:text-slate-400 font-medium text-xs sm:text-sm text-slate-900 dark:text-white"
+              className="w-full pl-10 pr-9 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg focus:border-emerald-500 outline-none transition-colors placeholder:text-zinc-400 text-xs sm:text-sm text-zinc-950 dark:text-white"
             />
             {search && (
               <button
                 type="button"
                 onClick={() => setSearch("")}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-0.5 rounded cursor-pointer"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 p-0.5 cursor-pointer"
                 aria-label="Hapus pencarian"
               >
                 <X className="w-3.5 h-3.5" />
@@ -262,13 +225,12 @@ export function KatalogKursusView({ courses, profile, onBookmarkToggle }: Katalo
             )}
           </div>
 
-          {/* Quick Dropdown Filters */}
-          <div className="flex items-center gap-2">
-            {/* Difficulty */}
-            <select aria-label="Input field"
+          <div className="flex flex-wrap items-center gap-2">
+            <select
+              aria-label="Filter tingkat kesulitan"
               value={selectedDifficulty}
               onChange={(e) => setSelectedDifficulty(e.target.value)}
-              className="px-3 py-2 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 outline-none focus:border-blue-500 cursor-pointer"
+              className="px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs font-semibold text-zinc-700 dark:text-zinc-200 outline-none focus:border-emerald-500 cursor-pointer"
             >
               {difficulties.map((diff) => (
                 <option key={diff} value={diff}>
@@ -277,11 +239,11 @@ export function KatalogKursusView({ courses, profile, onBookmarkToggle }: Katalo
               ))}
             </select>
 
-            {/* Status */}
-            <select aria-label="Input field"
+            <select
+              aria-label="Filter status belajar"
               value={selectedStatus}
               onChange={(e) => setSelectedStatus(e.target.value as any)}
-              className="px-3 py-2 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 outline-none focus:border-blue-500 cursor-pointer"
+              className="px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs font-semibold text-zinc-700 dark:text-zinc-200 outline-none focus:border-emerald-500 cursor-pointer"
             >
               <option value="Semua">Semua Status</option>
               <option value="Sedang Dipelajari">Sedang Dipelajari</option>
@@ -289,11 +251,11 @@ export function KatalogKursusView({ courses, profile, onBookmarkToggle }: Katalo
               <option value="Selesai">Selesai (100%)</option>
             </select>
 
-            {/* Sort */}
-            <select aria-label="Input field"
+            <select
+              aria-label="Urutkan pelatihan"
               value={selectedSort}
               onChange={(e) => setSelectedSort(e.target.value as any)}
-              className="px-3 py-2 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 outline-none focus:border-blue-500 cursor-pointer"
+              className="px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs font-semibold text-zinc-700 dark:text-zinc-200 outline-none focus:border-emerald-500 cursor-pointer"
             >
               <option value="Populer">Terpopuler</option>
               <option value="Terbaru">Terbaru</option>
@@ -302,58 +264,30 @@ export function KatalogKursusView({ courses, profile, onBookmarkToggle }: Katalo
           </div>
         </div>
 
-        {/* Active Filter Badges */}
-        {activeFilters.length > 0 && (
-          <div className="flex flex-wrap items-center gap-1.5 pt-2.5 border-t border-slate-100 dark:border-slate-800">
-            <span className="text-xs font-bold text-slate-400 mr-1 flex items-center gap-1">
-              <Filter className="w-3 h-3" /> Filter Aktif:
-            </span>
-            {activeFilters.map((filter) => (
-              <div
-                key={filter.key}
-                className="inline-flex items-center gap-1.5 bg-blue-50 dark:bg-blue-950/40 border border-blue-100 dark:border-blue-900/50 rounded-lg pl-2 pr-1.5 py-0.5 text-xs font-semibold text-blue-700 dark:text-blue-300"
-              >
-                <span>{filter.label}:</span>
-                <span className="font-bold">{filter.value}</span>
-                <button
-                  type="button"
-                  onClick={filter.onClear}
-                  className="hover:bg-blue-100 dark:hover:bg-blue-900/50 rounded p-0.5 transition-colors cursor-pointer"
-                  aria-label={`Hapus filter ${filter.label}`}
-                >
-                  <X className="w-3 h-3" />
-                </button>
-              </div>
-            ))}
+        <div className="flex items-center justify-between text-xs text-zinc-500 dark:text-zinc-400 pt-1 border-t border-zinc-100 dark:border-zinc-800">
+          <span className="font-mono tabular-nums">
+            Menampilkan <strong className="text-zinc-950 dark:text-white">{filteredCourses.length}</strong> dari {courses.length} pelatihan
+          </span>
+          {hasActiveFilters && (
             <button
               type="button"
               onClick={handleResetFilters}
-              className="text-xs font-bold text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-colors ml-1 cursor-pointer"
+              className="text-xs font-semibold text-emerald-700 dark:text-emerald-400 hover:underline cursor-pointer"
             >
-              Reset Semua
+              Reset Filter
             </button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
-      {/* Results Count */}
-      <div className="flex items-center justify-between text-xs font-semibold text-slate-500 dark:text-slate-400 px-1">
-        <span>
-          Menampilkan <strong className="text-slate-900 dark:text-white">{filteredCourses.length}</strong> kursus
-        </span>
-      </div>
-
-      {/* Course List / Grid */}
+      {/* Course Grid / List */}
       {filteredCourses.length === 0 ? (
-        <div className="text-center py-12 px-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 flex flex-col items-center justify-center space-y-3">
-          <div className="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-xl">
-            🔍
-          </div>
-          <h3 className="font-display text-base font-bold text-slate-900 dark:text-white">
-            Tidak ada kursus yang cocok
+        <div className="text-center py-14 px-4 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 flex flex-col items-center justify-center space-y-3">
+          <h3 className="font-display text-base font-bold text-zinc-950 dark:text-white">
+            Tidak ada pelatihan yang cocok
           </h3>
-          <p className="text-slate-500 dark:text-slate-400 text-xs max-w-sm">
-            Coba ubah kata kunci pencarian atau bersihkan filter untuk menemukan materi yang diinginkan.
+          <p className="text-zinc-500 dark:text-zinc-400 text-xs max-w-sm">
+            Ubah kata kunci pencarian atau reset filter untuk melihat seluruh katalog pelatihan.
           </p>
           <Button
             variant="secondary"
@@ -368,7 +302,7 @@ export function KatalogKursusView({ courses, profile, onBookmarkToggle }: Katalo
         <div
           className={
             layout === "grid"
-              ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3.5 sm:gap-4"
+              ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
               : "flex flex-col gap-3 max-w-4xl mx-auto w-full"
           }
         >

@@ -1,10 +1,14 @@
-import { useState, useEffect } from "react";
-import { Play, RotateCcw, Award, ShieldAlert, Layers, CheckCircle2, AlertTriangle, ArrowRight, History, Sparkles, Sliders } from "lucide-react";
+import { useState } from "react";
+import { RotateCcw, Award, Layers, ArrowRight, History, Sparkles } from "lucide-react";
 import { playSound } from "../../utils/sound";
-import { SimulationAttempt } from "../../types";
+import { Profile, SimulationAttempt } from "../../types";
+import { trainingApi } from "../../api/apiClient";
 
 interface SimulasiTahapKerjaTabProps {
   onAddXp?: (xp: number) => void;
+  onProfileUpdate?: (profile: Profile) => void;
+  onSimulationRecorded?: () => void;
+  showToast?: (message: string, type?: "success" | "error" | "info") => void;
 }
 
 export interface ScenarioStageOption {
@@ -33,327 +37,521 @@ export interface WorkScenario {
 const WORK_SCENARIOS: WorkScenario[] = [
   {
     id: "scen-1",
-    title: "Konflik Arsitektur Kode & Perbedaan Pendapat Tim Dev",
-    category: "Software Engineering & Team Conflict",
+    title: "Konflik Arsitektur API Menjelang Rilis Produk",
+    category: "Software Engineering",
     role: "Senior Frontend Lead",
-    description: "Terjadi perselisihan sengit antara Tim Frontend & Backend terkait keputusan migrasi REST API ke GraphQL menjelang deadline peluncuran produk.",
+    description:
+      "Terjadi perbedaan pendapat tajam antara Tim Frontend & Backend terkait migrasi REST API ke GraphQL lima hari sebelum deadline peluncuran.",
     stages: [
       {
         stageNumber: 1,
         title: "Tahap 1: Analisis Situasi & Akar Masalah",
-        description: "Kedua pihak saling menyalahkan terkait latency respon API. Bagaimana langkah diagnosa awal Anda?",
+        description:
+          "Kedua pihak saling menyalahkan terkait latency respon API. Bagaimana langkah diagnosa awal Anda?",
         options: [
           {
             id: "s1-opt-a",
-            label: "Opsi A: Lakukan profil performa (benchmark) dan network audit independen untuk mengumpulkan data objektif.",
+            label:
+              "Opsi A: Lakukan profil performa (benchmark) dan network audit independen untuk mengumpulkan data objektif.",
             points: 30,
-            specificFeedback: "Sangat baik! Diagnosa berbasis data objektif mencegah perdebatan opini emosional dan mengisolasi masalah secara presisi."
+            specificFeedback:
+              "Diagnosa berbasis data objektif mencegah perdebatan emosional dan mengisolasi masalah secara presisi.",
           },
           {
             id: "s1-opt-b",
-            label: "Opsi B: Langsung eskalasi masalah ke Engineering Manager untuk membuat keputusan final secepatnya.",
+            label:
+              "Opsi B: Langsung eskalasi masalah ke Engineering Manager untuk membuat keputusan final.",
             points: 15,
-            specificFeedback: "Eskalasi terlalu awal tanpa data pendukung menambah beban manajemen dan mengikis kepercayaan tim pada kepemimpinan teknis Anda."
+            specificFeedback:
+              "Eskalasi terlalu awal tanpa bukti data menambah beban manajemen dan melemahkan kepemimpinan teknis.",
           },
           {
             id: "s1-opt-c",
-            label: "Opsi C: Meminta Tim Backend menyerah dan mengikuti semua standar keinginan Tim Frontend.",
+            label:
+              "Opsi C: Meminta Tim Backend mengikuti seluruh standar keinginan Tim Frontend tanpa kompromi.",
             points: 10,
-            specificFeedback: "Pendekatan sepihak menciptakan iklim kerja toksik dan merusak kolaborasi lintas tim dalam jangka panjang."
-          }
-        ]
+            specificFeedback:
+              "Pendekatan sepihak merusak kolaborasi lintas tim dalam jangka panjang.",
+          },
+        ],
       },
       {
         stageNumber: 2,
-        title: "Tahap 2: Pengambilan Keputusan & Aksi Taktis",
-        description: "Hasil benchmark menunjukkan N+1 query pada database. Waktu tersisa 5 hari sebelum peluncuran. Keputusan apa yang Anda ambil?",
+        title: "Tahap 2: Pengambilan Keputusan Taktis",
+        description:
+          "Benchmark menunjukkan N+1 query pada database. Waktu tersisa 5 hari sebelum peluncuran. Keputusan apa yang Anda ambil?",
         options: [
           {
             id: "s2-opt-a",
-            label: "Opsi A: Terapkan caching Redis & indexing database sementara (Quick Fix), dan tunda migrasi GraphQL untuk rilis fase 2.",
+            label:
+              "Opsi A: Terapkan caching Redis & indexing database untuk rilis tepat waktu, lalu jadwalkan evaluasi GraphQL pada fase 2.",
             points: 40,
-            specificFeedback: "Keputusan bisnis & teknis yang sangat matang! Mengutamakan stabilitas rilis tepat waktu sembari menyiapkan utang teknis secara terencana."
+            specificFeedback:
+              "Keputusan bisnis dan teknis matang: menjaga stabilitas rilis sembari mengelola utang teknis secara terencana.",
           },
           {
             id: "s2-opt-b",
-            label: "Opsi B: Paksakan merombak seluruh skema GraphQL dalam 5 hari dengan meminta tim lembur tanpa batas.",
+            label:
+              "Opsi B: Paksakan merombak seluruh skema GraphQL dalam 5 hari dengan lembur penuh.",
             points: 15,
-            specificFeedback: "Berisiko tinggi memicu bug kritis di production dan risiko burnout parah pada anggota tim."
+            specificFeedback:
+              "Berisiko tinggi memicu bug kritis di produksi serta kelelahan tim.",
           },
           {
             id: "s2-opt-c",
-            label: "Opsi C: Tunda tanggal peluncuran secara sepihak tanpa berkonsultasi dengan Product Owner.",
+            label:
+              "Opsi C: Tunda tanggal peluncuran secara sepihak tanpa berkonsultasi dengan Product Owner.",
             points: 10,
-            specificFeedback: "Menunda rilis tanpa kesepakatan stakeholder bisnis merugikan roadmap pemasaran dan reputasi tim dev."
-          }
-        ]
+            specificFeedback:
+              "Menunda rilis tanpa penyelarasan bisnis merugikan roadmap pemasaran dan kepercayaan stakeholder.",
+          },
+        ],
       },
       {
         stageNumber: 3,
         title: "Tahap 3: Mitigasi Risiko & Post-Mortem",
-        description: "Produk sukses dirilis tepat waktu tanpa downtime. Langkah pasca-rilis apa yang Anda rancang?",
+        description:
+          "Produk sukses dirilis tepat waktu tanpa downtime. Langkah pasca-rilis apa yang Anda rancang?",
         options: [
           {
             id: "s3-opt-a",
-            label: "Opsi A: Agendakan sesi Blameless Post-Mortem, buat RFC standar API bersama, dan atur jadwal refactoring bertahap.",
+            label:
+              "Opsi A: Agendakan Blameless Post-Mortem, susun RFC kontrak API bersama, dan jadwalkan refactoring bertahap.",
             points: 30,
-            specificFeedback: "Luar biasa! Pembelajaran kultur blameless memperkuat hubungan kerja dan mencegah terulangnya insiden serupa."
+            specificFeedback:
+              "Kultur blameless memperkuat keamanan psikologis dan mencegah insiden serupa terulang.",
           },
           {
             id: "s3-opt-b",
-            label: "Opsi B: Menganggap masalah selesai dan membiarkan kode temporary tanpa dokumentasi utang teknis.",
+            label:
+              "Opsi B: Anggap masalah selesai dan biarkan solusi sementara tanpa dokumentasi utang teknis.",
             points: 10,
-            specificFeedback: "Membiarkan utang teknis tanpa dokumentasi akan memicu masalah performa yang lebih besar di masa mendatang."
+            specificFeedback:
+              "Utang teknis tanpa dokumentasi memicu penurunan performa berulang di kemudian hari.",
           },
           {
             id: "s3-opt-c",
-            label: "Opsi C: Memberikan penalti atau penilaian buruk pada anggota tim yang sempat berbeda pendapat.",
+            label:
+              "Opsi C: Memberikan penilaian buruk pada anggota tim yang sempat berbeda pendapat.",
             points: 5,
-            specificFeedback: "Menghukum perbedaan pendapat mematikan inovasi dan menurunkan psikologis keamanan (psychological safety) tim."
-          }
-        ]
-      }
-    ]
+            specificFeedback:
+              "Menghukum perbedaan pendapat mematikan inovasi dan merusak budaya tim.",
+          },
+        ],
+      },
+    ],
   },
   {
     id: "scen-2",
-    title: "Krisis Outage Server saat Peak Traffic Promosi BUMN",
-    category: "DevOps & Infrastructure Incident",
-    role: "System Reliability Engineer",
-    description: "Sistem aplikasi tiba-tiba mengalami lonjakan error 504 Gateway Timeout di tengah promosi flash sale nasional jam 12:00 WIB.",
+    title: "Outage Server Saat Peak Traffic Promosi Nasional",
+    category: "DevOps & SRE Incident",
+    role: "Site Reliability Engineer",
+    description:
+      "Aplikasi transaksi mengalami lonjakan error 504 Gateway Timeout di tengah promosi flash sale nasional pukul 12:00 WIB.",
     stages: [
       {
         stageNumber: 1,
         title: "Tahap 1: Respon Awal Insiden Kritis",
-        description: "Traffic naik 10x lipat,CPU utilization server mencapai 99%. Apa tindakan pertama Anda?",
+        description:
+          "Traffic melonjak 10x lipat dan CPU utilization menyentuh 99%. Apa tindakan pertama Anda?",
         options: [
           {
             id: "s1-scen2-a",
-            label: "Opsi A: Aktifkan mode pembatasan kuota (Rate Limiting) & sajikan halaman ruang tunggu (Queue Page) untuk stabilisasi beban.",
+            label:
+              "Opsi A: Aktifkan Rate Limiting & ruang tunggu (Queue Page) untuk menstabilkan beban transaksi aktif.",
             points: 30,
-            specificFeedback: "Respon tanggap darurat yang tepat! Mencegah server mati total (crash) dan menjaga ketersediaan layanan untuk transaksi yang sedang berjalan."
+            specificFeedback:
+              "Respon darurat tepat: mencegah crash total dan melindungi transaksi yang sedang diproses.",
           },
           {
             id: "s1-scen2-b",
-            label: "Opsi B: Melakukan restart server utama secara manual di jam sibuk.",
+            label:
+              "Opsi B: Melakukan restart server utama secara manual di tengah puncak traffic.",
             points: 10,
-            specificFeedback: "Restart manual saat lonjakan traffic akan memperburuk downtime dan menggagalkan ribuan transaksi aktif."
+            specificFeedback:
+              "Restart manual saat puncak beban justru memperparah kegagalan transaksi aktif.",
           },
           {
             id: "s1-scen2-c",
-            label: "Opsi C: Membiarkan sistem dan berharap traffic akan reda dengan sendirinya.",
+            label:
+              "Opsi C: Membiarkan sistem berjalan sambil menunggu traffic mereda sendiri.",
             points: 5,
-            specificFeedback: "Inaction saat insiden darurat berakibat fatal pada kerugian finansial dan kepercayaan pengguna."
-          }
-        ]
+            specificFeedback:
+              "Inaction saat insiden produksi berdampak langsung pada kerugian finansial.",
+          },
+        ],
       },
       {
         stageNumber: 2,
-        title: "Tahap 2: Skalabilitas & Taktik Pemulihan",
-        description: "Layanan kembali merespon lambat akibat bottleneck database. Bagaimana Anda menyelesaikan akar masalah ini?",
+        title: "Tahap 2: Skalabilitas & Pemulihan Bottleneck",
+        description:
+          "Observability menunjukkan bottleneck pada query pencarian di database utama. Bagaimana langkah pemulihan Anda?",
         options: [
           {
             id: "s2-scen2-a",
-            label: "Opsi A: Lakukan auto-scaling read-replica database dan alihkan query pencarian produk ke Read-Replica.",
+            label:
+              "Opsi A: Scale out Read-Replica dan arahkan traffic query baca ke Read-Replica sambil memasang cache.",
             points: 40,
-            specificFeedback: "Pemisahan beban Read/Write pada database merupakan best practice infrastruktur skala tinggi yang sangat efektif."
+            specificFeedback:
+              "Pemisahan beban Read/Write adalah praktik arsitektur skala tinggi yang paling aman dan efektif.",
           },
           {
             id: "s2-scen2-b",
-            label: "Opsi B: Langsung menaikkan kapasitas instance (Vertical Scaling) tanpa mematikan fitur yang boros query.",
+            label:
+              "Opsi B: Naikkan kapasitas instance secara vertikal (Vertical Scaling) yang membutuhkan reboot.",
             points: 20,
-            specificFeedback: "Vertical scaling instan memerlukan waktu reboot dan biaya sangat mahal tanpa menyelesaikan query yang tidak efisien."
+            specificFeedback:
+              "Vertical scaling berbiaya tinggi dan tetap memerlukan jeda downtime tanpa mengatasi akar query berat.",
           },
           {
             id: "s2-scen2-c",
-            label: "Opsi C: Mematikan seluruh database secara mendadak.",
+            label: "Opsi C: Mematikan sementara seluruh koneksi database.",
             points: 5,
-            specificFeedback: "Tindakan drastis tanpa peringatan merusak konsistensi data transaksi finansial pengguna."
-          }
-        ]
+            specificFeedback:
+              "Memutus total database tanpa graceful degradation merusak konsistensi transaksi.",
+          },
+        ],
       },
       {
         stageNumber: 3,
-        title: "Tahap 3: Komunikasi Stakeholder & Komitmen Kualitas",
-        description: "Insiden berhasil diatasi dalam 25 menit. Bagaimana laporan penanganan yang Anda sajikan ke jajaran Manajemen?",
+        title: "Tahap 3: Komunikasi Manajemen & Pemulihan Kepercayaan",
+        description:
+          "Layanan pulih dalam 25 menit. Bagaimana laporan yang Anda sajikan kepada jajaran direksi?",
         options: [
           {
             id: "s3-scen2-a",
-            label: "Opsi A: Rilis laporan incident timeline yang transparan, estimasi dampak, dan langkah kompensasi voucher bagi pengguna terdampak.",
+            label:
+              "Opsi A: Rilis incident timeline transparan, analisis dampak, rencana perbaikan permanen, serta rekomendasi pemulihan pelanggan.",
             points: 30,
-            specificFeedback: "Transparansi dan solusi pemulihan nama baik perusahaan menunjukkan profesionalisme tingkat senior."
+            specificFeedback:
+              "Transparansi dan rencana tindak lanjut terukur mencerminkan akuntabilitas profesional tingkat senior.",
           },
           {
             id: "s3-scen2-b",
-            label: "Opsi B: Menyembunyikan durasi downtime dan menyalahkan penyedia cloud vendor external.",
+            label:
+              "Opsi B: Menyembunyikan durasi downtime dan menyalahkan penyedia cloud eksternal.",
             points: 10,
-            specificFeedback: "Melempar tanggung jawab merusak integritas Anda sebagai profesional yang dapat diandalkan."
+            specificFeedback:
+              "Melempar tanggung jawab merusak integritas dan kredibilitas tim teknis.",
           },
           {
             id: "s3-scen2-c",
-            label: "Opsi C: Tidak mengirimkan laporan dan menganggap insiden telah berlalu.",
+            label: "Opsi C: Tidak mengirimkan laporan resmi karena sistem sudah kembali normal.",
             points: 5,
-            specificFeedback: "Tanpa laporan insiden, manajemen tidak dapat mengambil keputusan investasi perbaikan infrastruktur."
-          }
-        ]
-      }
-    ]
+            specificFeedback:
+              "Tanpa laporan insiden, organisasi kehilangan kesempatan memperkuat keandalan sistem.",
+          },
+        ],
+      },
+    ],
   },
   {
     id: "scen-3",
-    title: "Dilema Integritas & Nilai AKHLAK BUMN",
-    category: "Corporate Ethics & Compliance",
-    role: "Project Manager Specialist",
-    description: "Anda menemukan vendor mitra menawarkan potongan harga di luar kontrak resmi demi meloloskan audit kriteria proyek.",
+    title: "Dilema Integritas & Kepatuhan Vendor BUMN",
+    category: "Corporate Ethics & AKHLAK",
+    role: "Project Manager BUMN",
+    description:
+      "Vendor mitra meminta Anda menandatangani berita acara serah terima proyek meski dua fitur utama belum tuntas, dengan iming-iming potongan harga di luar kontrak.",
     stages: [
       {
         stageNumber: 1,
         title: "Tahap 1: Evaluasi Etika & Kepatuhan",
-        description: "Vendor meminta Anda menandatangani berita acara serah terima meskipun ada 2 fitur utama yang belum selesai.",
+        description:
+          "Vendor mendesak tanda tangan hari ini agar pencairan termin tidak tertunda.",
         options: [
           {
             id: "s1-scen3-a",
-            label: "Opsi A: Tolak penandatanganan secara tegas dan penerbitan adendum waktu penyelesaian resmi sesuai regulasi.",
+            label:
+              "Opsi A: Tolak penandatanganan secara tegas dan terbitkan catatan kekurangan resmi sesuai mekanisme kontrak.",
             points: 30,
-            specificFeedback: "Prinsip AKHLAK (Amanah & Loyal) dijunjung tinggi! Menolak kompromi integritas melindungi organisasi dari konsekuensi hukum."
+            specificFeedback:
+              "Menjunjung tinggi nilai AKHLAK (Amanah & Loyal) melindungi organisasi dari temuan audit dan risiko hukum.",
           },
           {
             id: "s1-scen3-b",
-            label: "Opsi B: Menandatangani serah terima dengan janji lisan vendor akan menyelesaikan fitur minggu depan.",
+            label:
+              "Opsi B: Menandatangani serah terima dengan janji lisan vendor akan menyelesaikannya pekan depan.",
             points: 10,
-            specificFeedback: "Janji lisan tanpa ikatan hukum melanggar prinsip tata kelola perusahaan yang baik (GCG)."
+            specificFeedback:
+              "Janji lisan tanpa adendum resmi melanggar prinsip Good Corporate Governance (GCG).",
           },
           {
             id: "s1-scen3-c",
-            label: "Opsi C: Menerima penawaran vendor dan membagi keuntungan bersama tim internal.",
+            label: "Opsi C: Menerima penawaran potongan di luar kontrak untuk kas tim.",
             points: 0,
-            specificFeedback: "Pelanggaran berat kode etik integritas yang dapat berakibat sanksi pidana dan pemecatan tidak hormat."
-          }
-        ]
+            specificFeedback:
+              "Pelanggaran kode etik serius yang melanggar aturan gratifikasi dan hukum.",
+          },
+        ],
       },
       {
         stageNumber: 2,
-        title: "Tahap 2: Manajemen Konflik & Komunikasi Vendor",
-        description: "Vendor mengancam akan menarik seluruh tim pengembang jika Anda tidak meloloskan serah terima.",
+        title: "Tahap 2: Manajemen Eskalasi & Legal",
+        description:
+          "Vendor mengancam menarik tim pengembang jika serah terima tidak segera disetujui.",
         options: [
           {
             id: "s2-scen3-a",
-            label: "Opsi A: Tetap berpegang pada syarat kontrak tertulis dan libatkan Tim Hukum / Compliance Perusahaan untuk mendampingi.",
+            label:
+              "Opsi A: Berpegang pada klausul SLA tertulis dan libatkan Unit Legal serta Pengadaan untuk mediasi formal.",
             points: 40,
-            specificFeedback: "Sangat tepat! Melibatkan unit legal memastikan posisi perusahaan terlindungi secara sah dan akuntabel."
+            specificFeedback:
+              "Melibatkan fungsi hukum dan pengadaan memastikan posisi perusahaan kuat dan akuntabel.",
           },
           {
             id: "s2-scen3-b",
-            label: "Opsi B: Panik dan langsung menyetujui tuntutan vendor demi menghindari perdebatan.",
+            label: "Opsi B: Menyetujui tuntutan vendor demi menghindari konflik.",
             points: 10,
-            specificFeedback: "Tunduk pada ancaman vendor menunjukkan kelemahan manajemen kontrol dan kepemimpinan."
+            specificFeedback:
+              "Kompromi terhadap tekanan menciptakan preseden buruk bagi tata kelola proyek.",
           },
           {
             id: "s2-scen3-c",
-            label: "Opsi C: Membatalkan kontrak secara emosional tanpa koordinasi dengan Tim Pengadaan.",
+            label:
+              "Opsi C: Memutus kontrak sepihak secara emosional tanpa prosedur sengketa.",
             points: 15,
-            specificFeedback: "Pembatalan sepihak tanpa mekanisme sengketa kontrak berisiko memicu gugatan balik ke perusahaan."
-          }
-        ]
+            specificFeedback:
+              "Pemutusan tanpa prosedur kontrak berisiko menimbulkan gugatan balik.",
+          },
+        ],
       },
       {
         stageNumber: 3,
-        title: "Tahap 3: Pencegahan Kebocoran Risiko Merek",
-        description: "Proyek akhirnya berhasil dirampungkan secara legal sesuai kriteria. Langkah penguatan sistem apa yang Anda usulkan?",
+        title: "Tahap 3: Penguatan Tata Kelola Berkelanjutan",
+        description:
+          "Vendor akhirnya menuntaskan seluruh fitur secara resmi. Langkah perbaikan sistem apa yang Anda usulkan?",
         options: [
           {
             id: "s3-scen3-a",
-            label: "Opsi A: Buat matriks evaluasi kinerja vendor terbuka dan usulkan audit independen berkala.",
+            label:
+              "Opsi A: Usulkan scorecard evaluasi vendor transparan berbasis SLA dan verifikasi UAT independen.",
             points: 30,
-            specificFeedback: "Sangat baik! Membangun sistem evaluasi transparan meningkatkan standar kualitas vendor mitra di masa mendatang."
+            specificFeedback:
+              "Perbaikan berbasis sistem mencegah celah kepatuhan serupa pada pengadaan berikutnya.",
           },
           {
             id: "s3-scen3-b",
-            label: "Opsi B: Menutup-nutupi rekam jejak vendor agar nama baik proyek tetap terlihat sempurna.",
+            label: "Opsi B: Menutup catatan kendala vendor agar laporan proyek terlihat mulus.",
             points: 10,
-            specificFeedback: "Menutup rekam jejak yang buruk berisiko menjebak unit kerja lain dalam menggunakan vendor bermasalah."
+            specificFeedback:
+              "Menyembunyikan riwayat performa vendor membahayakan unit kerja lain.",
           },
           {
             id: "s3-scen3-c",
-            label: "Opsi C: Menghentikan seluruh kerja sama dengan vendor luar di masa depan secara permanen.",
+            label: "Opsi C: Menghentikan seluruh kerja sama eksternal di masa depan.",
             points: 15,
-            specificFeedback: "Generalisasi ekstrem tanpa analisis objektif dapat membatasi akses perusahaan terhadap inovasi ekosistem mitra."
-          }
-        ]
-      }
-    ]
-  }
+            specificFeedback:
+              "Generalisasi berlebihan membatasi kapasitas inovasi dan kolaborasi ekosistem.",
+          },
+        ],
+      },
+    ],
+  },
+  {
+    id: "scen-4",
+    title: "Mitigasi Risiko Kredit & Target Kinerja Cabang Perbankan",
+    category: "Banking & Management Trainee",
+    role: "Management Trainee / Risk Analyst",
+    description:
+      "Menjelang tutup kuartal, cabang Anda kekurangan 12% target penyaluran kredit UMKM, sementara terdapat satu calon debitur bernilai besar dengan rasio DSCR di bawah standar kebijakan risiko.",
+    stages: [
+      {
+        stageNumber: 1,
+        title: "Tahap 1: Penilaian Prinsip Kehati-hatian (5C)",
+        description:
+          "Relationship Manager mendorong persetujuan cepat agar bonus kuartal cabang tercapai. Apa rekomendasi awal Anda?",
+        options: [
+          {
+            id: "s1-scen4-a",
+            label:
+              "Opsi A: Lakukan stress-test arus kas debitur dan analisis jaminan secara objektif sesuai komite risiko, tanpa mengabaikan ambang DSCR.",
+            points: 30,
+            specificFeedback:
+              "Menjaga kualitas aset (NPL rendah) lebih penting daripada mengejar target jangka pendek dengan risiko gagal bayar tinggi.",
+          },
+          {
+            id: "s1-scen4-b",
+            label:
+              "Opsi B: Langsung menyetujui plafon penuh dengan syarat laporan keuangan disusulkan bulan depan.",
+            points: 5,
+            specificFeedback:
+              "Melanggar prinsip kehati-hatian perbankan (prudential banking) dan membuka risiko kredit macet.",
+          },
+          {
+            id: "s1-scen4-c",
+            label:
+              "Opsi C: Menolak seluruh pengajuan tanpa memberikan analisis atau opsi struktur alternatif.",
+            points: 15,
+            specificFeedback:
+              "Aman secara risiko, namun kurang solutif untuk pertumbuhan bisnis yang sehat.",
+          },
+        ],
+      },
+      {
+        stageNumber: 2,
+        title: "Tahap 2: Restrukturisasi Skema Kredit yang Sehat",
+        description:
+          "Hasil stress-test menunjukkan bisnis debitur sebenarnya prospektif, namun cicilan terlalu berat di tahun pertama. Langkah strategis apa yang Anda tawarkan?",
+        options: [
+          {
+            id: "s2-scen4-a",
+            label:
+              "Opsi A: Usulkan penyesuaian plafon bertahap (tranche) dengan covenant arus kas dan agunan memadai agar DSCR kembali sehat.",
+            points: 40,
+            specificFeedback:
+              "Sangat strategis! Menyeimbangkan pertumbuhan bisnis cabang dengan manajemen risiko yang disiplin.",
+          },
+          {
+            id: "s2-scen4-b",
+            label:
+              "Opsi B: Menaikkan suku bunga setinggi mungkin agar menutupi potensi gagal bayar.",
+            points: 15,
+            specificFeedback:
+              "Bunga terlalu tinggi justru memperbesar beban cicilan dan meningkatkan probabilitas default.",
+          },
+          {
+            id: "s2-scen4-c",
+            label:
+              "Opsi C: Memecah kredit ke beberapa nama berbeda agar lolos batas wewenang cabang.",
+            points: 0,
+            specificFeedback:
+              "Tindakan splitting untuk menghindari komite risiko merupakan pelanggaran kepatuhan berat.",
+          },
+        ],
+      },
+      {
+        stageNumber: 3,
+        title: "Tahap 3: Monitoring Portofolio & Early Warning",
+        description:
+          "Skema bertahap disetujui komite kredit. Bagaimana Anda memastikan kualitas portofolio cabang tetap terjaga?",
+        options: [
+          {
+            id: "s3-scen4-a",
+            label:
+              "Opsi A: Tetapkan pemantauan covenant bulanan dan indikator Early Warning System (EWS) untuk intervensi dini.",
+            points: 30,
+            specificFeedback:
+              "Pemantauan proaktif berbasis EWS menjaga NPL tetap terkendali sekaligus mendampingi nasabah bertumbuh.",
+          },
+          {
+            id: "s3-scen4-b",
+            label:
+              "Opsi B: Menunggu hingga terjadi tunggakan 90 hari sebelum melakukan evaluasi ulang.",
+            points: 10,
+            specificFeedback:
+              "Menunggu hingga kategori macet membuat biaya pemulihan jauh lebih mahal.",
+          },
+          {
+            id: "s3-scen4-c",
+            label: "Opsi C: Menyerahkan seluruh monitoring kepada debitur secara mandiri.",
+            points: 5,
+            specificFeedback:
+              "Fungsi kontrol risiko tidak dapat didelegasikan kepada pihak debitur.",
+          },
+        ],
+      },
+    ],
+  },
 ];
 
-export function SimulasiTahapKerjaTab({ onAddXp }: SimulasiTahapKerjaTabProps) {
+export function SimulasiTahapKerjaTab({
+  onAddXp,
+  onProfileUpdate,
+  onSimulationRecorded,
+  showToast,
+}: SimulasiTahapKerjaTabProps) {
   const [selectedScenarioId, setSelectedScenarioId] = useState<string>(WORK_SCENARIOS[0].id);
   const [difficulty, setDifficulty] = useState<"Pemula" | "Menengah" | "Industri">("Menengah");
   const [currentStageIdx, setCurrentStageIdx] = useState(0);
   const [selectedOptions, setSelectedOptions] = useState<Record<number, ScenarioStageOption>>({});
   const [isFinished, setIsFinished] = useState(false);
 
-  // Simulation History state
   const [history, setHistory] = useState<SimulationAttempt[]>(() => {
     try {
       const saved = localStorage.getItem("skillora_simulasi_decision_history");
       if (saved) return JSON.parse(saved);
-    } catch (e) {
-      console.error(e);
+    } catch {
+      // ignore
     }
     return [];
   });
 
-  const activeScenario = WORK_SCENARIOS.find(s => s.id === selectedScenarioId) || WORK_SCENARIOS[0];
+  const activeScenario =
+    WORK_SCENARIOS.find((s) => s.id === selectedScenarioId) || WORK_SCENARIOS[0];
   const currentStage = activeScenario.stages[currentStageIdx];
 
   const handleSelectOption = (opt: ScenarioStageOption) => {
     if (isFinished) return;
     playSound("click");
-    setSelectedOptions(prev => ({ ...prev, [currentStageIdx]: opt }));
+    setSelectedOptions((prev) => ({ ...prev, [currentStageIdx]: opt }));
   };
 
-  const handleNextStage = () => {
+  const handleNextStage = async () => {
     if (!selectedOptions[currentStageIdx]) return;
 
     if (currentStageIdx < activeScenario.stages.length - 1) {
-      setCurrentStageIdx(prev => prev + 1);
+      setCurrentStageIdx((prev) => prev + 1);
       playSound("correct");
-    } else {
-      // Finish simulation
-      setIsFinished(true);
-      playSound("levelUp");
+      return;
+    }
 
-      // Calculate scores
-      const stage1Score = selectedOptions[0]?.points || 0;
-      const stage2Score = selectedOptions[1]?.points || 0;
-      const stage3Score = selectedOptions[2]?.points || 0;
-      const totalScore = Math.min(100, stage1Score + stage2Score + stage3Score);
+    setIsFinished(true);
+    playSound("levelUp");
 
-      const feedbackList = [
-        `Tahap 1: ${selectedOptions[0]?.specificFeedback}`,
-        `Tahap 2: ${selectedOptions[1]?.specificFeedback}`,
-        `Tahap 3: ${selectedOptions[2]?.specificFeedback}`
-      ];
+    const stage1Score = selectedOptions[0]?.points || 0;
+    const stage2Score = selectedOptions[1]?.points || 0;
+    const stage3Score = selectedOptions[2]?.points || 0;
+    const totalScore = Math.min(100, stage1Score + stage2Score + stage3Score);
 
-      const newAttempt: SimulationAttempt = {
-        id: `sim_${Date.now()}`,
-        scenarioId: activeScenario.id,
-        scenarioTitle: activeScenario.title,
-        type: "DecisionSimulation",
-        difficulty,
+    const feedbackList = [
+      `Tahap 1: ${selectedOptions[0]?.specificFeedback}`,
+      `Tahap 2: ${selectedOptions[1]?.specificFeedback}`,
+      `Tahap 3: ${selectedOptions[2]?.specificFeedback}`,
+    ];
+
+    const newAttempt: SimulationAttempt = {
+      id: `sim_${Date.now()}`,
+      scenarioId: activeScenario.id,
+      scenarioTitle: activeScenario.title,
+      type: "DecisionSimulation",
+      difficulty,
+      score: totalScore,
+      completedAt: new Date().toLocaleDateString("id-ID", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      }),
+      specificFeedback: feedbackList,
+      stageScores: { stage1: stage1Score, stage2: stage2Score, stage3: stage3Score },
+    };
+
+    const updatedHistory = [newAttempt, ...history.slice(0, 9)];
+    setHistory(updatedHistory);
+    localStorage.setItem("skillora_simulasi_decision_history", JSON.stringify(updatedHistory));
+
+    const earnedXp = totalScore >= 70 ? 200 : 75;
+    try {
+      const saved = await trainingApi.recordSimulation({
+        simType: "decision",
+        title: `${activeScenario.title} (${difficulty})`,
         score: totalScore,
-        completedAt: new Date().toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" }),
-        specificFeedback: feedbackList,
-        stageScores: { stage1: stage1Score, stage2: stage2Score, stage3: stage3Score }
-      };
-
-      const updatedHistory = [newAttempt, ...history.slice(0, 9)];
-      setHistory(updatedHistory);
-      localStorage.setItem("skillora_simulasi_decision_history", JSON.stringify(updatedHistory));
-
-      if (onAddXp && totalScore >= 70) {
-        onAddXp(200);
-      }
+        metrics: {
+          scenarioId: activeScenario.id,
+          role: activeScenario.role,
+          difficulty,
+          stageScores: { stage1: stage1Score, stage2: stage2Score, stage3: stage3Score },
+        },
+        aiFeedback: feedbackList.join(" | "),
+        earnedXp,
+      });
+      if (saved?.profile) onProfileUpdate?.(saved.profile);
+      else if (onAddXp && totalScore >= 70) onAddXp(earnedXp);
+      onSimulationRecorded?.();
+      showToast?.(`Simulasi Keputusan tersimpan (${totalScore}/100 · +${earnedXp} XP).`, "success");
+    } catch {
+      if (onAddXp && totalScore >= 70) onAddXp(earnedXp);
     }
   };
 
@@ -363,31 +561,35 @@ export function SimulasiTahapKerjaTab({ onAddXp }: SimulasiTahapKerjaTabProps) {
     setIsFinished(false);
   };
 
-  const calculateTotalScore = () => {
-    return Object.values(selectedOptions).reduce((acc, curr) => acc + curr.points, 0);
-  };
+  const calculateTotalScore = () =>
+    Object.values(selectedOptions).reduce((acc, curr) => acc + curr.points, 0);
 
   return (
-    <div className="space-y-6">
-      {/* Top Scenario Controls */}
-      <div className="p-6 bg-white dark:bg-slate-800 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-4">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-slate-100 dark:border-slate-700">
+    <div className="space-y-5">
+      {/* Top Scenario Selector */}
+      <div className="p-5 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3.5 border-b border-zinc-200 dark:border-zinc-800">
           <div>
-            <span className="text-xs font-black uppercase tracking-wider text-blue-600 dark:text-blue-400">Pilih Skenario Masalah Industri</span>
-            <h3 className="font-bold text-sm text-slate-900 dark:text-white">Simulasi Keputusan Studi Kasus Multi-Tahap</h3>
+            <span className="text-[11px] font-mono uppercase tracking-wider text-emerald-700 dark:text-emerald-400 font-semibold">
+              4 Skenario Keputusan Industri
+            </span>
+            <h3 className="font-display font-bold text-base text-zinc-950 dark:text-white">
+              Simulasi Studi Kasus Multi-Tahap
+            </h3>
           </div>
 
           <div className="flex items-center gap-2">
-            <span className="text-xs font-bold text-slate-500">Tingkat Kesulitan:</span>
-            <div className="flex bg-slate-100 dark:bg-slate-900 p-1 rounded-xl border border-slate-200 dark:border-slate-700">
+            <span className="text-xs text-zinc-500">Level:</span>
+            <div className="flex bg-zinc-100 dark:bg-zinc-950 p-0.5 rounded-lg border border-zinc-200 dark:border-zinc-800">
               {(["Pemula", "Menengah", "Industri"] as const).map((lvl) => (
                 <button
                   key={lvl}
+                  type="button"
                   onClick={() => setDifficulty(lvl)}
-                  className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  className={`px-3 py-1 rounded-md text-xs font-semibold transition-colors cursor-pointer ${
                     difficulty === lvl
-                      ? "bg-blue-600 text-white shadow-2xs"
-                      : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
+                      ? "bg-zinc-950 dark:bg-zinc-100 text-white dark:text-zinc-950"
+                      : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-950 dark:hover:text-white"
                   }`}
                 >
                   {lvl}
@@ -397,72 +599,78 @@ export function SimulasiTahapKerjaTab({ onAddXp }: SimulasiTahapKerjaTabProps) {
           </div>
         </div>
 
-        {/* Scenario Selector Chips */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          {WORK_SCENARIOS.map((scen) => (
-            <button
-              key={scen.id}
-              onClick={() => {
-                setSelectedScenarioId(scen.id);
-                handleRestart();
-              }}
-              className={`p-4 rounded-2xl border text-left transition-all cursor-pointer space-y-2 ${
-                selectedScenarioId === scen.id
-                  ? "border-blue-600 bg-blue-50/70 dark:bg-blue-950/50 text-blue-950 dark:text-blue-200 font-bold shadow-2xs"
-                  : "border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300"
-              }`}
-            >
-              <span className="text-xs uppercase font-black tracking-wider px-2 py-0.5 bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300 rounded-md">
-                {scen.role}
-              </span>
-              <div className="text-xs font-bold line-clamp-2">{scen.title}</div>
-            </button>
-          ))}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+          {WORK_SCENARIOS.map((scen) => {
+            const active = selectedScenarioId === scen.id;
+            return (
+              <button
+                key={scen.id}
+                type="button"
+                onClick={() => {
+                  setSelectedScenarioId(scen.id);
+                  handleRestart();
+                }}
+                className={`p-3.5 rounded-lg border text-left transition-colors cursor-pointer space-y-1.5 ${
+                  active
+                    ? "border-emerald-600 bg-emerald-50/70 dark:bg-emerald-950/35 text-zinc-950 dark:text-white"
+                    : "border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 text-zinc-700 dark:text-zinc-300"
+                }`}
+              >
+                <span className="text-[11px] font-mono text-emerald-700 dark:text-emerald-400 font-semibold block truncate">
+                  {scen.role}
+                </span>
+                <div className="text-xs font-bold line-clamp-2 leading-snug">{scen.title}</div>
+              </button>
+            );
+          })}
         </div>
       </div>
 
       {!isFinished ? (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Main Stage Interactive Form */}
-          <div className="lg:col-span-2 p-6 bg-white dark:bg-slate-800 rounded-3xl border border-slate-200 dark:border-slate-700 space-y-6 shadow-sm">
-            {/* Stage Progress Bar */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+          {/* Interactive Stage Panel */}
+          <div className="lg:col-span-8 p-5 sm:p-6 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 space-y-5">
             <div className="space-y-2">
-              <div className="flex items-center justify-between text-xs font-bold text-slate-500 dark:text-slate-400">
-                <span className="flex items-center gap-1.5 text-blue-600 dark:text-blue-400">
-                  <Layers className="w-4 h-4" />
+              <div className="flex items-center justify-between text-xs font-mono text-zinc-500 dark:text-zinc-400">
+                <span className="flex items-center gap-1.5 text-emerald-700 dark:text-emerald-400 font-semibold">
+                  <Layers className="w-3.5 h-3.5" />
                   {currentStage.title}
                 </span>
-                <span>Tahap {currentStageIdx + 1} dari {activeScenario.stages.length}</span>
+                <span className="tabular-nums">
+                  Tahap {currentStageIdx + 1}/{activeScenario.stages.length}
+                </span>
               </div>
-              <div className="h-2 w-full bg-slate-100 dark:bg-slate-900 rounded-full overflow-hidden">
+              <div className="h-1.5 w-full bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden">
                 <div
-                  className="h-full bg-blue-600 transition-all duration-300"
-                  style={{ width: `${((currentStageIdx + 1) / activeScenario.stages.length) * 100}%` }}
+                  className="h-full bg-emerald-600 transition-all duration-300"
+                  style={{
+                    width: `${((currentStageIdx + 1) / activeScenario.stages.length) * 100}%`,
+                  }}
                 />
               </div>
             </div>
 
-            {/* Stage Description */}
-            <div className="p-4 bg-slate-50 dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-2">
-              <span className="text-xs font-black uppercase text-amber-600 dark:text-amber-400">Konstruksi Masalah</span>
-              <p className="text-xs font-semibold text-slate-800 dark:text-slate-200 leading-relaxed">
+            <div className="p-4 bg-zinc-50 dark:bg-zinc-950/60 rounded-lg border border-zinc-200 dark:border-zinc-800 space-y-1.5">
+              <span className="text-[11px] font-mono uppercase tracking-wider text-zinc-500 font-semibold">
+                Situasi Keputusan
+              </span>
+              <p className="text-sm font-semibold text-zinc-950 dark:text-white leading-relaxed">
                 {currentStage.description}
               </p>
             </div>
 
-            {/* Options List */}
-            <div className="space-y-3">
-              <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Pilih Respon Keputusan Anda:</label>
+            <div className="space-y-2.5">
               {currentStage.options.map((opt) => {
                 const isSelected = selectedOptions[currentStageIdx]?.id === opt.id;
                 return (
                   <button
                     key={opt.id}
+                    type="button"
                     onClick={() => handleSelectOption(opt)}
-                    className={`w-full text-left p-4 rounded-2xl text-xs font-medium border transition-all cursor-pointer ${
+                    className={`w-full text-left p-3.5 rounded-lg text-xs sm:text-sm border transition-colors cursor-pointer ${
                       isSelected
-                        ? "border-blue-600 bg-blue-50 dark:bg-blue-950/60 text-blue-950 dark:text-blue-100 font-bold ring-2 ring-blue-500/30"
-                        : "border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300"
+                        ? "border-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-950 dark:text-emerald-200 font-semibold"
+                        : "border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 text-zinc-700 dark:text-zinc-300"
                     }`}
                   >
                     {opt.label}
@@ -471,131 +679,141 @@ export function SimulasiTahapKerjaTab({ onAddXp }: SimulasiTahapKerjaTabProps) {
               })}
             </div>
 
-            <div className="flex items-center justify-between pt-4 border-t border-slate-100 dark:border-slate-700">
+            <div className="flex items-center justify-between pt-4 border-t border-zinc-200 dark:border-zinc-800">
               <button
+                type="button"
                 disabled={currentStageIdx === 0}
-                onClick={() => setCurrentStageIdx(prev => prev - 1)}
-                className="px-4 py-2 bg-slate-100 dark:bg-slate-900 disabled:opacity-40 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-bold cursor-pointer"
+                onClick={() => setCurrentStageIdx((prev) => prev - 1)}
+                className="px-4 py-2 border border-zinc-200 dark:border-zinc-700 disabled:opacity-40 text-zinc-700 dark:text-zinc-300 rounded-lg text-xs font-semibold cursor-pointer"
               >
                 Tahap Sebelumnya
               </button>
 
               <button
+                type="button"
                 disabled={!selectedOptions[currentStageIdx]}
                 onClick={handleNextStage}
-                className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white rounded-xl text-xs font-bold cursor-pointer flex items-center gap-2 transition-all shadow-md"
+                className="px-5 py-2.5 bg-zinc-950 dark:bg-zinc-100 disabled:opacity-40 text-white dark:text-zinc-950 rounded-lg text-xs font-semibold cursor-pointer flex items-center gap-1.5"
               >
-                <span>{currentStageIdx < activeScenario.stages.length - 1 ? "Lanjut Tahap Berikutnya" : "Selesaikan & Lihat Evaluasi"}</span>
-                <ArrowRight className="w-4 h-4" />
+                <span>
+                  {currentStageIdx < activeScenario.stages.length - 1
+                    ? "Lanjut Tahap Berikutnya"
+                    : "Selesaikan & Evaluasi"}
+                </span>
+                <ArrowRight className="w-3.5 h-3.5" />
               </button>
             </div>
           </div>
 
-          {/* Right Column: Scenario Context & Live Decision Summary */}
-          <div className="space-y-6">
-            <div className="p-5 bg-white dark:bg-slate-800 rounded-3xl border border-slate-200 dark:border-slate-700 space-y-4 shadow-sm">
-              <h4 className="font-bold text-xs text-slate-900 dark:text-white uppercase tracking-wider">Ringkasan Skenario</h4>
-              <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-                {activeScenario.description}
-              </p>
-
-              <div className="pt-2 border-t border-slate-100 dark:border-slate-700 space-y-2">
-                <span className="text-xs font-bold text-slate-400 uppercase">Progres Pilihan Anda</span>
-                {activeScenario.stages.map((stg, i) => {
-                  const opt = selectedOptions[i];
-                  return (
-                    <div key={stg.stageNumber} className="flex items-center justify-between text-xs p-2 rounded-xl bg-slate-50 dark:bg-slate-900">
-                      <span className="font-bold text-slate-700 dark:text-slate-300">Tahap {i + 1}</span>
-                      <span className={opt ? "text-emerald-600 font-bold" : "text-slate-400 italic"}>
-                        {opt ? `Dipilih (+${opt.points} poin)` : "Belum diisi"}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
+          {/* Right Context Column */}
+          <div className="lg:col-span-4 p-5 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 space-y-4">
+            <h4 className="font-mono text-xs font-semibold text-zinc-500 uppercase tracking-wider">
+              Ringkasan Kasus
+            </h4>
+            <p className="text-xs text-zinc-600 dark:text-zinc-300 leading-relaxed">
+              {activeScenario.description}
+            </p>
+            <div className="pt-3 border-t border-zinc-200 dark:border-zinc-800 space-y-2">
+              {activeScenario.stages.map((stg, i) => {
+                const opt = selectedOptions[i];
+                return (
+                  <div
+                    key={stg.stageNumber}
+                    className="flex items-center justify-between text-xs p-2.5 rounded-lg bg-zinc-50 dark:bg-zinc-950/60 border border-zinc-200 dark:border-zinc-800"
+                  >
+                    <span className="font-semibold text-zinc-800 dark:text-zinc-200">
+                      Tahap {i + 1}
+                    </span>
+                    <span
+                      className={`font-mono tabular-nums ${
+                        opt ? "text-emerald-700 dark:text-emerald-400 font-semibold" : "text-zinc-400"
+                      }`}
+                    >
+                      {opt ? "Terpilih" : "Menunggu"}
+                    </span>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>
       ) : (
-        /* Evaluation & Specific Feedback Display */
-        <div className="p-8 bg-white dark:bg-slate-800 rounded-3xl border border-slate-200 dark:border-slate-700 space-y-6 max-w-3xl mx-auto shadow-xl">
-          <div className="text-center space-y-2">
-            <div className="w-16 h-16 bg-blue-100 dark:bg-blue-950 rounded-2xl flex items-center justify-center mx-auto text-blue-600 dark:text-blue-400">
-              <Award className="w-8 h-8" />
-            </div>
-            <h3 className="font-bold text-xl text-slate-900 dark:text-white">Hasil Evaluasi Simulasi Kerja</h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
-              Skor Performa & Feedback Spesifik Berdasarkan Keputusan Anda ({difficulty})
-            </p>
-          </div>
-
-          <div className="p-5 bg-slate-50 dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 flex justify-around text-center">
-            <div>
-              <span className="text-xs text-slate-400 font-bold uppercase">Skor Total Keputusan</span>
-              <div className="text-3xl font-black text-blue-600 dark:text-blue-400 mt-0.5">{calculateTotalScore()} / 100</div>
-            </div>
-            <div>
-              <span className="text-xs text-slate-400 font-bold uppercase">Status Evaluasi</span>
-              <div className={`text-sm font-black mt-1 ${calculateTotalScore() >= 70 ? "text-emerald-600" : "text-amber-600"}`}>
-                {calculateTotalScore() >= 70 ? "SANGAT DIREKOMENDASIKAN" : "PERLU EVALUASI ULANG"}
+        <div className="p-6 sm:p-7 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 space-y-6 max-w-3xl mx-auto">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-zinc-200 dark:border-zinc-800 pb-5">
+            <div className="flex items-center gap-3.5">
+              <div className="w-12 h-12 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/50 flex items-center justify-center text-emerald-700 dark:text-emerald-400">
+                <Award className="w-6 h-6" />
+              </div>
+              <div>
+                <p className="text-xs font-mono uppercase tracking-wider text-emerald-700 dark:text-emerald-400 font-semibold">
+                  Evaluasi Keputusan ({difficulty})
+                </p>
+                <h3 className="font-display font-bold text-xl text-zinc-950 dark:text-white">
+                  Skor Akhir: <span className="font-mono tabular-nums">{calculateTotalScore()}/100</span>
+                </h3>
               </div>
             </div>
+            <button
+              type="button"
+              onClick={handleRestart}
+              className="px-4 py-2 bg-zinc-950 dark:bg-zinc-100 text-white dark:text-zinc-950 rounded-lg font-semibold text-xs flex items-center gap-1.5 cursor-pointer self-start sm:self-auto"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+              Ulangi Skenario
+            </button>
           </div>
 
-          {/* Specific Feedback List */}
           <div className="space-y-3">
-            <h4 className="font-bold text-xs text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-purple-500" />
-              <span>Feedback Spesifik Per Tahap Keputusan:</span>
+            <h4 className="font-semibold text-xs text-zinc-500 uppercase tracking-wider flex items-center gap-1.5">
+              <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
+              Umpan Balik Spesifik per Tahap
             </h4>
-
             {activeScenario.stages.map((stg, i) => {
               const opt = selectedOptions[i];
               return (
-                <div key={stg.stageNumber} className="p-4 bg-slate-50 dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-1">
-                  <div className="flex items-center justify-between text-xs font-bold text-slate-900 dark:text-white">
+                <div
+                  key={stg.stageNumber}
+                  className="p-4 bg-zinc-50 dark:bg-zinc-950/60 rounded-lg border border-zinc-200 dark:border-zinc-800 space-y-1.5"
+                >
+                  <div className="flex items-center justify-between text-xs font-semibold text-zinc-950 dark:text-white">
                     <span>{stg.title}</span>
-                    <span className="text-blue-600 dark:text-blue-400">+{opt?.points || 0} Poin</span>
+                    <span className="font-mono tabular-nums text-emerald-700 dark:text-emerald-400">
+                      +{opt?.points || 0} poin
+                    </span>
                   </div>
-                  <p className="text-xs text-slate-600 dark:text-slate-300 italic pt-1">
-                    "{opt?.specificFeedback}"
+                  <p className="text-xs text-zinc-600 dark:text-zinc-300 leading-relaxed">
+                    {opt?.specificFeedback}
                   </p>
                 </div>
               );
             })}
           </div>
-
-          <button
-            onClick={handleRestart}
-            className="w-full py-3.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-bold text-xs shadow-md flex items-center justify-center gap-2 cursor-pointer transition-all"
-          >
-            <RotateCcw className="w-4 h-4" />
-            <span>Coba Ulang Simulasi Skenario Ini</span>
-          </button>
         </div>
       )}
 
-      {/* History of Simulation Runs */}
       {history.length > 0 && (
-        <div className="p-6 bg-white dark:bg-slate-800 rounded-3xl border border-slate-200 dark:border-slate-700 space-y-4 shadow-sm">
-          <h3 className="font-bold text-xs text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
-            <History className="w-4 h-4 text-blue-600" />
-            <span>Riwayat Simulasi Skenario Kerja Sebelumnya ({history.length})</span>
+        <div className="p-5 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 space-y-3">
+          <h3 className="font-mono text-xs font-semibold text-zinc-500 uppercase tracking-wider flex items-center gap-1.5">
+            <History className="w-3.5 h-3.5 text-emerald-600" />
+            Riwayat Skenario Keputusan ({history.length})
           </h3>
-
-          <div className="space-y-3">
-            {history.map((attempt) => (
-              <div key={attempt.id} className="p-4 bg-slate-50 dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 text-xs space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="font-bold text-slate-900 dark:text-white">{attempt.scenarioTitle}</span>
-                  <span className="px-2.5 py-1 bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 rounded-lg font-black">
-                    Skor: {attempt.score}/100
-                  </span>
+          <div className="divide-y divide-zinc-100 dark:divide-zinc-800">
+            {history.slice(0, 5).map((attempt) => (
+              <div
+                key={attempt.id}
+                className="py-2.5 flex items-center justify-between gap-3 text-xs"
+              >
+                <div className="min-w-0">
+                  <p className="font-semibold text-zinc-950 dark:text-white truncate">
+                    {attempt.scenarioTitle}
+                  </p>
+                  <p className="text-[11px] text-zinc-500 font-mono">
+                    {attempt.difficulty} · {attempt.completedAt}
+                  </p>
                 </div>
-                <div className="flex items-center justify-between text-xs text-slate-500">
-                  <span>Tingkat: <strong>{attempt.difficulty}</strong></span>
-                  <span>{attempt.completedAt}</span>
-                </div>
+                <span className="font-mono font-bold tabular-nums text-emerald-700 dark:text-emerald-400 shrink-0">
+                  {attempt.score}/100
+                </span>
               </div>
             ))}
           </div>

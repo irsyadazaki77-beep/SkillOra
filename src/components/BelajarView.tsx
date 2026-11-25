@@ -11,6 +11,8 @@ import { RecommendedCoursesSection } from "../features/learning/components/Recom
 import { DashboardSidebar } from "../features/learning/components/DashboardSidebar";
 import { NewUserOnboardingCard } from "../features/learning/components/NewUserOnboardingCard";
 import { CareerJourneyStepper } from "../features/learning/components/CareerJourneyStepper";
+import { SmartRoadmapCard } from "./SmartRoadmapCard";
+import { Terminal, Trophy, ArrowUpRight } from "lucide-react";
 
 const AutoCvModal = lazy(() => import("./AutoCvModal").then(m => ({ default: m.AutoCvModal })));
 const CareerReadinessCalculator = lazy(() => import("./CareerReadinessCalculator").then(m => ({ default: m.CareerReadinessCalculator })));
@@ -219,6 +221,52 @@ export function BelajarView({
               onNavigateToSertifikasi={onNavigateToSertifikasi}
             />
           )}
+
+          {/* Editorial Spotlight: Flagship Lab & Competitive Arena */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <button
+              type="button"
+              onClick={() => navigate("/lab")}
+              className="group text-left bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 hover:border-emerald-500/70 rounded-xl p-5 space-y-2 transition-colors cursor-pointer"
+            >
+              <div className="flex items-center justify-between text-xs font-mono text-emerald-600 dark:text-emerald-400 font-semibold">
+                <span className="inline-flex items-center gap-1.5">
+                  <Terminal className="w-3.5 h-3.5" />
+                  FLAGSHIP LAB AI
+                </span>
+                <ArrowUpRight className="w-4 h-4 text-zinc-400 group-hover:text-emerald-600 transition-colors" />
+              </div>
+              <h3 className="font-display text-base font-bold text-zinc-950 dark:text-white">
+                Interactive Coding & Case Lab
+              </h3>
+              <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">
+                Uji kode JavaScript, query SQL, dan studi kasus BUMN dengan audit rubrik AI terstruktur.
+              </p>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => navigate("/arena")}
+              className="group text-left bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 hover:border-emerald-500/70 rounded-xl p-5 space-y-2 transition-colors cursor-pointer"
+            >
+              <div className="flex items-center justify-between text-xs font-mono text-emerald-600 dark:text-emerald-400 font-semibold">
+                <span className="inline-flex items-center gap-1.5">
+                  <Trophy className="w-3.5 h-3.5" />
+                  LIVE ARENA & LIGA
+                </span>
+                <ArrowUpRight className="w-4 h-4 text-zinc-400 group-hover:text-emerald-600 transition-colors" />
+              </div>
+              <h3 className="font-display text-base font-bold text-zinc-950 dark:text-white">
+                Battle Quiz, Tryout & Liga Mingguan
+              </h3>
+              <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">
+                Duel real-time WebSocket, Tryout Akbar berbatas waktu, dan kejar promosi divisi mingguan.
+              </p>
+            </button>
+          </div>
+
+          {/* Smart Weekly Study Roadmap AI */}
+          <SmartRoadmapCard defaultRole={targetRole} showToast={showToast} />
 
           {/* Recommended Next Actions */}
           <RecommendedNextActions

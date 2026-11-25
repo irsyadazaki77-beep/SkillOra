@@ -2,7 +2,7 @@ import { Course, Lesson, Profile, Question } from "../../types";
 
 export type ModeLatihan = "lesson" | "quick" | "topic" | "simulation" | "wrong";
 export type DifficultyLevel = "Pemula" | "Menengah" | "Sulit";
-export type HubTab = "drills" | "topics" | "mistakes" | "analytics";
+export type HubTab = "drills" | "adaptive" | "flashcards" | "topics" | "mistakes" | "analytics";
 
 export interface LatihanViewProps {
   courses: Course[];

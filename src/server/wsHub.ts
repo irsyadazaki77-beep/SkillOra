@@ -5,9 +5,11 @@ import { adminAuth } from "../lib/firebase-admin.js";
 import { UserRepository } from "./repositories/UserRepository.js";
 import { ForumService } from "./services/forumService.js";
 import { InterviewService } from "./services/interviewService.js";
+import { resolveTierFromXp } from "./services/arenaService.js";
+import { ensureSeeded } from "./db/seedData.js";
 import { db } from "../db/index.js";
 import { AI_MODELS } from "./config/aiConfig.js";
-import { interviewSessions } from "../db/schema.js";
+import { arenaMatches, interviewSessions, questionsBank, users } from "../db/schema.js";
 import { eq } from "drizzle-orm";
 
 interface AuthenticatedWsIdentity {
@@ -15,7 +17,52 @@ interface AuthenticatedWsIdentity {
   uid: string;
   name: string;
   email: string;
+  avatar: string;
   isGuest: boolean;
+}
+
+interface ArenaPlayer {
+  uid: string;
+  dbUserId: number;
+  name: string;
+  avatar: string;
+  score: number;
+  correctCount: number;
+  ws: WebSocket;
+}
+
+interface ArenaQuestionItem {
+  id: number;
+  prompt: string;
+  options: string[];
+  answerIndex: number;
+  explanation: string;
+  competencyTag: string;
+}
+
+interface ArenaRoom {
+  roomCode: string;
+  topic: string;
+  hostUid: string;
+  status: "lobby" | "active" | "finished";
+  players: Map<string, ArenaPlayer>;
+  questions: ArenaQuestionItem[];
+  currentIdx: number;
+  roundEndsAt: number;
+  roundDurationMs: number;
+  answersThisRound: Map<string, { optionIndex: number; answeredAt: number }>;
+  roundTimer?: ReturnType<typeof setTimeout>;
+  nextRoundTimer?: ReturnType<typeof setTimeout>;
+  createdAt: number;
+}
+
+function generateRoomCode(): string {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let code = "";
+  for (let i = 0; i < 6; i++) {
+    code += chars[Math.floor(Math.random() * chars.length)];
+  }
+  return code;
 }
 
 async function resolveWsIdentity(token: string | null): Promise<AuthenticatedWsIdentity | null> {
@@ -31,6 +78,7 @@ async function resolveWsIdentity(token: string | null): Promise<AuthenticatedWsI
       uid: userRow.uid,
       name: userRow.name,
       email: userRow.email,
+      avatar: userRow.avatar || "🦁",
       isGuest: true,
     };
   }
@@ -49,6 +97,7 @@ async function resolveWsIdentity(token: string | null): Promise<AuthenticatedWsI
       uid: userRow.uid,
       name: userRow.name,
       email: userRow.email,
+      avatar: userRow.avatar || "🦁",
       isGuest: false,
     };
   } catch {
@@ -59,9 +108,15 @@ async function resolveWsIdentity(token: string | null): Promise<AuthenticatedWsI
 export function attachWsHub(httpServer: HttpServer) {
   const collabWss = new WebSocketServer({ noServer: true });
   const interviewWss = new WebSocketServer({ noServer: true });
+  const arenaWss = new WebSocketServer({ noServer: true });
 
   // Room map: roomId -> Set<WebSocket>
   const roomSubscribers = new Map<string, Set<WebSocket>>();
+
+  // Battle Quiz Arena state (server-authoritative)
+  const arenaRooms = new Map<string, ArenaRoom>();
+  const arenaClients = new Set<WebSocket>();
+  const socketToRoom = new Map<WebSocket, { roomCode: string; uid: string }>();
 
   function broadcastToRoom(roomId: string, payload: any) {
     const subs = roomSubscribers.get(roomId);
@@ -73,6 +128,413 @@ export function attachWsHub(httpServer: HttpServer) {
       }
     }
   }
+
+  function serializePublicLobbies() {
+    return Array.from(arenaRooms.values())
+      .filter((r) => r.status === "lobby" && r.players.size > 0)
+      .sort((a, b) => b.createdAt - a.createdAt)
+      .slice(0, 12)
+      .map((r) => {
+        const host = r.players.get(r.hostUid);
+        return {
+          roomCode: r.roomCode,
+          topic: r.topic,
+          hostName: host?.name || "Host",
+          playerCount: r.players.size,
+          status: r.status,
+        };
+      });
+  }
+
+  function broadcastPublicLobbies() {
+    const payload = JSON.stringify({ type: "room:list", rooms: serializePublicLobbies() });
+    for (const client of arenaClients) {
+      if (client.readyState === WebSocket.OPEN) {
+        client.send(payload);
+      }
+    }
+  }
+
+  function serializeRoomState(room: ArenaRoom) {
+    const players = Array.from(room.players.values())
+      .map((p) => ({
+        uid: p.uid,
+        name: p.name,
+        avatar: p.avatar,
+        score: p.score,
+        correctCount: p.correctCount,
+        isHost: p.uid === room.hostUid,
+        answered: room.answersThisRound.has(p.uid),
+      }))
+      .sort((a, b) => b.score - a.score);
+
+    return {
+      roomCode: room.roomCode,
+      topic: room.topic,
+      hostUid: room.hostUid,
+      status: room.status,
+      currentIdx: room.currentIdx,
+      totalQuestions: room.questions.length,
+      roundEndsAt: room.roundEndsAt,
+      players,
+    };
+  }
+
+  function broadcastArenaRoom(room: ArenaRoom, payload: any) {
+    const msg = JSON.stringify(payload);
+    for (const p of room.players.values()) {
+      if (p.ws.readyState === WebSocket.OPEN) {
+        p.ws.send(msg);
+      }
+    }
+  }
+
+  function clearRoomTimers(room: ArenaRoom) {
+    if (room.roundTimer) {
+      clearTimeout(room.roundTimer);
+      room.roundTimer = undefined;
+    }
+    if (room.nextRoundTimer) {
+      clearTimeout(room.nextRoundTimer);
+      room.nextRoundTimer = undefined;
+    }
+  }
+
+  async function finishArenaMatch(room: ArenaRoom) {
+    clearRoomTimers(room);
+    room.status = "finished";
+
+    const ranked = Array.from(room.players.values())
+      .map((p) => ({
+        uid: p.uid,
+        dbUserId: p.dbUserId,
+        name: p.name,
+        avatar: p.avatar,
+        score: p.score,
+        correctCount: p.correctCount,
+      }))
+      .sort((a, b) => b.score - a.score);
+
+    const winner = ranked[0];
+
+    try {
+      await db.insert(arenaMatches).values({
+        roomCode: room.roomCode,
+        topic: room.topic,
+        mode: ranked.length > 1 ? "multiplayer_battle" : "solo_sprint",
+        participants: ranked.map((r) => ({
+          name: r.name,
+          score: r.score,
+          correctCount: r.correctCount,
+          avatar: r.avatar,
+        })),
+        winnerName: winner?.name || null,
+        questionCount: room.questions.length,
+        finishedAt: new Date(),
+      });
+
+      // Award XP & weeklyXp to each participant
+      for (let i = 0; i < ranked.length; i++) {
+        const p = ranked[i];
+        const xpGain = Math.max(25, Math.min(200, Math.round(p.score / 12) + (i === 0 ? 45 : 20)));
+        const existingUser = await db.query.users.findFirst({ where: eq(users.id, p.dbUserId) });
+        if (existingUser) {
+          const nextXp = existingUser.xp + xpGain;
+          const nextWeeklyXp = (existingUser.weeklyXp || 0) + xpGain;
+          const nextLevel = Math.max(existingUser.level, Math.floor(nextXp / 500) + 1);
+          await db
+            .update(users)
+            .set({
+              xp: nextXp,
+              weeklyXp: nextWeeklyXp,
+              level: nextLevel,
+              leagueTier: resolveTierFromXp(nextWeeklyXp),
+              updatedAt: new Date(),
+            })
+            .where(eq(users.id, existingUser.id));
+        }
+      }
+    } catch (err) {
+      console.warn("Arena match persistence warning:", err);
+    }
+
+    broadcastArenaRoom(room, {
+      type: "match:finished",
+      room: serializeRoomState(room),
+      rankings: ranked.map((r, i) => ({
+        rank: i + 1,
+        uid: r.uid,
+        name: r.name,
+        avatar: r.avatar,
+        score: r.score,
+        correctCount: r.correctCount,
+        xpAwarded: Math.max(25, Math.min(200, Math.round(r.score / 12) + (i === 0 ? 45 : 20))),
+      })),
+    });
+
+    broadcastPublicLobbies();
+  }
+
+  function resolveArenaRound(room: ArenaRoom) {
+    if (room.status !== "active") return;
+    clearRoomTimers(room);
+
+    const q = room.questions[room.currentIdx];
+    if (!q) {
+      finishArenaMatch(room);
+      return;
+    }
+
+    const roundStart = room.roundEndsAt - room.roundDurationMs;
+    for (const [uid, ans] of room.answersThisRound.entries()) {
+      const player = room.players.get(uid);
+      if (!player) continue;
+      if (ans.optionIndex === q.answerIndex) {
+        const remainingRatio = Math.max(0, Math.min(1, (room.roundEndsAt - ans.answeredAt) / room.roundDurationMs));
+        const speedBonus = Math.round(remainingRatio * 120);
+        const points = 100 + speedBonus;
+        player.score += points;
+        player.correctCount += 1;
+      } else if (ans.answeredAt < roundStart) {
+        // ignore invalid timestamps
+      }
+    }
+
+    broadcastArenaRoom(room, {
+      type: "round:result",
+      questionIndex: room.currentIdx,
+      correctOption: q.answerIndex,
+      explanation: q.explanation,
+      room: serializeRoomState(room),
+    });
+
+    room.nextRoundTimer = setTimeout(() => {
+      if (room.players.size === 0) {
+        arenaRooms.delete(room.roomCode);
+        broadcastPublicLobbies();
+        return;
+      }
+      if (room.currentIdx + 1 >= room.questions.length) {
+        finishArenaMatch(room);
+      } else {
+        room.currentIdx += 1;
+        startArenaRound(room);
+      }
+    }, 3200);
+  }
+
+  function startArenaRound(room: ArenaRoom) {
+    clearRoomTimers(room);
+    const q = room.questions[room.currentIdx];
+    if (!q) {
+      finishArenaMatch(room);
+      return;
+    }
+
+    room.answersThisRound.clear();
+    room.roundDurationMs = 15000;
+    room.roundEndsAt = Date.now() + room.roundDurationMs;
+
+    broadcastArenaRoom(room, {
+      type: "round:question",
+      questionIndex: room.currentIdx,
+      totalQuestions: room.questions.length,
+      roundEndsAt: room.roundEndsAt,
+      question: {
+        id: q.id,
+        prompt: q.prompt,
+        options: q.options,
+        competencyTag: q.competencyTag,
+      },
+      room: serializeRoomState(room),
+    });
+
+    room.roundTimer = setTimeout(() => {
+      resolveArenaRound(room);
+    }, room.roundDurationMs + 250);
+  }
+
+  function removeSocketFromArenaRoom(ws: WebSocket) {
+    const binding = socketToRoom.get(ws);
+    if (!binding) return;
+    socketToRoom.delete(ws);
+
+    const room = arenaRooms.get(binding.roomCode);
+    if (!room) return;
+
+    room.players.delete(binding.uid);
+    if (room.players.size === 0) {
+      clearRoomTimers(room);
+      arenaRooms.delete(room.roomCode);
+    } else {
+      if (room.hostUid === binding.uid) {
+        const nextHost = room.players.values().next().value;
+        if (nextHost) room.hostUid = nextHost.uid;
+      }
+      broadcastArenaRoom(room, { type: "room:state", room: serializeRoomState(room) });
+    }
+    broadcastPublicLobbies();
+  }
+
+  arenaWss.on("connection", async (ws: WebSocket, _req: IncomingMessage, context: { user: AuthenticatedWsIdentity }) => {
+    const { user } = context;
+    arenaClients.add(ws);
+
+    ws.send(
+      JSON.stringify({
+        type: "arena:connected",
+        uid: user.uid,
+        name: user.name,
+        rooms: serializePublicLobbies(),
+      })
+    );
+
+    ws.on("message", async (raw: RawData) => {
+      try {
+        const msg = JSON.parse(raw.toString());
+
+        if (msg.type === "room:list") {
+          ws.send(JSON.stringify({ type: "room:list", rooms: serializePublicLobbies() }));
+          return;
+        }
+
+        if (msg.type === "room:leave") {
+          removeSocketFromArenaRoom(ws);
+          ws.send(JSON.stringify({ type: "room:left" }));
+          return;
+        }
+
+        if (msg.type === "room:create") {
+          removeSocketFromArenaRoom(ws);
+          await ensureSeeded();
+          const topic = typeof msg.topic === "string" && msg.topic.trim() ? msg.topic.trim() : "Semua";
+          const allQ = await db.select().from(questionsBank);
+          const filtered =
+            topic === "Semua"
+              ? allQ
+              : allQ.filter((q) => q.category.toLowerCase() === topic.toLowerCase());
+          const poolQ = (filtered.length >= 5 ? filtered : allQ)
+            .sort(() => Math.random() - 0.5)
+            .slice(0, 6)
+            .map((q) => ({
+              id: q.id,
+              prompt: q.prompt,
+              options: Array.isArray(q.options) ? (q.options as string[]) : [],
+              answerIndex: q.answerIndex,
+              explanation: q.explanation,
+              competencyTag: q.competencyTag,
+            }));
+
+          let roomCode = generateRoomCode();
+          while (arenaRooms.has(roomCode)) roomCode = generateRoomCode();
+
+          const room: ArenaRoom = {
+            roomCode,
+            topic,
+            hostUid: user.uid,
+            status: "lobby",
+            players: new Map(),
+            questions: poolQ,
+            currentIdx: 0,
+            roundEndsAt: 0,
+            roundDurationMs: 15000,
+            answersThisRound: new Map(),
+            createdAt: Date.now(),
+          };
+
+          room.players.set(user.uid, {
+            uid: user.uid,
+            dbUserId: user.dbUserId,
+            name: user.name,
+            avatar: user.avatar,
+            score: 0,
+            correctCount: 0,
+            ws,
+          });
+
+          arenaRooms.set(roomCode, room);
+          socketToRoom.set(ws, { roomCode, uid: user.uid });
+          broadcastArenaRoom(room, { type: "room:state", room: serializeRoomState(room) });
+          broadcastPublicLobbies();
+          return;
+        }
+
+        if (msg.type === "room:join") {
+          const code = String(msg.roomCode || "").trim().toUpperCase();
+          const room = arenaRooms.get(code);
+          if (!room) {
+            ws.send(JSON.stringify({ type: "error", message: `Kode ruang "${code}" tidak ditemukan.` }));
+            return;
+          }
+          if (room.status !== "lobby") {
+            ws.send(JSON.stringify({ type: "error", message: "Pertandingan di ruang ini sudah dimulai atau selesai." }));
+            return;
+          }
+          if (room.players.size >= 8) {
+            ws.send(JSON.stringify({ type: "error", message: "Ruang sudah penuh (maksimal 8 peserta)." }));
+            return;
+          }
+
+          removeSocketFromArenaRoom(ws);
+          room.players.set(user.uid, {
+            uid: user.uid,
+            dbUserId: user.dbUserId,
+            name: user.name,
+            avatar: user.avatar,
+            score: 0,
+            correctCount: 0,
+            ws,
+          });
+          socketToRoom.set(ws, { roomCode: room.roomCode, uid: user.uid });
+          broadcastArenaRoom(room, { type: "room:state", room: serializeRoomState(room) });
+          broadcastPublicLobbies();
+          return;
+        }
+
+        if (msg.type === "room:start") {
+          const binding = socketToRoom.get(ws);
+          if (!binding) return;
+          const room = arenaRooms.get(binding.roomCode);
+          if (!room || room.status !== "lobby") return;
+          if (room.hostUid !== user.uid) {
+            ws.send(JSON.stringify({ type: "error", message: "Hanya pembuat ruang (Host) yang dapat memulai duel." }));
+            return;
+          }
+          room.status = "active";
+          room.currentIdx = 0;
+          broadcastPublicLobbies();
+          startArenaRound(room);
+          return;
+        }
+
+        if (msg.type === "round:answer") {
+          const binding = socketToRoom.get(ws);
+          if (!binding) return;
+          const room = arenaRooms.get(binding.roomCode);
+          if (!room || room.status !== "active") return;
+          if (room.answersThisRound.has(user.uid)) return;
+
+          const optionIndex = Number(msg.optionIndex);
+          if (!Number.isInteger(optionIndex) || optionIndex < 0 || optionIndex > 5) return;
+
+          room.answersThisRound.set(user.uid, { optionIndex, answeredAt: Date.now() });
+          broadcastArenaRoom(room, { type: "room:state", room: serializeRoomState(room) });
+
+          // If every active player answered, end round early
+          if (room.answersThisRound.size >= room.players.size) {
+            resolveArenaRound(room);
+          }
+        }
+      } catch (err: any) {
+        ws.send(JSON.stringify({ type: "error", message: err.message || "Gagal memproses aksi Arena." }));
+      }
+    });
+
+    ws.on("close", () => {
+      arenaClients.delete(ws);
+      removeSocketFromArenaRoom(ws);
+    });
+  });
 
   collabWss.on("connection", async (ws: WebSocket, _req: IncomingMessage, context: { roomId: string; user: AuthenticatedWsIdentity }) => {
     const { roomId, user } = context;
@@ -222,7 +684,6 @@ ATURAN WAWANCARA:
       })
       .then((s) => {
         liveSession = s;
-        // Kick off greeting cleanly once connected
         if (!isClosed) {
           s.sendRealtimeInput({
             text: `Halo Bu Riska, saya kandidat yang siap mengikuti wawancara untuk posisi ${jobTitle} di ${companyName}. Silakan mulai sesi wawancara.`,
@@ -273,8 +734,7 @@ ATURAN WAWANCARA:
       const url = new URL(req.url || "/", `http://${req.headers.host || "localhost"}`);
       const pathname = url.pathname;
 
-      if (pathname !== "/ws/collab" && pathname !== "/ws/interview") {
-        // Leave unknown upgrade paths untouched (or destroy cleanly if not Vite HMR)
+      if (pathname !== "/ws/collab" && pathname !== "/ws/interview" && pathname !== "/ws/arena") {
         return;
       }
 
@@ -283,6 +743,13 @@ ATURAN WAWANCARA:
       if (!user) {
         socket.write("HTTP/1.1 401 Unauthorized\r\n\r\n");
         socket.destroy();
+        return;
+      }
+
+      if (pathname === "/ws/arena") {
+        arenaWss.handleUpgrade(req, socket, head, (ws) => {
+          arenaWss.emit("connection", ws, req, { user });
+        });
         return;
       }
 
@@ -310,7 +777,7 @@ ATURAN WAWANCARA:
           interviewWss.emit("connection", ws, req, { sessionId, user });
         });
       }
-    } catch (err) {
+    } catch {
       socket.destroy();
     }
   });

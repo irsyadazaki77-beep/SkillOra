@@ -501,6 +501,8 @@ export interface Lesson {
   assessments?: Assessment[];
   competency?: string;
   sources?: { title: string; url: string; category?: string }[];
+  inlineChecks?: InlineKnowledgeCheck[];
+  flashcards?: FlashcardItem[];
 }
 
 export interface Module {
@@ -547,6 +549,8 @@ export interface Course {
   author?: string;
   reviewer?: string;
   modules?: Module[]; // new nested structure
+  linkedLabIds?: string[];
+  casePrompt?: CourseCasePrompt | null;
 }
 
 export interface TeamMember {
@@ -751,6 +755,7 @@ export interface LeagueStandingRow {
 
 export interface LeagueOverview {
   currentTier: string;
+  activeTier?: string;
   nextTier: string | null;
   myRank: number;
   myWeeklyXp: number;
@@ -866,4 +871,138 @@ export interface CampusCohortItem {
   featuredLabs: string[];
   isJoined?: boolean;
 }
+
+// --- Training Engine 3.0 Types ---
+
+export interface InlineKnowledgeCheck {
+  id: string;
+  afterParagraph?: number;
+  question: string;
+  options: string[];
+  answerIndex: number;
+  explanation: string;
+  competencyTag?: string;
+}
+
+export interface FlashcardItem {
+  id: string;
+  front: string;
+  back: string;
+  hint?: string;
+  competencyTag?: string;
+}
+
+export interface CourseCasePrompt {
+  title: string;
+  scenario: string;
+  deliverables: string[];
+  rubricCriteria: string[];
+}
+
+export interface CompetencyScoreItem {
+  topic: string;
+  correct: number;
+  total: number;
+  accuracy: number;
+}
+
+export interface CourseExamRecord {
+  id: number;
+  courseId: string;
+  examType: "pretest" | "final";
+  score: number;
+  passed: boolean;
+  correctCount: number;
+  totalQuestions: number;
+  competencyBreakdown: CompetencyScoreItem[];
+  weakTopics: string[];
+  aiDiagnostic?: string | null;
+  durationSeconds: number;
+  earnedXp: number;
+  createdAt: string;
+}
+
+export interface FlashcardQueueItem {
+  cardId: string;
+  courseId: string;
+  courseTitle: string;
+  lessonId: string;
+  lessonTitle: string;
+  front: string;
+  back: string;
+  hint?: string;
+  competencyTag?: string;
+  easeFactor: number;
+  intervalDays: number;
+  repetitions: number;
+  lastQuality?: string | null;
+  nextReviewAt?: string | null;
+  isDue: boolean;
+}
+
+export interface TrainingAssignmentRecord {
+  id: number;
+  courseId: string;
+  promptTitle: string;
+  answerText: string;
+  score: number;
+  passed: boolean;
+  rubricScores: Array<{ criterion: string; score: number; maxScore: number; comment: string }>;
+  aiFeedback: string;
+  strengths: string[];
+  improvements: string[];
+  modelAnswerSummary?: string | null;
+  earnedXp: number;
+  createdAt: string;
+}
+
+export interface CourseTrainingOverview {
+  courseId: string;
+  pretest: CourseExamRecord | null;
+  finalExam: CourseExamRecord | null;
+  learningGain: number | null;
+  completedLessons: number;
+  totalLessons: number;
+  dueFlashcards: number;
+  totalFlashcards: number;
+  masteredFlashcards: number;
+  latestAssignment: TrainingAssignmentRecord | null;
+  assignmentHistory: TrainingAssignmentRecord[];
+  linkedLabs: Array<{
+    challengeId: string;
+    title: string;
+    track: string;
+    difficulty: string;
+    passed: boolean;
+    bestScore: number;
+  }>;
+  stagesCompleted: number;
+  isCertified: boolean;
+}
+
+export interface SimulationAttemptRecord {
+  id: number;
+  simType: "tkd" | "kraepelin" | "decision" | "star";
+  title: string;
+  score: number;
+  metrics: Record<string, any>;
+  aiFeedback?: string | null;
+  earnedXp: number;
+  createdAt: string;
+}
+
+export interface StarEvaluationResult {
+  overallScore: number;
+  situationScore: number;
+  taskScore: number;
+  actionScore: number;
+  resultScore: number;
+  quantificationScore: number;
+  strengths: string[];
+  improvements: string[];
+  revisedExample: string;
+  summaryFeedback: string;
+  earnedXp: number;
+}
+
 

@@ -2,6 +2,7 @@ import { Router } from "express";
 import { db } from "../../db/index.js";
 import { certificates } from "../../db/schema.js";
 import { eq } from "drizzle-orm";
+import { CareerExpansionService } from "../services/careerExpansionService.js";
 
 const router = Router();
 
@@ -27,6 +28,25 @@ router.get("/public/certificates/:id", async (req, res) => {
   } catch (error) {
     console.error("Error verifying certificate:", error);
     res.status(500).json({ success: false, error: "Terjadi kesalahan server saat memverifikasi sertifikat." });
+  }
+});
+
+router.get("/public/portfolio/:slug", async (req, res) => {
+  try {
+    const portfolio = await CareerExpansionService.getPublicPortfolio(req.params.slug);
+    if (!portfolio) {
+      return res.status(404).json({
+        success: false,
+        error: { message: "Portofolio tidak ditemukan atau disetel privat oleh pemiliknya." },
+      });
+    }
+    return res.json({ success: true, data: portfolio });
+  } catch (error) {
+    console.error("Error fetching public portfolio:", error);
+    return res.status(500).json({
+      success: false,
+      error: { message: "Terjadi kesalahan server saat memuat portofolio." },
+    });
   }
 });
 

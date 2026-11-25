@@ -19,6 +19,7 @@ import mentorRoutes from "./src/server/routes/mentorRoutes.js";
 import communityRoutes from "./src/server/routes/communityRoutes.js";
 import billingRoutes from "./src/server/routes/billingRoutes.js";
 import devRoutes from "./src/server/routes/devRoutes.js";
+import upgradeRoutes from "./src/server/routes/upgradeRoutes.js";
 import { UserRepository } from "./src/server/repositories/UserRepository.js";
 import { NotificationRepository } from "./src/server/repositories/NotificationRepository.js";
 import { UserService } from "./src/server/services/userService.js";
@@ -80,6 +81,7 @@ apiRouter.use(mentorRoutes);
 apiRouter.use(communityRoutes);
 apiRouter.use(billingRoutes);
 apiRouter.use(devRoutes);
+apiRouter.use(upgradeRoutes);
 apiRouter.use(publicRoutes);
 
 // Notifications & Sync Endpoints

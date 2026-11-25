@@ -107,6 +107,8 @@ export const courses = pgTable('courses', {
   projectTitle: text('project_title'),
   projectDescription: text('project_description'),
   projectRubric: text('project_rubric'),
+  linkedLabIds: jsonb('linked_lab_ids').default('[]').notNull(),
+  casePrompt: jsonb('case_prompt'),
   status: text('status').default('published').notNull(), // 'draft' | 'published'
   isProOnly: boolean('is_pro_only').default(false).notNull(),
   authorUserId: integer('author_user_id').references(() => users.id, { onDelete: 'set null' }),
@@ -128,6 +130,8 @@ export const lessons = pgTable('lessons', {
   videoUrl: text('video_url'),
   estimatedMinutes: integer('estimated_minutes').default(15).notNull(),
   questionsData: jsonb('questions_data'),
+  inlineChecks: jsonb('inline_checks').default('[]').notNull(),
+  flashcards: jsonb('flashcards').default('[]').notNull(),
   createdAt: timestamp('created_at').defaultNow(),
 }, (t) => [
   index('lessons_lesson_id_idx').on(t.lessonId),
@@ -705,6 +709,78 @@ export const campusCohorts = pgTable('campus_cohorts', {
   createdAt: timestamp('created_at').defaultNow(),
 }, (t) => [
   index('campus_cohorts_cid_idx').on(t.cohortId),
+]);
+
+// --- Training Engine 3.0 Tables ---
+
+export const courseExams = pgTable('course_exams', {
+  id: serial('id').primaryKey(),
+  userId: integer('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  courseId: text('course_id').notNull(),
+  examType: text('exam_type').notNull(), // 'pretest' | 'final'
+  score: integer('score').default(0).notNull(),
+  passed: boolean('passed').default(false).notNull(),
+  correctCount: integer('correct_count').default(0).notNull(),
+  totalQuestions: integer('total_questions').default(0).notNull(),
+  competencyBreakdown: jsonb('competency_breakdown').default('[]').notNull(),
+  weakTopics: jsonb('weak_topics').default('[]').notNull(),
+  aiDiagnostic: text('ai_diagnostic'),
+  durationSeconds: integer('duration_seconds').default(0).notNull(),
+  earnedXp: integer('earned_xp').default(0).notNull(),
+  createdAt: timestamp('created_at').defaultNow(),
+}, (t) => [
+  index('course_exams_user_course_idx').on(t.userId, t.courseId),
+  index('course_exams_type_idx').on(t.examType),
+]);
+
+export const flashcardProgress = pgTable('flashcard_progress', {
+  id: serial('id').primaryKey(),
+  userId: integer('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  courseId: text('course_id').notNull(),
+  lessonId: text('lesson_id').notNull(),
+  cardId: text('card_id').notNull(),
+  easeFactor: integer('ease_factor').default(250).notNull(), // 250 = 2.50x
+  intervalDays: integer('interval_days').default(1).notNull(),
+  repetitions: integer('repetitions').default(0).notNull(),
+  lastQuality: text('last_quality').default('good').notNull(), // 'again' | 'hard' | 'good' | 'easy'
+  nextReviewAt: timestamp('next_review_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (t) => [
+  unique('flashcard_progress_user_course_card_uniq').on(t.userId, t.courseId, t.cardId),
+  index('flashcard_progress_user_due_idx').on(t.userId, t.nextReviewAt),
+]);
+
+export const trainingAssignments = pgTable('training_assignments', {
+  id: serial('id').primaryKey(),
+  userId: integer('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  courseId: text('course_id').notNull(),
+  promptTitle: text('prompt_title').notNull(),
+  answerText: text('answer_text').notNull(),
+  score: integer('score').default(0).notNull(),
+  passed: boolean('passed').default(false).notNull(),
+  rubricScores: jsonb('rubric_scores').default('[]').notNull(),
+  aiFeedback: text('ai_feedback').notNull(),
+  strengths: jsonb('strengths').default('[]').notNull(),
+  improvements: jsonb('improvements').default('[]').notNull(),
+  modelAnswerSummary: text('model_answer_summary'),
+  earnedXp: integer('earned_xp').default(0).notNull(),
+  createdAt: timestamp('created_at').defaultNow(),
+}, (t) => [
+  index('training_assignments_user_course_idx').on(t.userId, t.courseId),
+]);
+
+export const simulationAttempts = pgTable('simulation_attempts', {
+  id: serial('id').primaryKey(),
+  userId: integer('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  simType: text('sim_type').notNull(), // 'tkd' | 'kraepelin' | 'decision' | 'star'
+  title: text('title').notNull(),
+  score: integer('score').default(0).notNull(),
+  metrics: jsonb('metrics').default('{}').notNull(),
+  aiFeedback: text('ai_feedback'),
+  earnedXp: integer('earned_xp').default(0).notNull(),
+  createdAt: timestamp('created_at').defaultNow(),
+}, (t) => [
+  index('simulation_attempts_user_type_idx').on(t.userId, t.simType),
 ]);
 
 // Relations

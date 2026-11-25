@@ -10,6 +10,8 @@ import { DrillsTab } from "../features/practice/components/DrillsTab";
 import { TopicsTab } from "../features/practice/components/TopicsTab";
 import { MistakesTab } from "../features/practice/components/MistakesTab";
 import { AnalyticsTab } from "../features/practice/components/AnalyticsTab";
+import { AdaptiveDrillTab } from "../features/practice/components/AdaptiveDrillTab";
+import { FlashcardDeckPanel } from "./training/FlashcardDeckPanel";
 import { QuizActiveScreen } from "../features/practice/components/QuizActiveScreen";
 import { QuizResultModal } from "../features/practice/components/QuizResultModal";
 
@@ -297,28 +299,28 @@ export function LatihanView({
         wrongCount={allWrongQuestions.length}
       />
 
-      {/* Adaptive AI Assessment (CAT) Launcher Banner */}
-      <div className="bg-gradient-to-r from-indigo-950 via-slate-900 to-blue-950 rounded-2xl p-5 border border-indigo-500/30 text-white flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-sm">
+      {/* Adaptive AI Assessment (CAT) Launcher Strip */}
+      <div className="bg-white dark:bg-zinc-900 rounded-xl p-5 border border-zinc-200 dark:border-zinc-800 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-start gap-3.5">
-          <div className="w-11 h-11 rounded-xl bg-indigo-500/20 border border-indigo-400/30 text-indigo-300 flex items-center justify-center shrink-0">
+          <div className="w-10 h-10 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/50 text-emerald-700 dark:text-emerald-400 flex items-center justify-center shrink-0">
             <Brain className="w-5 h-5" />
           </div>
           <div>
-            <span className="text-xs font-bold uppercase tracking-wider text-indigo-300 block mb-0.5">
+            <span className="text-[11px] font-mono uppercase tracking-wider text-emerald-700 dark:text-emerald-400 font-semibold block mb-0.5">
               Computerized Adaptive Testing (CAT)
             </span>
-            <h3 className="font-display font-bold text-base text-white">
+            <h3 className="font-display font-bold text-base text-zinc-950 dark:text-white">
               Uji Asesmen AI Adaptif Berjenjang (Level 1–5)
             </h3>
-            <p className="text-xs text-slate-300 mt-1 max-w-2xl">
-              Tingkat kesulitan soal otomatis beradaptasi dengan akurasi jawaban Anda, lengkap dengan Ability Score dan rekomendasi belajar diagnostik dari AI.
+            <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-1 max-w-2xl">
+              Tingkat kesulitan soal otomatis beradaptasi dengan akurasi jawaban Anda, lengkap dengan Ability Score dan rekomendasi belajar diagnostik AI.
             </p>
           </div>
         </div>
         <button
           type="button"
           onClick={() => navigate(ROUTES.career.adaptive)}
-          className="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold flex items-center gap-1.5 shrink-0 transition-colors cursor-pointer"
+          className="px-4 py-2.5 rounded-lg bg-zinc-950 dark:bg-zinc-100 hover:opacity-90 text-white dark:text-zinc-950 text-xs font-semibold flex items-center gap-1.5 shrink-0 transition-opacity cursor-pointer whitespace-nowrap"
         >
           <span>Mulai Asesmen Adaptif</span>
           <ChevronRight className="w-4 h-4" />
@@ -336,6 +338,20 @@ export function LatihanView({
           allAvailableQuestions={allAvailableQuestions}
           allWrongQuestions={allWrongQuestions}
           setActiveHubTab={setActiveHubTab}
+        />
+      )}
+
+      {activeHubTab === "adaptive" && (
+        <AdaptiveDrillTab
+          onProfileUpdate={onProfileUpdate}
+          showToast={showToast}
+        />
+      )}
+
+      {activeHubTab === "flashcards" && (
+        <FlashcardDeckPanel
+          onProfileUpdate={onProfileUpdate}
+          showToast={showToast}
         />
       )}
 

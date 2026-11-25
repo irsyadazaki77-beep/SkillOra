@@ -1,49 +1,139 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { 
-  BookOpen, 
-  ArrowLeft, 
-  CheckCircle2, 
-  Clock, 
-  Award, 
-  ChevronRight, 
+import {
+  BookOpen,
+  ArrowLeft,
+  CheckCircle2,
+  XCircle,
+  Clock,
+  ChevronRight,
   ChevronLeft,
-  PlayCircle, 
-  HelpCircle, 
-  FileText, 
-  StickyNote, 
-  Lightbulb, 
-  Sparkles, 
-  ArrowRight, 
-  ShieldCheck, 
-  Zap, 
-  Bookmark, 
-  BookmarkCheck, 
-  Save, 
+  FileText,
+  StickyNote,
+  Lightbulb,
+  ArrowRight,
+  Bookmark,
+  BookmarkCheck,
+  Save,
   Check,
   Copy,
-  Layers,
   Menu,
   X,
-  Target,
-  Share2
+  Bot,
+  Pin,
+  Cloud,
+  Layers,
+  HelpCircle,
 } from "lucide-react";
-import { Course, Lesson, Profile } from "../types";
-import { apiClient } from "../api/apiClient";
+import { Course, InlineKnowledgeCheck, Profile } from "../types";
+import { apiClient, studyApi } from "../api/apiClient";
 import { playSound } from "../utils/sound";
 import { getCourseProgress, getStructuredModules, saveResumePosition } from "../utils/courseUtils";
-import { Badge } from "./ui/Badge";
 import { Button } from "./ui/Button";
 import { ProgressBar } from "./ui/ProgressBar";
+import { CopilotContextInfo } from "./MentorChatSidebar";
+import { FlashcardDeckPanel } from "./training/FlashcardDeckPanel";
 
 interface MateriViewProps {
   courses: Course[];
   profile: Profile;
   onProfileUpdate: (profile: Profile) => void;
   showToast?: (message: string, type?: "success" | "error" | "info") => void;
+  onOpenCopilot?: (ctx: CopilotContextInfo) => void;
 }
 
-// Code Block with Copy feature
+function InlineKnowledgeCheckCard({
+  check,
+  index,
+  selectedOption,
+  onSelect,
+}: {
+  check: InlineKnowledgeCheck;
+  index: number;
+  selectedOption: number | undefined;
+  onSelect: (optionIdx: number) => void;
+}) {
+  const answered = selectedOption !== undefined;
+  const isCorrect = answered && selectedOption === check.answerIndex;
+
+  return (
+    <div className="my-6 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50/80 dark:bg-zinc-950/70 p-4 sm:p-5 space-y-3.5">
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-[11px] font-mono uppercase tracking-wider font-semibold text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5">
+          <HelpCircle className="w-3.5 h-3.5" />
+          Cek Paham {index + 1}
+        </span>
+        {answered && (
+          <span
+            className={`text-xs font-semibold flex items-center gap-1 ${
+              isCorrect
+                ? "text-emerald-700 dark:text-emerald-400"
+                : "text-rose-600 dark:text-rose-400"
+            }`}
+          >
+            {isCorrect ? (
+              <>
+                <CheckCircle2 className="w-3.5 h-3.5" /> Tepat
+              </>
+            ) : (
+              <>
+                <XCircle className="w-3.5 h-3.5" /> Perlu Ditinjau
+              </>
+            )}
+          </span>
+        )}
+      </div>
+
+      <p className="text-sm font-semibold text-zinc-950 dark:text-white leading-snug">
+        {check.question}
+      </p>
+
+      <div className="space-y-2">
+        {check.options.map((opt, optIdx) => {
+          const isPicked = selectedOption === optIdx;
+          const isRightOption = optIdx === check.answerIndex;
+
+          let optionStyle =
+            "border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-zinc-800 dark:text-zinc-200 hover:border-emerald-500/60";
+          if (answered) {
+            if (isRightOption) {
+              optionStyle =
+                "border-emerald-500 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-900 dark:text-emerald-200 font-medium";
+            } else if (isPicked) {
+              optionStyle =
+                "border-rose-400 bg-rose-50 dark:bg-rose-950/40 text-rose-900 dark:text-rose-200";
+            } else {
+              optionStyle =
+                "border-zinc-200 dark:border-zinc-800 bg-white/60 dark:bg-zinc-900/50 text-zinc-500 dark:text-zinc-500";
+            }
+          }
+
+          return (
+            <button
+              key={optIdx}
+              type="button"
+              onClick={() => onSelect(optIdx)}
+              className={`w-full text-left px-3.5 py-2.5 rounded-lg border text-xs sm:text-sm transition-colors flex items-start gap-2.5 cursor-pointer ${optionStyle}`}
+            >
+              <span className="font-mono text-xs font-bold shrink-0 mt-0.5">
+                {String.fromCharCode(65 + optIdx)}.
+              </span>
+              <span className="flex-1 leading-snug">{opt}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      {answered && (
+        <div className="pt-2 border-t border-zinc-200 dark:border-zinc-800 text-xs text-zinc-700 dark:text-zinc-300 leading-relaxed">
+          <span className="font-semibold text-zinc-950 dark:text-white">Pembahasan: </span>
+          {check.explanation}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function CodeBlock({ code, language }: { code: string; language?: string }) {
   const [copied, setCopied] = useState(false);
 
@@ -54,9 +144,9 @@ function CodeBlock({ code, language }: { code: string; language?: string }) {
   };
 
   return (
-    <div className="my-4 rounded-xl overflow-hidden border border-slate-800 bg-slate-950 shadow-inner">
-      <div className="flex items-center justify-between px-4 py-2 bg-slate-900 border-b border-slate-800 text-xs text-slate-400">
-        <span className="font-mono uppercase font-bold">{language || "Code"}</span>
+    <div className="my-4 rounded-xl overflow-hidden border border-zinc-800 bg-zinc-950">
+      <div className="flex items-center justify-between px-4 py-2 bg-zinc-900 border-b border-zinc-800 text-xs text-zinc-400">
+        <span className="font-mono uppercase font-semibold">{language || "code"}</span>
         <button
           type="button"
           onClick={handleCopy}
@@ -66,7 +156,7 @@ function CodeBlock({ code, language }: { code: string; language?: string }) {
           {copied ? (
             <>
               <Check className="w-3.5 h-3.5 text-emerald-400" />
-              <span className="text-emerald-400 font-semibold">Tersalin!</span>
+              <span className="text-emerald-400 font-semibold">Tersalin</span>
             </>
           ) : (
             <>
@@ -76,138 +166,40 @@ function CodeBlock({ code, language }: { code: string; language?: string }) {
           )}
         </button>
       </div>
-      <pre className="p-4 text-emerald-400 font-mono text-xs overflow-x-auto leading-relaxed">
+      <pre className="p-4 text-emerald-300 font-mono text-xs overflow-x-auto leading-relaxed">
         <code>{code}</code>
       </pre>
     </div>
   );
 }
 
-// Helper component to render rich formatted text content with callouts, headers, bold text & lists
-function FormattedTextBlock({ content }: { content: string }) {
-  const paragraphs = content.split("\n\n");
-
-  return (
-    <div className="space-y-4">
-      {paragraphs.map((para, pIdx) => {
-        const trimmed = para.trim();
-
-        // Check Heading 3 (###)
-        if (trimmed.startsWith("### ")) {
-          const titleText = trimmed.replace(/^###\s+/, "");
-          return (
-            <div key={pIdx} className="pt-4 pb-1 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between gap-2">
-              <h3 className="text-base sm:text-lg font-bold font-display text-slate-900 dark:text-white flex items-center gap-2">
-                <span className="w-1.5 h-4.5 bg-blue-600 dark:bg-blue-400 rounded-full shrink-0" />
-                <span>{titleText}</span>
-              </h3>
-            </div>
-          );
-        }
-
-        // Check Heading 2 (##)
-        if (trimmed.startsWith("## ")) {
-          const titleText = trimmed.replace(/^##\s+/, "");
-          return (
-            <div key={pIdx} className="pt-5 pb-1">
-              <h2 className="text-lg sm:text-xl font-bold font-display text-slate-900 dark:text-white tracking-tight">
-                {titleText}
-              </h2>
-            </div>
-          );
-        }
-
-        // Check Callouts (> 💡, > ⚠️, > 📌, > 🎯, > )
-        if (trimmed.startsWith("> ")) {
-          const calloutText = trimmed.replace(/^>\s*/, "").trim();
-          let boxStyle = "bg-blue-50/70 dark:bg-blue-950/20 border-blue-200 dark:border-blue-900 text-blue-950 dark:text-blue-200";
-          let icon = "📌";
-
-          if (calloutText.includes("💡") || calloutText.toLowerCase().includes("tip") || calloutText.toLowerCase().includes("trik")) {
-            boxStyle = "bg-amber-50/80 dark:bg-amber-950/40 border-amber-300 dark:border-amber-800 text-amber-950 dark:text-amber-200";
-            icon = "💡";
-          } else if (calloutText.includes("⚠️") || calloutText.toLowerCase().includes("jebakan") || calloutText.toLowerCase().includes("peringatan")) {
-            boxStyle = "bg-rose-50/80 dark:bg-rose-950/40 border-rose-300 dark:border-rose-800 text-rose-950 dark:text-rose-200";
-            icon = "⚠️";
-          } else if (calloutText.includes("🎯") || calloutText.toLowerCase().includes("formula") || calloutText.toLowerCase().includes("rumus")) {
-            boxStyle = "bg-emerald-50/80 dark:bg-emerald-950/40 border-emerald-300 dark:border-emerald-800 text-emerald-950 dark:text-emerald-200";
-            icon = "🎯";
-          }
-
-          return (
-            <div key={pIdx} className={`p-4 rounded-2xl border ${boxStyle} shadow-2xs space-y-1 my-3.5`}>
-              <div className="flex items-start gap-3">
-                <span className="text-lg shrink-0 mt-0.5">{icon}</span>
-                <div className="text-xs sm:text-sm font-medium leading-relaxed whitespace-pre-line">
-                  {renderFormattedInline(calloutText.replace(/^[💡⚠️📌🎯]\s*/, ""))}
-                </div>
-              </div>
-            </div>
-          );
-        }
-
-        // Check bullet lists
-        if (trimmed.split("\n").some(line => line.trim().startsWith("- ") || line.trim().startsWith("* ") || /^\d+\.\s/.test(line.trim()))) {
-          const lines = trimmed.split("\n");
-          return (
-            <ul key={pIdx} className="space-y-2 my-2.5 pl-1">
-              {lines.map((line, lIdx) => {
-                const lineTrim = line.trim();
-                const isOrdered = /^\d+\.\s/.test(lineTrim);
-                const isUnordered = lineTrim.startsWith("- ") || lineTrim.startsWith("* ");
-                if (!isOrdered && !isUnordered) {
-                  return (
-                    <p key={lIdx} className="text-slate-700 dark:text-slate-300 text-xs sm:text-sm leading-relaxed">
-                      {renderFormattedInline(line)}
-                    </p>
-                  );
-                }
-
-                const cleanText = lineTrim.replace(/^(-\s*|\*\s*|\d+\.\s*)/, "");
-                return (
-                  <li key={lIdx} className="flex items-start gap-2.5 text-xs sm:text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
-                    <span className="w-1.5 h-1.5 rounded-full bg-blue-600 dark:bg-blue-400 shrink-0 mt-2" />
-                    <div>{renderFormattedInline(cleanText)}</div>
-                  </li>
-                );
-              })}
-            </ul>
-          );
-        }
-
-        // Default Paragraph
-        return (
-          <p key={pIdx} className="text-slate-700 dark:text-slate-300 text-xs sm:text-sm leading-relaxed">
-            {renderFormattedInline(trimmed)}
-          </p>
-        );
-      })}
-    </div>
-  );
-}
-
-// Helper for inline bold (**text**), code (`code`), and highlight ($text$)
 function renderFormattedInline(text: string) {
   const parts = text.split(/(\*\*[^*]+\*\*|`[^`]+`|\$[^\$]+\$)/g);
 
   return parts.map((part, idx) => {
     if (part.startsWith("**") && part.endsWith("**")) {
       return (
-        <strong key={idx} className="font-bold text-slate-900 dark:text-white">
+        <strong key={idx} className="font-semibold text-zinc-950 dark:text-white">
           {part.slice(2, -2)}
         </strong>
       );
     }
     if (part.startsWith("`") && part.endsWith("`")) {
       return (
-        <code key={idx} className="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 text-blue-600 dark:text-blue-400 rounded-md font-mono text-xs border border-slate-200 dark:border-slate-700">
+        <code
+          key={idx}
+          className="px-1.5 py-0.5 bg-zinc-100 dark:bg-zinc-800 text-emerald-700 dark:text-emerald-300 rounded font-mono text-xs border border-zinc-200 dark:border-zinc-700"
+        >
           {part.slice(1, -1)}
         </code>
       );
     }
     if (part.startsWith("$") && part.endsWith("$")) {
       return (
-        <span key={idx} className="px-1.5 py-0.5 bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 font-mono text-xs rounded-md border border-blue-200 dark:border-blue-800">
+        <span
+          key={idx}
+          className="px-1.5 py-0.5 bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-mono text-xs rounded"
+        >
           {part.slice(1, -1)}
         </span>
       );
@@ -216,11 +208,94 @@ function renderFormattedInline(text: string) {
   });
 }
 
+function FormattedTextBlock({ content }: { content: string }) {
+  const paragraphs = content.split("\n\n");
+
+  return (
+    <div className="space-y-4">
+      {paragraphs.map((para, pIdx) => {
+        const trimmed = para.trim();
+
+        if (trimmed.startsWith("### ")) {
+          return (
+            <h3
+              key={pIdx}
+              className="pt-4 pb-1 border-b border-zinc-200 dark:border-zinc-800 text-base sm:text-lg font-bold font-display text-zinc-950 dark:text-white"
+            >
+              {trimmed.replace(/^###\s+/, "")}
+            </h3>
+          );
+        }
+
+        if (trimmed.startsWith("## ")) {
+          return (
+            <h2
+              key={pIdx}
+              className="pt-5 pb-1 text-lg sm:text-xl font-bold font-display text-zinc-950 dark:text-white tracking-tight"
+            >
+              {trimmed.replace(/^##\s+/, "")}
+            </h2>
+          );
+        }
+
+        if (trimmed.startsWith("> ")) {
+          const calloutText = trimmed.replace(/^>\s*/, "").trim();
+          return (
+            <div
+              key={pIdx}
+              className="p-4 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950/60 my-3.5 text-xs sm:text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed whitespace-pre-line"
+            >
+              {renderFormattedInline(calloutText)}
+            </div>
+          );
+        }
+
+        if (
+          trimmed
+            .split("\n")
+            .some((line) => line.trim().startsWith("- ") || line.trim().startsWith("* ") || /^\d+\.\s/.test(line.trim()))
+        ) {
+          const lines = trimmed.split("\n");
+          return (
+            <ul key={pIdx} className="space-y-2 my-2.5 pl-1">
+              {lines.map((line, lIdx) => {
+                const lineTrim = line.trim();
+                const isList = /^\d+\.\s/.test(lineTrim) || lineTrim.startsWith("- ") || lineTrim.startsWith("* ");
+                if (!isList) {
+                  return (
+                    <p key={lIdx} className="text-zinc-700 dark:text-zinc-300 text-sm leading-relaxed">
+                      {renderFormattedInline(line)}
+                    </p>
+                  );
+                }
+                const cleanText = lineTrim.replace(/^(-\s*|\*\s*|\d+\.\s*)/, "");
+                return (
+                  <li key={lIdx} className="flex items-start gap-2.5 text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 dark:bg-emerald-400 shrink-0 mt-2" />
+                    <div>{renderFormattedInline(cleanText)}</div>
+                  </li>
+                );
+              })}
+            </ul>
+          );
+        }
+
+        return (
+          <p key={pIdx} className="text-zinc-700 dark:text-zinc-300 text-sm leading-relaxed">
+            {renderFormattedInline(trimmed)}
+          </p>
+        );
+      })}
+    </div>
+  );
+}
+
 export function MateriView({
   courses,
   profile,
   onProfileUpdate,
   showToast,
+  onOpenCopilot,
 }: MateriViewProps) {
   const { id: routeCourseId, lessonId: routeLessonId } = useParams();
   const navigate = useNavigate();
@@ -230,47 +305,70 @@ export function MateriView({
 
   const lessonIndex = course?.lessons.findIndex((l) => l.id === lesson?.id) ?? 0;
   const isFirstLesson = lessonIndex === 0;
-  const isLastLesson = lessonIndex === (course?.lessons.length ?? 1) - 1;
   const prevLesson = lessonIndex > 0 ? course?.lessons[lessonIndex - 1] : null;
-  const nextLesson = course?.lessons[lessonIndex + 1];
 
-  // Notes & UI State
+  // PostgreSQL Cloud Notes state
   const [noteContent, setNoteContent] = useState<string>("");
+  const [notePinned, setNotePinned] = useState<boolean>(false);
+  const [noteUpdatedAt, setNoteUpdatedAt] = useState<string | null>(null);
+  const [savingNote, setSavingNote] = useState<boolean>(false);
+  const [loadingNote, setLoadingNote] = useState<boolean>(false);
+
   const [isBookmarked, setIsBookmarked] = useState<boolean>(false);
   const [isCompleting, setIsCompleting] = useState<boolean>(false);
   const [showNotesDrawer, setShowNotesDrawer] = useState<boolean>(false);
+  const [showFlashcardDrawer, setShowFlashcardDrawer] = useState<boolean>(false);
   const [showMobileSidebar, setShowMobileSidebar] = useState<boolean>(false);
 
-  // Structured Modules for Sidebar
-  const modules = useMemo(() => {
-    return course ? getStructuredModules(course) : [];
-  }, [course]);
+  // Inline Knowledge Checks state per lesson
+  const [inlineAnswers, setInlineAnswers] = useState<Record<string, number>>({});
 
-  const progressInfo = useMemo(() => {
-    return course ? getCourseProgress(course) : null;
-  }, [course]);
+  const modules = useMemo(() => (course ? getStructuredModules(course) : []), [course]);
+  const progressInfo = useMemo(() => (course ? getCourseProgress(course) : null), [course]);
 
-  // Sync state on change
+  // Reset inline check answers & load Cloud Notes on lesson change
   useEffect(() => {
-    if (course && lesson) {
-      const savedNote = localStorage.getItem(`skillora_note_${course.id}_${lesson.id}`) || lesson.notes || "";
-      setNoteContent(savedNote);
+    if (!course || !lesson) return;
+    setInlineAnswers({});
 
-      if (profile?.bookmarkedLessons) {
-        setIsBookmarked(profile.bookmarkedLessons.includes(lesson.id));
-      }
-
-      // Auto save resume position
-      saveResumePosition(course.id, lesson.id, course.title, lesson.title);
+    if (profile?.bookmarkedLessons) {
+      setIsBookmarked(profile.bookmarkedLessons.includes(lesson.id));
     }
-  }, [course, lesson, profile]);
+    saveResumePosition(course.id, lesson.id, course.title, lesson.title);
+
+    let active = true;
+    setLoadingNote(true);
+    studyApi
+      .getNote(course.id, lesson.id)
+      .then((cloudNote) => {
+        if (!active) return;
+        if (cloudNote) {
+          setNoteContent(cloudNote.content);
+          setNotePinned(cloudNote.isPinned);
+          setNoteUpdatedAt(cloudNote.updatedAt);
+        } else {
+          setNoteContent(lesson.notes || "");
+          setNotePinned(false);
+          setNoteUpdatedAt(null);
+        }
+      })
+      .catch(() => {
+        if (active) setNoteContent(lesson.notes || "");
+      })
+      .finally(() => {
+        if (active) setLoadingNote(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [course?.id, lesson?.id, profile?.bookmarkedLessons]);
 
   if (!course || !lesson) {
     return (
       <div className="max-w-2xl mx-auto py-16 px-4 text-center space-y-4">
-        <div className="text-4xl">📚</div>
-        <h2 className="text-xl font-bold text-slate-900 dark:text-white">Materi Tidak Ditemukan</h2>
-        <p className="text-sm text-slate-500 dark:text-slate-400">
+        <h2 className="font-display text-xl font-bold text-zinc-950 dark:text-white">Materi Tidak Ditemukan</h2>
+        <p className="text-sm text-zinc-500 dark:text-zinc-400">
           Materi pelajaran yang Anda cari tidak tersedia atau sedang diperbarui.
         </p>
         <Button
@@ -285,15 +383,45 @@ export function MateriView({
     );
   }
 
-  // Save Note
-  const handleSaveNote = () => {
-    localStorage.setItem(`skillora_note_${course.id}_${lesson.id}`, noteContent);
-    if (showToast) {
-      showToast("Catatan materi berhasil disimpan! 📝", "success");
+  const inlineChecks = lesson.inlineChecks || [];
+  const answeredChecksCount = inlineChecks.filter((c) => inlineAnswers[c.id] !== undefined).length;
+  const correctChecksCount = inlineChecks.filter(
+    (c) => inlineAnswers[c.id] === c.answerIndex
+  ).length;
+
+  const handleSelectInlineCheck = (check: InlineKnowledgeCheck, optionIdx: number) => {
+    setInlineAnswers((prev) => ({ ...prev, [check.id]: optionIdx }));
+    playSound(optionIdx === check.answerIndex ? "correct" : "wrong");
+  };
+
+  const handleSaveCloudNote = async () => {
+    setSavingNote(true);
+    try {
+      const saved = await studyApi.saveNote(course.id, lesson.id, noteContent, notePinned);
+      setNoteUpdatedAt(saved.updatedAt);
+      showToast?.("Catatan tersinkron ke Cloud PostgreSQL.", "success");
+    } catch (err: any) {
+      showToast?.(err?.message || "Gagal menyimpan catatan ke cloud.", "error");
+    } finally {
+      setSavingNote(false);
     }
   };
 
-  // Toggle Bookmark
+  const handleDeleteCloudNote = async () => {
+    setSavingNote(true);
+    try {
+      await studyApi.deleteNote(course.id, lesson.id);
+      setNoteContent("");
+      setNotePinned(false);
+      setNoteUpdatedAt(null);
+      showToast?.("Catatan cloud dihapus.", "info");
+    } catch (err: any) {
+      showToast?.(err?.message || "Gagal menghapus catatan.", "error");
+    } finally {
+      setSavingNote(false);
+    }
+  };
+
   const handleToggleBookmark = async () => {
     const currentBookmarks = profile?.bookmarkedLessons || [];
     const updated = isBookmarked
@@ -305,19 +433,15 @@ export function MateriView({
 
     try {
       await apiClient.post("/user/bookmark-lesson", { courseId: course.id, lessonId: lesson.id });
-      if (showToast) {
-        showToast(!isBookmarked ? "Materi disimpan ke Bookmark 🔖" : "Materi dihapus dari Bookmark", "success");
-      }
-    } catch (e) {
-      console.error(e);
+      showToast?.(!isBookmarked ? "Materi disimpan ke Bookmark." : "Materi dihapus dari Bookmark.", "success");
+    } catch {
+      // ignore
     }
   };
 
-  // Complete and continue
   const handleCompleteAndGoToQuiz = async () => {
     playSound("correct");
     setIsCompleting(true);
-
     try {
       const data = await apiClient.post("/courses/complete-lesson", {
         courseId: course.id,
@@ -325,104 +449,121 @@ export function MateriView({
         completed: true,
       });
       if (data.profile) onProfileUpdate(data.profile);
-    } catch (e) {
-      console.error(e);
+    } catch {
+      // ignore
     } finally {
       setIsCompleting(false);
     }
-
-    if (showToast) {
-      showToast(`Materi selesai! Membuka kuis latihan... 🚀`, "success");
-    }
-
+    showToast?.("Materi selesai! Membuka latihan pemahaman...", "success");
     navigate(`/belajar/kursus/${course.id}/latihan/${lesson.id}`);
   };
 
-  // Navigate to previous lesson
   const handlePrevLesson = () => {
     if (prevLesson) {
       navigate(`/belajar/kursus/${course.id}/materi/${prevLesson.id}`);
     }
   };
 
-  // Navigate to next lesson
-  const handleNextLessonDirectly = () => {
-    if (nextLesson) {
-      navigate(`/belajar/kursus/${course.id}/materi/${nextLesson.id}`);
-    } else {
-      navigate(`/belajar/kursus/${course.id}`);
-    }
-  };
+  // Compute where to interleave inline checks cleanly among content blocks
+  const contentBlocks = lesson.contentBlocks || [];
+  const firstCheckAfterBlock = contentBlocks.length > 1 ? Math.floor(contentBlocks.length / 2) - 1 : 0;
 
   return (
-    <div className="animate-in fade-in duration-200 max-w-[1360px] mx-auto w-full pb-20 lg:pb-12 px-3 sm:px-5 pt-2 sm:pt-4 space-y-4">
-      
-      {/* Top Breadcrumb & Actions Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-3 bg-white dark:bg-slate-900 p-3 sm:p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs">
-        <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 dark:text-slate-400 overflow-x-auto whitespace-nowrap min-w-0">
-          <Link to="/belajar" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Belajar</Link>
-          <ChevronRight className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-          <Link to={`/belajar/kursus/${course.id}`} className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors truncate max-w-[160px] sm:max-w-xs">
+    <div className="w-full pb-20 lg:pb-12 space-y-5">
+      {/* Top Course Player Action Bar */}
+      <div className="flex flex-wrap items-center justify-between gap-3 bg-white dark:bg-zinc-900 px-4 py-3 rounded-xl border border-zinc-200 dark:border-zinc-800">
+        <div className="flex items-center gap-1.5 text-xs font-medium text-zinc-500 dark:text-zinc-400 overflow-x-auto whitespace-nowrap min-w-0">
+          <Link to="/belajar/katalog" className="hover:text-emerald-600 dark:hover:text-emerald-400">
+            Katalog
+          </Link>
+          <ChevronRight className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
+          <Link
+            to={`/belajar/kursus/${course.id}`}
+            className="hover:text-emerald-600 dark:hover:text-emerald-400 truncate max-w-[160px] sm:max-w-xs"
+          >
             {course.title}
           </Link>
-          <ChevronRight className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-          <span className="text-slate-800 dark:text-slate-200 font-bold truncate">
-            Sesi {lessonIndex + 1} dari {course.lessons?.length}
+          <ChevronRight className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
+          <span className="text-zinc-950 dark:text-white font-semibold font-mono tabular-nums">
+            Sesi {lessonIndex + 1}/{course.lessons.length}
           </span>
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
-          {/* Mobile Sidebar Toggle */}
           <button
             type="button"
             onClick={() => setShowMobileSidebar(true)}
-            className="lg:hidden px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-bold text-slate-700 dark:text-slate-200 flex items-center gap-1.5 cursor-pointer"
+            className="lg:hidden px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 text-xs font-semibold text-zinc-700 dark:text-zinc-200 flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
           >
             <Menu className="w-3.5 h-3.5" />
-            <span>Silabus</span>
+            Silabus
           </button>
 
-          {/* Note Toggle Button */}
           <button
             type="button"
-            onClick={() => setShowNotesDrawer(!showNotesDrawer)}
-            className={`px-3 py-1.5 rounded-xl border text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer ${
-              showNotesDrawer
-                ? "bg-blue-50 dark:bg-blue-950/50 border-blue-300 dark:border-blue-800 text-blue-700 dark:text-blue-300"
-                : "bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100"
+            onClick={() => setShowFlashcardDrawer(true)}
+            className="px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 hover:border-emerald-500/60 text-xs font-semibold text-zinc-800 dark:text-zinc-200 flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
+          >
+            <Layers className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+            <span className="hidden sm:inline">Flashcard</span>
+          </button>
+
+          {onOpenCopilot && (
+            <button
+              type="button"
+              onClick={() =>
+                onOpenCopilot({
+                  courseTitle: course.title,
+                  lessonTitle: lesson.title,
+                })
+              }
+              className="px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 hover:border-emerald-500/60 text-xs font-semibold text-zinc-800 dark:text-zinc-200 flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
+            >
+              <Bot className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+              <span className="hidden sm:inline">Tanya Copilot</span>
+            </button>
+          )}
+
+          <button
+            type="button"
+            onClick={() => setShowNotesDrawer(true)}
+            className={`px-3 py-1.5 rounded-lg border text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer whitespace-nowrap ${
+              noteContent.trim()
+                ? "border-emerald-500/50 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300"
+                : "border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800"
             }`}
           >
             <StickyNote className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">Catatan</span>
           </button>
 
-          {/* Bookmark Button */}
           <button
             type="button"
             onClick={handleToggleBookmark}
-            className={`p-1.5 sm:px-3 sm:py-1.5 rounded-xl border text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer ${
+            className={`p-1.5 sm:px-3 sm:py-1.5 rounded-lg border text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer whitespace-nowrap ${
               isBookmarked
-                ? "bg-amber-50 dark:bg-amber-950/50 border-amber-300 dark:border-amber-800 text-amber-700 dark:text-amber-300"
-                : "bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100"
+                ? "border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300"
+                : "border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800"
             }`}
             aria-label={isBookmarked ? "Hapus dari bookmark" : "Simpan materi"}
           >
-            {isBookmarked ? <BookmarkCheck className="w-3.5 h-3.5 fill-amber-500 text-amber-500" /> : <Bookmark className="w-3.5 h-3.5" />}
+            {isBookmarked ? <BookmarkCheck className="w-3.5 h-3.5" /> : <Bookmark className="w-3.5 h-3.5" />}
             <span className="hidden sm:inline">{isBookmarked ? "Tersimpan" : "Simpan"}</span>
           </button>
         </div>
       </div>
 
-      {/* Main 2-Column Learning Layout */}
+      {/* 2-Zone Course Player Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        
-        {/* LEFT SYLLABUS SIDEBAR (Desktop - 4 Cols) */}
-        <div className="hidden lg:block lg:col-span-4 space-y-4 sticky top-4">
-          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-4 space-y-3.5 shadow-2xs">
-            <div>
-              <div className="flex items-center justify-between text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                <span>Silabus Kursus</span>
-                <span className="text-blue-600 dark:text-blue-400">{progressInfo?.percentage}% Selesai</span>
+        {/* LEFT SYLLABUS SIDEBAR */}
+        <aside className="hidden lg:block lg:col-span-4 sticky top-20">
+          <div className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-4 space-y-4">
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between text-xs">
+                <span className="font-semibold text-zinc-900 dark:text-zinc-100">Silabus Kursus</span>
+                <span className="font-mono font-semibold tabular-nums text-emerald-600 dark:text-emerald-400">
+                  {progressInfo?.percentage || 0}%
+                </span>
               </div>
               <ProgressBar
                 value={progressInfo?.percentage || 0}
@@ -431,16 +572,17 @@ export function MateriView({
               />
             </div>
 
-            {/* Modules Accordion / List */}
-            <div className="space-y-3 max-h-[calc(100vh-220px)] overflow-y-auto pr-1">
+            <div className="space-y-3 max-h-[calc(100vh-270px)] overflow-y-auto pr-1">
               {modules.map((mod) => (
-                <div key={mod.id} className="rounded-xl border border-slate-100 dark:border-slate-800/80 overflow-hidden">
-                  <div className="px-3 py-2 bg-slate-50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-800/60 flex items-center justify-between text-xs font-bold text-slate-700 dark:text-slate-300">
+                <div key={mod.id} className="rounded-lg border border-zinc-200 dark:border-zinc-800 overflow-hidden">
+                  <div className="px-3 py-2 bg-zinc-50 dark:bg-zinc-950/60 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between text-xs font-semibold text-zinc-700 dark:text-zinc-300">
                     <span>Modul {mod.moduleNumber}</span>
-                    <span className="text-slate-400">{mod.completedLessonsCount}/{mod.totalLessonsCount}</span>
+                    <span className="font-mono tabular-nums text-zinc-400">
+                      {mod.completedLessonsCount}/{mod.totalLessonsCount}
+                    </span>
                   </div>
 
-                  <div className="divide-y divide-slate-100 dark:divide-slate-800/60">
+                  <div className="divide-y divide-zinc-100 dark:divide-zinc-800">
                     {mod.lessons.map(({ lesson: les, indexInCourse, isCompleted: lesCompleted, isLocked: lesLocked }) => {
                       const isActive = les.id === lesson.id;
                       return (
@@ -449,31 +591,26 @@ export function MateriView({
                           type="button"
                           disabled={lesLocked}
                           onClick={() => navigate(`/belajar/kursus/${course.id}/materi/${les.id}`)}
-                          className={`w-full text-left p-2.5 text-xs flex items-center gap-2.5 transition-all cursor-pointer ${
+                          className={`w-full text-left px-3 py-2.5 text-xs flex items-center gap-2.5 transition-colors cursor-pointer ${
                             isActive
-                              ? "bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 font-bold border-l-3 border-blue-600"
-                              : lesCompleted
-                              ? "text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/40 font-medium"
+                              ? "bg-emerald-50/80 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 font-semibold"
                               : lesLocked
-                              ? "text-slate-400 dark:text-slate-600 cursor-not-allowed opacity-60"
-                              : "text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/40 font-medium"
+                              ? "text-zinc-400 dark:text-zinc-600 cursor-not-allowed opacity-60"
+                              : "text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800/50"
                           }`}
                         >
-                          <div className={`w-5 h-5 rounded-md flex items-center justify-center shrink-0 text-xs font-bold ${
-                            lesCompleted
-                              ? "bg-emerald-500 text-white"
-                              : isActive
-                              ? "bg-blue-600 text-white shadow-2xs"
-                              : "bg-slate-100 dark:bg-slate-800 text-slate-500"
-                          }`}>
-                            {lesCompleted ? <Check className="w-3 h-3 stroke-[3]" /> : indexInCourse + 1}
+                          <div
+                            className={`w-5 h-5 rounded-md flex items-center justify-center shrink-0 font-mono text-[11px] font-semibold ${
+                              lesCompleted
+                                ? "bg-emerald-600 text-white"
+                                : isActive
+                                ? "bg-zinc-950 dark:bg-zinc-100 text-white dark:text-zinc-950"
+                                : "bg-zinc-100 dark:bg-zinc-800 text-zinc-500"
+                            }`}
+                          >
+                            {lesCompleted ? <Check className="w-3 h-3" /> : indexInCourse + 1}
                           </div>
                           <span className="truncate flex-1">{les.title}</span>
-                          {les.questions && les.questions.length > 0 && (
-                            <span className="text-xs px-1 py-0.2 rounded bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 border border-purple-200/50">
-                              Kuis
-                            </span>
-                          )}
                         </button>
                       );
                     })}
@@ -481,50 +618,71 @@ export function MateriView({
                 </div>
               ))}
             </div>
-          </div>
-        </div>
 
-        {/* RIGHT READING CANVAS (8 Cols on Desktop / 12 Cols on Mobile) */}
-        <div className="lg:col-span-8 space-y-6">
-          
-          {/* Active Lesson Header Canvas */}
-          <div className="bg-white dark:bg-slate-900 rounded-2xl p-5 sm:p-6 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-4">
-            <div className="space-y-2 pb-4 border-b border-slate-100 dark:border-slate-800">
-              <div className="flex items-center gap-2 flex-wrap">
-                <Badge variant="primary" size="sm">
-                  Sesi {lessonIndex + 1} dari {course.lessons.length}
-                </Badge>
-                <span className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1 font-medium">
-                  <Clock className="w-3.5 h-3.5 text-slate-400" />
-                  {lesson.estimatedMinutes || 15} Menit Baca
+            <div className="pt-2 border-t border-zinc-200 dark:border-zinc-800">
+              <button
+                type="button"
+                onClick={() => navigate(`/belajar/kursus/${course.id}`)}
+                className="w-full py-2 text-xs font-semibold text-zinc-600 dark:text-zinc-300 hover:text-emerald-700 dark:hover:text-emerald-400 flex items-center justify-center gap-1.5 cursor-pointer"
+              >
+                <ArrowLeft className="w-3.5 h-3.5" />
+                Kembali ke Hub 4 Tahap
+              </button>
+            </div>
+          </div>
+        </aside>
+
+        {/* RIGHT EDITORIAL READING CANVAS */}
+        <article className="lg:col-span-8 space-y-5">
+          <div className="bg-white dark:bg-zinc-900 rounded-xl p-6 sm:p-8 border border-zinc-200 dark:border-zinc-800 space-y-6">
+            {/* Clean Unboxed Metadata Header */}
+            <header className="space-y-2 pb-5 border-b border-zinc-200 dark:border-zinc-800">
+              <div className="flex flex-wrap items-center gap-2 text-xs font-mono tabular-nums text-zinc-500 dark:text-zinc-400">
+                <span>Sesi {lessonIndex + 1} dari {course.lessons.length}</span>
+                <span>·</span>
+                <span className="inline-flex items-center gap-1">
+                  <Clock className="w-3.5 h-3.5" />
+                  {lesson.estimatedMinutes || 15} menit baca
                 </span>
+                {inlineChecks.length > 0 && (
+                  <>
+                    <span>·</span>
+                    <span className="text-zinc-700 dark:text-zinc-300">
+                      Cek Paham {answeredChecksCount}/{inlineChecks.length}
+                      {answeredChecksCount > 0 ? ` (${correctChecksCount} benar)` : ""}
+                    </span>
+                  </>
+                )}
                 {lesson.xp && (
-                  <span className="text-xs font-bold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 px-2 py-0.5 rounded-md border border-amber-200 dark:border-amber-800/60">
-                    +{lesson.xp} XP
-                  </span>
+                  <>
+                    <span>·</span>
+                    <span className="text-emerald-600 dark:text-emerald-400 font-semibold">+{lesson.xp} XP</span>
+                  </>
                 )}
                 {lesson.completed && (
-                  <Badge variant="success" size="sm">
-                    <Check className="w-3 h-3 mr-1" /> Selesai
-                  </Badge>
+                  <>
+                    <span>·</span>
+                    <span className="text-emerald-600 dark:text-emerald-400 font-semibold">Selesai</span>
+                  </>
                 )}
               </div>
 
-              <h1 className="text-xl sm:text-2xl font-bold font-display text-slate-900 dark:text-white tracking-tight leading-snug">
+              <h1 className="text-2xl sm:text-3xl font-bold font-display text-zinc-950 dark:text-white tracking-tight leading-snug">
                 {lesson.title}
               </h1>
-            </div>
+            </header>
 
-            {/* Target Pembelajaran / Objectives */}
+            {/* Learning Objectives */}
             {lesson.learningObjectives && lesson.learningObjectives.length > 0 && (
-              <div className="p-4 bg-blue-50/50 dark:bg-blue-950/20 rounded-2xl border border-blue-100 dark:border-blue-900/40 space-y-2">
-                <h3 className="text-xs font-bold text-blue-950 dark:text-blue-200 flex items-center gap-1.5 uppercase tracking-wide">
-                  <Lightbulb className="w-4 h-4 text-amber-500" /> Target Pembelajaran Sesi Ini
+              <div className="p-4 rounded-xl bg-zinc-50 dark:bg-zinc-950/60 border border-zinc-200 dark:border-zinc-800 space-y-2.5">
+                <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-600 dark:text-zinc-400 flex items-center gap-1.5">
+                  <Lightbulb className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                  Target Pembelajaran Sesi Ini
                 </h3>
-                <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-blue-900 dark:text-blue-300">
+                <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-zinc-700 dark:text-zinc-300">
                   {lesson.learningObjectives.map((obj, idx) => (
                     <li key={idx} className="flex items-start gap-2">
-                      <CheckCircle2 className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
                       <span>{obj}</span>
                     </li>
                   ))}
@@ -532,58 +690,101 @@ export function MateriView({
               </div>
             )}
 
-            {/* Structured Content Area */}
-            <div className="prose dark:prose-invert max-w-none space-y-4 text-slate-700 dark:text-slate-200 text-sm sm:text-base leading-relaxed pt-2">
-              <p className="text-sm sm:text-base font-medium text-slate-800 dark:text-slate-200 leading-relaxed border-l-3 border-blue-600 pl-3.5 py-1 bg-blue-50/30 dark:bg-blue-950/20 rounded-r-lg">
-                Modul ini menyajikan panduan mendalam dan studi kasus teknis mengenai <b>{lesson.title}</b> dalam standar kurikulum {course.partner}.
+            {/* Reading Body with Interleaved Inline Knowledge Checks */}
+            <div className="max-w-[72ch] space-y-4">
+              <p className="text-sm text-zinc-600 dark:text-zinc-300 leading-relaxed">
+                Panduan terstruktur dan studi kasus praktis mengenai{" "}
+                <strong className="font-semibold text-zinc-950 dark:text-white">{lesson.title}</strong> dalam standar kurikulum {course.partner}.
               </p>
 
-              {lesson.contentBlocks && lesson.contentBlocks.length > 0 ? (
-                lesson.contentBlocks.map((block) => (
-                  <div key={block.id} className="space-y-2">
-                    {block.type === "text" && (
-                      <FormattedTextBlock content={block.content} />
+              {contentBlocks.length > 0 ? (
+                contentBlocks.map((block, bIdx) => (
+                  <React.Fragment key={block.id}>
+                    <div>
+                      {block.type === "text" && <FormattedTextBlock content={block.content} />}
+                      {block.type === "code" && (
+                        <CodeBlock code={block.content} language={block.language || "code"} />
+                      )}
+                    </div>
+
+                    {/* Interleave first inline knowledge check mid-article */}
+                    {bIdx === firstCheckAfterBlock && inlineChecks[0] && (
+                      <InlineKnowledgeCheckCard
+                        check={inlineChecks[0]}
+                        index={0}
+                        selectedOption={inlineAnswers[inlineChecks[0].id]}
+                        onSelect={(optIdx) => handleSelectInlineCheck(inlineChecks[0], optIdx)}
+                      />
                     )}
-                    {block.type === "code" && (
-                      <CodeBlock code={block.content} language={block.language || "code"} />
-                    )}
-                  </div>
+                  </React.Fragment>
                 ))
               ) : (
-                <div className="space-y-4">
-                  <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-200/60 dark:border-slate-700 space-y-3">
-                    <h3 className="font-bold text-slate-900 dark:text-white text-base">
-                      Ringkasan Materi & Panduan Pembelajaran
-                    </h3>
-                    <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
-                      Dalam sesi ini, Anda mempelajari arsitektur dasar, standar best-practice, serta analisis studi kasus yang sering diujikan pada tes seleksi kerja dan implementasi industri.
-                    </p>
-                  </div>
-                </div>
+                <>
+                  <p className="text-sm text-zinc-600 dark:text-zinc-300 leading-relaxed">
+                    Dalam sesi ini Anda mempelajari fondasi arsitektur, pola implementasi terbaik, serta analisis kasus yang diujikan pada seleksi industri.
+                  </p>
+                  {inlineChecks[0] && (
+                    <InlineKnowledgeCheckCard
+                      check={inlineChecks[0]}
+                      index={0}
+                      selectedOption={inlineAnswers[inlineChecks[0].id]}
+                      onSelect={(optIdx) => handleSelectInlineCheck(inlineChecks[0], optIdx)}
+                    />
+                  )}
+                </>
               )}
 
-              {/* Transcript if available */}
+              {/* Remaining inline knowledge checks at end of reading */}
+              {inlineChecks.slice(1).map((chk, idx) => (
+                <InlineKnowledgeCheckCard
+                  key={chk.id}
+                  check={chk}
+                  index={idx + 1}
+                  selectedOption={inlineAnswers[chk.id]}
+                  onSelect={(optIdx) => handleSelectInlineCheck(chk, optIdx)}
+                />
+              ))}
+
               {lesson.transcript && (
-                <div className="p-4 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-2 mt-4">
-                  <h4 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
-                    Transkrip & Catatan Instruktur
+                <div className="p-4 rounded-xl bg-zinc-50 dark:bg-zinc-950/60 border border-zinc-200 dark:border-zinc-800 space-y-1.5 mt-4">
+                  <h4 className="text-xs font-semibold uppercase tracking-wider text-zinc-500">
+                    Catatan Instruktur
                   </h4>
-                  <p className="text-xs text-slate-600 dark:text-slate-300 italic leading-relaxed">
-                    {lesson.transcript}
-                  </p>
+                  <p className="text-xs text-zinc-600 dark:text-zinc-300 leading-relaxed">{lesson.transcript}</p>
                 </div>
               )}
             </div>
 
-            {/* References / Sources */}
-            {lesson.sources && lesson.sources.length > 0 && (
-              <div className="pt-6 border-t border-slate-100 dark:border-slate-800 space-y-3">
-                <div className="flex items-center gap-2">
-                  <BookOpen className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />
-                  <h3 className="text-sm font-bold font-display text-slate-900 dark:text-white">
-                    Referensi & Sumber Acuan
-                  </h3>
+            {/* Quick Flashcard Reminder Strip */}
+            {lesson.flashcards && lesson.flashcards.length > 0 && (
+              <div className="p-4 rounded-xl bg-zinc-50 dark:bg-zinc-950/60 border border-zinc-200 dark:border-zinc-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="space-y-0.5">
+                  <p className="text-xs font-semibold text-zinc-950 dark:text-white flex items-center gap-1.5">
+                    <Layers className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                    {lesson.flashcards.length} Flashcard Konsep Kunci Tersedia
+                  </p>
+                  <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                    Uji daya ingat aktif sesi ini dengan spaced repetition SM-2 sebelum lanjut ke kuis.
+                  </p>
                 </div>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => setShowFlashcardDrawer(true)}
+                  leftIcon={<Layers className="w-3.5 h-3.5" />}
+                >
+                  Latih Flashcard
+                </Button>
+              </div>
+            )}
+
+            {/* References */}
+            {lesson.sources && lesson.sources.length > 0 && (
+              <div className="pt-5 border-t border-zinc-200 dark:border-zinc-800 space-y-3">
+                <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-500 flex items-center gap-1.5">
+                  <BookOpen className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                  Referensi & Dokumentasi
+                </h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                   {lesson.sources.map((source, idx) => (
                     <a
@@ -591,20 +792,13 @@ export function MateriView({
                       href={source.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-start gap-2.5 p-2.5 bg-slate-50 hover:bg-blue-50/40 dark:bg-slate-800/40 dark:hover:bg-blue-950/20 border border-slate-200/60 hover:border-blue-200 dark:border-slate-700 dark:hover:border-blue-800 rounded-xl transition-all group"
+                      className="flex items-center justify-between gap-2 p-3 rounded-lg border border-zinc-200 dark:border-zinc-800 hover:border-emerald-500/60 transition-colors text-xs"
                     >
-                      <div className="p-2 bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 rounded-lg shrink-0 group-hover:scale-105 transition-transform">
-                        <FileText className="w-3.5 h-3.5" />
-                      </div>
-                      <div className="space-y-0.5 min-w-0 flex-1">
-                        <h4 className="text-xs font-semibold text-slate-800 dark:text-slate-200 truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                          {source.title}
-                        </h4>
-                        <p className="text-xs text-slate-400 flex items-center gap-1">
-                          <span>Buka referensi</span>
-                          <ChevronRight className="w-2.5 h-2.5" />
-                        </p>
-                      </div>
+                      <span className="flex items-center gap-2 min-w-0">
+                        <FileText className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
+                        <span className="font-medium text-zinc-800 dark:text-zinc-200 truncate">{source.title}</span>
+                      </span>
+                      <ChevronRight className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
                     </a>
                   ))}
                 </div>
@@ -612,9 +806,8 @@ export function MateriView({
             )}
           </div>
 
-          {/* Lesson Navigation Bottom Action Bar */}
-          <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 sm:p-5 border border-slate-200/80 dark:border-slate-800 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-3.5">
-            {/* Prev Lesson Button */}
+          {/* Bottom Navigation Bar */}
+          <div className="bg-white dark:bg-zinc-900 rounded-xl p-4 border border-zinc-200 dark:border-zinc-800 flex flex-col sm:flex-row items-center justify-between gap-3">
             <Button
               variant="secondary"
               size="md"
@@ -622,11 +815,17 @@ export function MateriView({
               onClick={handlePrevLesson}
               leftIcon={<ChevronLeft className="w-4 h-4" />}
             >
-              {prevLesson ? `Sebelumnya: ${prevLesson.title.slice(0, 16)}...` : "Sesi Pertama"}
+              {prevLesson ? "Sebelumnya" : "Sesi Pertama"}
             </Button>
 
-            {/* Next / Complete Action */}
-            <div className="flex items-center gap-2 w-full sm:w-auto">
+            <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+              <button
+                type="button"
+                onClick={() => navigate(`/belajar/kursus/${course.id}`)}
+                className="px-3.5 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 text-xs font-semibold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800 cursor-pointer whitespace-nowrap"
+              >
+                Hub 4 Tahap
+              </button>
               <Button
                 variant="primary"
                 size="md"
@@ -638,72 +837,129 @@ export function MateriView({
               </Button>
             </div>
           </div>
-        </div>
+        </article>
       </div>
 
-      {/* SLIDE-OUT / COLLAPSIBLE NOTES DRAWER */}
-      {showNotesDrawer && (
-        <div role="dialog" aria-modal="true" className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center sm:justify-end p-3 sm:p-4 animate-in fade-in duration-200">
-          <div className="bg-white dark:bg-slate-900 rounded-2xl max-w-md w-full h-[520px] p-5 shadow-2xl border border-slate-200 dark:border-slate-800 flex flex-col justify-between space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
-              <div className="flex items-center gap-2">
-                <div className="p-2 bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 rounded-xl">
-                  <StickyNote className="w-4 h-4" />
-                </div>
-                <div>
-                  <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Catatan Personal</span>
-                  <h3 className="text-xs font-bold text-slate-900 dark:text-white truncate max-w-[220px]">
-                    {lesson.title}
-                  </h3>
-                </div>
+      {/* FLASHCARD SM-2 SLIDE-OVER DRAWER */}
+      {showFlashcardDrawer && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-60 bg-zinc-950/50 backdrop-blur-xs flex items-center justify-center sm:justify-end p-3 sm:p-4"
+        >
+          <div className="bg-white dark:bg-zinc-900 rounded-xl max-w-lg w-full max-h-[88vh] p-5 shadow-2xl border border-zinc-200 dark:border-zinc-800 flex flex-col gap-4 overflow-hidden">
+            <div className="flex items-center justify-between border-b border-zinc-200 dark:border-zinc-800 pb-3">
+              <div className="min-w-0">
+                <p className="text-[11px] font-mono text-emerald-600 dark:text-emerald-400 flex items-center gap-1 font-semibold">
+                  <Layers className="w-3.5 h-3.5" />
+                  Flashcard Spaced Repetition
+                </p>
+                <h3 className="text-xs font-semibold text-zinc-950 dark:text-white truncate mt-0.5">
+                  {course.title}
+                </h3>
               </div>
               <button
                 type="button"
-                onClick={() => setShowNotesDrawer(false)}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
-                aria-label="Tutup catatan"
+                onClick={() => setShowFlashcardDrawer(false)}
+                aria-label="Tutup flashcard"
+                className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <textarea aria-label="Input field"
+            <div className="flex-1 overflow-y-auto pr-1">
+              <FlashcardDeckPanel
+                courseId={course.id}
+                onProfileUpdate={onProfileUpdate}
+                showToast={showToast}
+                compact
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* CLOUD NOTES DRAWER (PostgreSQL Synced) */}
+      {showNotesDrawer && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-60 bg-zinc-950/50 backdrop-blur-xs flex items-center justify-center sm:justify-end p-3 sm:p-4"
+        >
+          <div className="bg-white dark:bg-zinc-900 rounded-xl max-w-md w-full h-[540px] p-5 shadow-2xl border border-zinc-200 dark:border-zinc-800 flex flex-col justify-between gap-4">
+            <div className="flex items-center justify-between border-b border-zinc-200 dark:border-zinc-800 pb-3">
+              <div className="min-w-0">
+                <p className="text-[11px] font-mono text-emerald-600 dark:text-emerald-400 flex items-center gap-1 font-semibold">
+                  <Cloud className="w-3.5 h-3.5" />
+                  Catatan Cloud Tersinkron
+                </p>
+                <h3 className="text-xs font-semibold text-zinc-950 dark:text-white truncate mt-0.5">
+                  {lesson.title}
+                </h3>
+              </div>
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => setNotePinned((p) => !p)}
+                  title={notePinned ? "Lepas pin catatan" : "Sematkan catatan"}
+                  className={`p-1.5 rounded-lg cursor-pointer ${
+                    notePinned
+                      ? "bg-amber-50 dark:bg-amber-950/40 text-amber-600"
+                      : "text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200"
+                  }`}
+                >
+                  <Pin className="w-4 h-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowNotesDrawer(false)}
+                  aria-label="Tutup catatan"
+                  className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+
+            <textarea
+              aria-label="Isi catatan materi"
               value={noteContent}
+              disabled={loadingNote}
               onChange={(e) => setNoteContent(e.target.value)}
-              placeholder="Tulis ringkasan rumus atau catatan penting sesi ini..."
-              className="flex-1 w-full p-3 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl text-xs sm:text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none font-medium leading-relaxed"
+              placeholder={loadingNote ? "Memuat catatan cloud..." : "Tulis poin penting, rumus, atau potongan kode sesi ini..."}
+              className="flex-1 w-full p-3.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-emerald-500 resize-none leading-relaxed"
             />
 
-            <div className="flex items-center justify-between pt-2">
-              <button
-                type="button"
-                onClick={() => {
-                  localStorage.removeItem(`skillora_note_${course.id}_${lesson.id}`);
-                  setNoteContent("");
-                  if (showToast) showToast("Catatan dihapus", "info");
-                }}
-                className="text-xs text-rose-500 hover:underline font-bold cursor-pointer"
-              >
-                Hapus
-              </button>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => setShowNotesDrawer(false)}
+            <div className="flex items-center justify-between pt-1">
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  disabled={savingNote || !noteContent.trim()}
+                  onClick={handleDeleteCloudNote}
+                  className="text-xs text-rose-600 dark:text-rose-400 hover:underline font-medium disabled:opacity-40 cursor-pointer"
                 >
+                  Hapus
+                </button>
+                {noteUpdatedAt && (
+                  <span className="text-[11px] font-mono text-zinc-400">
+                    Tersimpan {new Date(noteUpdatedAt).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}
+                  </span>
+                )}
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Button variant="secondary" size="sm" onClick={() => setShowNotesDrawer(false)}>
                   Tutup
                 </Button>
                 <Button
                   variant="primary"
                   size="sm"
-                  onClick={() => {
-                    handleSaveNote();
-                    setShowNotesDrawer(false);
-                  }}
+                  disabled={savingNote}
+                  onClick={handleSaveCloudNote}
                   leftIcon={<Save className="w-3.5 h-3.5" />}
                 >
-                  Simpan
+                  {savingNote ? "Menyimpan..." : "Simpan Cloud"}
                 </Button>
               </div>
             </div>
@@ -713,31 +969,31 @@ export function MateriView({
 
       {/* MOBILE SYLLABUS DRAWER */}
       {showMobileSidebar && (
-        <div role="dialog" aria-modal="true" className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-start p-3 animate-in fade-in duration-200 lg:hidden">
-          <div className="bg-white dark:bg-slate-900 rounded-2xl max-w-sm w-full h-[85vh] p-4 shadow-2xl border border-slate-200 dark:border-slate-800 flex flex-col justify-between space-y-3">
-            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
-              <div className="flex items-center gap-2">
-                <BookOpen className="w-4 h-4 text-blue-600" />
-                <h3 className="font-display font-bold text-sm text-slate-900 dark:text-white">Silabus Kursus</h3>
-              </div>
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-60 bg-zinc-950/50 backdrop-blur-xs flex items-center justify-start p-3 lg:hidden"
+        >
+          <div className="bg-white dark:bg-zinc-900 rounded-xl max-w-sm w-full h-[85vh] p-4 shadow-2xl border border-zinc-200 dark:border-zinc-800 flex flex-col justify-between gap-3">
+            <div className="flex items-center justify-between border-b border-zinc-200 dark:border-zinc-800 pb-3">
+              <h3 className="font-display font-bold text-sm text-zinc-950 dark:text-white">Silabus Kursus</h3>
               <button
                 type="button"
                 onClick={() => setShowMobileSidebar(false)}
-                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
+                className="p-1 text-zinc-400 hover:text-zinc-700 cursor-pointer"
                 aria-label="Tutup silabus"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            {/* Modules List */}
             <div className="flex-1 overflow-y-auto space-y-3 pr-1">
               {modules.map((mod) => (
-                <div key={mod.id} className="rounded-xl border border-slate-100 dark:border-slate-800/80 overflow-hidden">
-                  <div className="px-3 py-2 bg-slate-50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-800/60 text-xs font-bold text-slate-700 dark:text-slate-300">
-                    Modul {mod.moduleNumber}: {mod.title.replace(/^Modul \d+:\s*/, "")}
+                <div key={mod.id} className="rounded-lg border border-zinc-200 dark:border-zinc-800 overflow-hidden">
+                  <div className="px-3 py-2 bg-zinc-50 dark:bg-zinc-950/60 border-b border-zinc-200 dark:border-zinc-800 text-xs font-semibold text-zinc-700 dark:text-zinc-300">
+                    Modul {mod.moduleNumber}
                   </div>
-                  <div className="divide-y divide-slate-100 dark:divide-slate-800/60">
+                  <div className="divide-y divide-zinc-100 dark:divide-zinc-800">
                     {mod.lessons.map(({ lesson: les, indexInCourse, isCompleted: lesCompleted, isLocked: lesLocked }) => {
                       const isActive = les.id === lesson.id;
                       return (
@@ -749,25 +1005,15 @@ export function MateriView({
                             setShowMobileSidebar(false);
                             navigate(`/belajar/kursus/${course.id}/materi/${les.id}`);
                           }}
-                          className={`w-full text-left p-2.5 text-xs flex items-center gap-2.5 transition-all ${
+                          className={`w-full text-left px-3 py-2.5 text-xs flex items-center gap-2.5 ${
                             isActive
-                              ? "bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 font-bold border-l-3 border-blue-600"
-                              : lesCompleted
-                              ? "text-slate-600 dark:text-slate-300 font-medium"
+                              ? "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 font-semibold"
                               : lesLocked
-                              ? "text-slate-400 opacity-60 cursor-not-allowed"
-                              : "text-slate-700 dark:text-slate-300 font-medium"
+                              ? "text-zinc-400 opacity-60 cursor-not-allowed"
+                              : "text-zinc-700 dark:text-zinc-300"
                           }`}
                         >
-                          <div className={`w-5 h-5 rounded-md flex items-center justify-center shrink-0 text-xs font-bold ${
-                            lesCompleted
-                              ? "bg-emerald-500 text-white"
-                              : isActive
-                              ? "bg-blue-600 text-white shadow-2xs"
-                              : "bg-slate-100 dark:bg-slate-800 text-slate-500"
-                          }`}>
-                            {lesCompleted ? <Check className="w-3 h-3 stroke-[3]" /> : indexInCourse + 1}
-                          </div>
+                          <span className="font-mono text-[11px]">{lesCompleted ? "✓" : indexInCourse + 1}</span>
                           <span className="truncate flex-1">{les.title}</span>
                         </button>
                       );
@@ -777,18 +1023,12 @@ export function MateriView({
               ))}
             </div>
 
-            <Button
-              variant="secondary"
-              size="sm"
-              fullWidth
-              onClick={() => setShowMobileSidebar(false)}
-            >
+            <Button variant="secondary" size="sm" fullWidth onClick={() => setShowMobileSidebar(false)}>
               Tutup Silabus
             </Button>
           </div>
         </div>
       )}
-
     </div>
   );
 }

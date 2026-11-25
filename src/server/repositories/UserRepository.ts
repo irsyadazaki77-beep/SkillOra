@@ -444,6 +444,17 @@ export class UserRepository {
       notifyEmail: updatedUserRow.notifyEmail,
       notifyDaily: updatedUserRow.notifyDaily,
       notifySound: updatedUserRow.notifySound,
+      portfolioSlug:
+        updatedUserRow.portfolioSlug ||
+        (updatedUserRow.username || updatedUserRow.name || "pelajar")
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, "-")
+          .replace(/^-|-$/g, "") + `-${updatedUserRow.id}`,
+      portfolioPublic: updatedUserRow.portfolioPublic ?? true,
+      portfolioHeadline: updatedUserRow.portfolioHeadline || updatedUserRow.role || "Pelajar Siap Kerja",
+      campusName: updatedUserRow.campusName || null,
+      majorName: updatedUserRow.majorName || null,
+      leagueTier: updatedUserRow.leagueTier || "silver",
     };
   }
 
