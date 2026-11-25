@@ -17,9 +17,11 @@ import {
 import { eq, desc } from "drizzle-orm";
 import { NotificationRepository } from "./NotificationRepository.js";
 import { safeParse } from "../../utils/safeJson.js";
+import { ensureSchema } from "../db/ensureSchema.js";
 
 export class UserRepository {
   static async getOrCreateUser(uid: string, email: string = "user@skillora.app", name: string = "Siswa") {
+    await ensureSchema();
     let userRow = await db.query.users.findFirst({
       where: eq(users.uid, uid),
     });

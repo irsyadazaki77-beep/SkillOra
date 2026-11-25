@@ -23,6 +23,7 @@ import { UserRepository } from "./src/server/repositories/UserRepository.js";
 import { NotificationRepository } from "./src/server/repositories/NotificationRepository.js";
 import { UserService } from "./src/server/services/userService.js";
 import { attachWsHub } from "./src/server/wsHub.js";
+import { ensureSchema } from "./src/server/db/ensureSchema.js";
 import { ensureSeeded } from "./src/server/db/seedData.js";
 import { globalErrorHandler } from "./src/server/middlewares/errorHandler.js";
 import { pool } from "./src/db/index.js";
@@ -166,6 +167,8 @@ app.use("/api", apiLimiter, apiRouter);
 const PORT = 3000;
 
 async function startServer() {
+  // Ensure missing columns/tables exist before seeding and serving requests
+  await ensureSchema();
   // Ensure baseline catalog data is seeded idempotently into PostgreSQL
   ensureSeeded().catch((err) => console.warn("Initial seed warning:", err));
 
