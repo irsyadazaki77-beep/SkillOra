@@ -533,6 +533,7 @@ export interface Course {
   partner: string;
   rating?: number;
   enrolledCount?: number;
+  isEnrolled?: boolean;
   category?: string;
   logo: string;
   image: string;

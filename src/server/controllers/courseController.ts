@@ -106,4 +106,17 @@ export class CourseController {
       });
     }
   }
+
+  static async enrollCourse(req: AuthenticatedRequest, res: Response) {
+    try {
+      const result = await CourseService.enrollCourse(req.userId!, req.params.id);
+      return res.json({ success: true, data: result });
+    } catch (err: any) {
+      const status = err.message?.includes("tidak ditemukan") ? 404 : 400;
+      return res.status(status).json({
+        success: false,
+        error: { code: status === 404 ? "NOT_FOUND" : "BAD_REQUEST", message: err.message }
+      });
+    }
+  }
 }

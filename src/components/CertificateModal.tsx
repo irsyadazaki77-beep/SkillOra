@@ -37,6 +37,16 @@ export function CertificateModal({
   });
 
   const verificationUrl = typeof window !== "undefined" ? `${window.location.origin}/verify/${finalCertId}` : "";
+  const nowDate = new Date();
+  const linkedInUrl = activeCertificate
+    ? `https://www.linkedin.com/profile/add?startTask=CERTIFICATION_NAME&name=${encodeURIComponent(
+        activeCertificate.title
+      )}&organizationName=${encodeURIComponent(
+        `SkillOra — ${activeCertificate.partner}`
+      )}&issueYear=${nowDate.getFullYear()}&issueMonth=${
+        nowDate.getMonth() + 1
+      }&certId=${encodeURIComponent(finalCertId)}&certUrl=${encodeURIComponent(verificationUrl)}`
+    : "";
 
   const generateInteractiveHtml = () => {
     if (!activeCertificate) return "";
@@ -432,6 +442,16 @@ export function CertificateModal({
                   <Download className="w-4 h-4" />
                   <span>Unduh File Sertifikat</span>
                 </button>
+                <a
+                  href={linkedInUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="bg-[#0A66C2] hover:bg-[#004182] text-white px-3 py-2 rounded-xl flex items-center gap-1.5 text-xs font-extrabold transition-all active:scale-95"
+                  title="Tambahkan kredensial ini ke profil LinkedIn Anda"
+                >
+                  <Award className="w-4 h-4" />
+                  <span>Tambahkan ke LinkedIn</span>
+                </a>
                 <button
                   onClick={() => window.print()}
                   className="bg-amber-500 hover:bg-amber-600 text-slate-950 px-3.5 py-2 rounded-xl flex items-center gap-2 text-xs font-extrabold transition-all shadow-[0_4px_12px_rgba(245,158,11,0.3)] hover:shadow-[0_4px_16px_rgba(245,158,11,0.5)] active:scale-95 cursor-pointer"

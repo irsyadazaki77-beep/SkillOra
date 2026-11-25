@@ -85,7 +85,24 @@ export class CourseService {
       contentMarkdown: body.contentMarkdown,
       estimatedMinutes: body.estimatedMinutes,
       questions: body.questions,
+      videoUrl: body.videoUrl,
     });
+  }
+
+  static async enrollCourse(userId: string, courseId: string) {
+    const profile = await UserRepository.getFullProfile(userId);
+    const result = await CourseRepository.enrollCourse(profile.id, courseId);
+    if (!result.alreadyEnrolled) {
+      await NotificationRepository.addNotification(
+        profile.id,
+        `🎓 Berhasil mendaftar kursus gratis '${result.courseTitle}'. Selamat belajar tanpa batas di SkillOra!`
+      );
+    }
+    return {
+      enrolled: result.enrolled,
+      alreadyEnrolled: result.alreadyEnrolled,
+      enrolledCount: result.enrolledCount,
+    };
   }
 
   static async completeLesson(userId: string, data: { courseId: string; lessonId: string }) {

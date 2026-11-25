@@ -244,6 +244,13 @@ async function runEnsureSchema(): Promise<void> {
       "earned_xp" integer DEFAULT 0 NOT NULL,
       "created_at" timestamp DEFAULT now()
     );`,
+    `CREATE TABLE IF NOT EXISTS "course_enrollments" (
+      "id" serial PRIMARY KEY,
+      "user_id" integer NOT NULL,
+      "course_id" integer NOT NULL,
+      "enrolled_at" timestamp DEFAULT now() NOT NULL,
+      CONSTRAINT "course_enrollments_user_course_uniq" UNIQUE ("user_id", "course_id")
+    );`,
   ];
 
   for (const sql of statements) {

@@ -33,6 +33,8 @@ import { Button } from "./ui/Button";
 import { ProgressBar } from "./ui/ProgressBar";
 import { CopilotContextInfo } from "./MentorChatSidebar";
 import { FlashcardDeckPanel } from "./training/FlashcardDeckPanel";
+import { MarkdownRenderer } from "./ui/MarkdownRenderer";
+import { LessonVideoPlayer } from "./ui/LessonVideoPlayer";
 
 interface MateriViewProps {
   courses: Course[];
@@ -697,11 +699,15 @@ export function MateriView({
                 <strong className="font-semibold text-zinc-950 dark:text-white">{lesson.title}</strong> dalam standar kurikulum {course.partner}.
               </p>
 
+              {lesson.videoUrl && (
+                <LessonVideoPlayer videoUrl={lesson.videoUrl} title={lesson.title} />
+              )}
+
               {contentBlocks.length > 0 ? (
                 contentBlocks.map((block, bIdx) => (
                   <React.Fragment key={block.id}>
                     <div>
-                      {block.type === "text" && <FormattedTextBlock content={block.content} />}
+                      {block.type === "text" && <MarkdownRenderer content={block.content} />}
                       {block.type === "code" && (
                         <CodeBlock code={block.content} language={block.language || "code"} />
                       )}

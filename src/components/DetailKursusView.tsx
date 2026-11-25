@@ -27,9 +27,10 @@ import {
   Sparkles,
   FileCheck2,
   RotateCcw,
+  UserPlus,
 } from "lucide-react";
 import { Course, CourseTrainingOverview, Lesson, Profile } from "../types";
-import { apiClient, trainingApi } from "../api/apiClient";
+import { apiClient, courseApi, trainingApi } from "../api/apiClient";
 import { getCourseProgress, getStructuredModules } from "../utils/courseUtils";
 import { resolveCourseImage } from "../utils/resolveAsset";
 import defaultCourseImg from "../assets/images/course_tech_engineering_1794974031663.jpg";
@@ -67,6 +68,14 @@ export function DetailKursusView({
 
   const [overview, setOverview] = useState<CourseTrainingOverview | null>(null);
   const [loadingOverview, setLoadingOverview] = useState(false);
+  const [localEnrolled, setLocalEnrolled] = useState<boolean>(Boolean(course?.isEnrolled));
+  const [localEnrolledCount, setLocalEnrolledCount] = useState<number>(course?.enrolledCount || 0);
+  const [enrollingCourse, setEnrollingCourse] = useState(false);
+
+  useEffect(() => {
+    setLocalEnrolled(Boolean(course?.isEnrolled));
+    setLocalEnrolledCount(course?.enrolledCount || 0);
+  }, [course?.id, course?.isEnrolled, course?.enrolledCount]);
 
   // Lesson note modal state
   const [activeNoteLesson, setActiveNoteLesson] = useState<Lesson | null>(null);
@@ -338,6 +347,10 @@ export function DetailKursusView({
                 <span className="font-mono tabular-nums text-zinc-700 dark:text-zinc-300 font-semibold">
                   +{course.xpReward} XP
                 </span>
+                <span>·</span>
+                <span className="font-semibold text-emerald-700 dark:text-emerald-400">
+                  100% Gratis · Beasiswa Terbuka
+                </span>
               </div>
 
               <h1 className="text-2xl sm:text-3xl font-display font-bold text-zinc-950 dark:text-white tracking-tight leading-snug">
@@ -399,14 +412,51 @@ export function DetailKursusView({
               <Button
                 variant="secondary"
                 size="md"
-                onClick={() => {
-                  const target = nextLesson || course.lessons[0];
-                  if (target) navigate(`/belajar/kursus/${course.id}/materi/${target.id}`);
-                }}
+                onClick={() => navigate("/belajar/lms")}
                 leftIcon={<BookOpen className="w-4 h-4" />}
               >
-                Buka Materi
+                Ruang LMS Terfokus
               </Button>
+
+              <button
+                type="button"
+                disabled={enrollingCourse || localEnrolled}
+                onClick={async () => {
+                  setEnrollingCourse(true);
+                  try {
+                    const res = await courseApi.enrollCourse(course.id);
+                    setLocalEnrolled(true);
+                    setLocalEnrolledCount(res.enrolledCount);
+                    showToast?.(
+                      res.alreadyEnrolled
+                        ? `Anda sudah terdaftar pada "${course.title}".`
+                        : `Berhasil mendaftar gratis di "${course.title}"!`,
+                      "success"
+                    );
+                  } catch (err: any) {
+                    showToast?.(err?.message || "Gagal mendaftar kursus.", "error");
+                  } finally {
+                    setEnrollingCourse(false);
+                  }
+                }}
+                className={`px-3.5 py-2 rounded-lg border text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer whitespace-nowrap shrink-0 ${
+                  localEnrolled
+                    ? "bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-900/50 text-emerald-700 dark:text-emerald-300 cursor-default"
+                    : "bg-emerald-600 hover:bg-emerald-700 border-emerald-600 text-white"
+                }`}
+              >
+                {localEnrolled ? (
+                  <>
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    <span>Terdaftar{localEnrolledCount > 0 ? ` (${localEnrolledCount})` : ""}</span>
+                  </>
+                ) : (
+                  <>
+                    <UserPlus className="w-3.5 h-3.5" />
+                    <span>{enrollingCourse ? "Mendaftar..." : "Daftar Kursus Gratis"}</span>
+                  </>
+                )}
+              </button>
 
               <button
                 type="button"

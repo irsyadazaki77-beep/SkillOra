@@ -241,8 +241,14 @@ export const courseApi = {
   createCourse: (courseData: Partial<Course>) => apiClient.post<Course>("/courses", courseData),
   updateCourse: (id: string, courseData: Partial<Course>) => apiClient.put<Course>(`/courses/${id}`, courseData),
   deleteCourse: (id: string) => apiClient.delete<any>(`/courses/${id}`),
-  addLesson: (courseId: string, lessonData: { title: string; xp?: number; estimatedMinutes?: number; contentMarkdown?: string }) =>
-    apiClient.post<any>(`/courses/${courseId}/lessons`, lessonData),
+  enrollCourse: (courseId: string) =>
+    apiClient.post<{ enrolled: boolean; alreadyEnrolled: boolean; enrolledCount: number }>(
+      `/courses/${courseId}/enroll`
+    ),
+  addLesson: (
+    courseId: string,
+    lessonData: { title: string; xp?: number; estimatedMinutes?: number; contentMarkdown?: string; videoUrl?: string }
+  ) => apiClient.post<any>(`/courses/${courseId}/lessons`, lessonData),
 };
 
 export const aiApi = {

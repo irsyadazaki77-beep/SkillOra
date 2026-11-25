@@ -31,6 +31,7 @@ export function KelolaLmsView({ courses, onCoursesUpdated, showToast }: KelolaLm
   // Lesson Module Form Inside Course Editor
   const [newLessonTitle, setNewLessonTitle] = useState("");
   const [newLessonXp, setNewLessonXp] = useState("50");
+  const [newLessonVideoUrl, setNewLessonVideoUrl] = useState("");
   const [newLessonContent, setNewLessonContent] = useState("");
 
   const refreshFromDb = async () => {
@@ -127,11 +128,13 @@ export function KelolaLmsView({ courses, onCoursesUpdated, showToast }: KelolaLm
         title: newLessonTitle.trim(),
         xp: Number(newLessonXp) || 50,
         estimatedMinutes: 20,
+        videoUrl: newLessonVideoUrl.trim() || undefined,
         contentMarkdown:
           newLessonContent.trim() ||
           `### ${newLessonTitle.trim()}\n\nPelajari konsep inti serta implementasi praktis pada modul ${newLessonTitle.trim()}.`,
       });
       setNewLessonTitle("");
+      setNewLessonVideoUrl("");
       setNewLessonContent("");
       await refreshFromDb();
       showToast(`Modul "${newLessonTitle}" berhasil ditambahkan ke PostgreSQL!`, "success");
@@ -407,11 +410,19 @@ export function KelolaLmsView({ courses, onCoursesUpdated, showToast }: KelolaLm
                   </button>
                 </div>
 
+                <input
+                  type="url"
+                  value={newLessonVideoUrl}
+                  onChange={(e) => setNewLessonVideoUrl(e.target.value)}
+                  placeholder="URL Video YouTube / Vimeo / .mp4 opsional (misal: https://youtu.be/...)"
+                  className="w-full p-2.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:border-emerald-500 text-slate-900 dark:text-white"
+                />
+
                 <textarea
                   rows={2}
                   value={newLessonContent}
                   onChange={(e) => setNewLessonContent(e.target.value)}
-                  placeholder="Ringkasan materi Markdown opsional..."
+                  placeholder="Ringkasan materi Markdown opsional (mendukung # Heading, ```kode```, tabel, daftar)..."
                   className="w-full p-2.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:border-emerald-500 text-slate-900 dark:text-white resize-none"
                 />
               </div>

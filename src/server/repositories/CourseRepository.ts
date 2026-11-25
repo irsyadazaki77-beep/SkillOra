@@ -1,9 +1,14 @@
 import { db } from "../../db/index.js";
-import { courses, lessons, userProgress, bookmarks, quizAttempts } from "../../db/schema.js";
+import { courses, lessons, userProgress, bookmarks, quizAttempts, courseEnrollments } from "../../db/schema.js";
 import { ensureSeeded } from "../db/seedData.js";
-import { eq, and, asc, desc } from "drizzle-orm";
+import { eq, and, asc, desc, sql } from "drizzle-orm";
 
-function mapDbCourseToFrontend(dbCourse: any, completedLessonIds: Set<number>) {
+function mapDbCourseToFrontend(
+  dbCourse: any,
+  completedLessonIds: Set<number>,
+  enrolledCourseIds: Set<number> = new Set(),
+  enrollmentCounts: Map<number, number> = new Map()
+) {
   const sortedLessons = [...(dbCourse.lessons || [])].sort((a, b) => a.orderIndex - b.orderIndex);
 
   return {
@@ -18,6 +23,8 @@ function mapDbCourseToFrontend(dbCourse: any, completedLessonIds: Set<number>) {
     partner: dbCourse.partner || "Skillora Academy",
     logo: dbCourse.logo || "🎓",
     image: dbCourse.image || "/src/assets/images/course_tech_engineering_1794974031663.jpg",
+    enrolledCount: enrollmentCounts.get(dbCourse.id) || 0,
+    isEnrolled: enrolledCourseIds.has(dbCourse.id),
     skills: Array.isArray(dbCourse.skills) ? dbCourse.skills : [],
     linkedLabIds: Array.isArray(dbCourse.linkedLabIds) ? dbCourse.linkedLabIds : [],
     casePrompt: dbCourse.casePrompt || null,
@@ -52,11 +59,32 @@ export class CourseRepository {
   static async getCourses(dbUserId: number, includeDrafts = false) {
     await ensureSeeded();
 
-    const progressList = await db
-      .select()
-      .from(userProgress)
-      .where(eq(userProgress.userId, dbUserId));
+    const progressList = dbUserId > 0
+      ? await db
+          .select()
+          .from(userProgress)
+          .where(eq(userProgress.userId, dbUserId))
+      : [];
     const completedLessonIds = new Set(progressList.map((p) => p.lessonId));
+
+    const userEnrollments = dbUserId > 0
+      ? await db
+          .select({ courseId: courseEnrollments.courseId })
+          .from(courseEnrollments)
+          .where(eq(courseEnrollments.userId, dbUserId))
+      : [];
+    const enrolledCourseIds = new Set(userEnrollments.map((e) => e.courseId));
+
+    const countRows = await db
+      .select({
+        courseId: courseEnrollments.courseId,
+        total: sql<number>`count(*)::int`,
+      })
+      .from(courseEnrollments)
+      .groupBy(courseEnrollments.courseId);
+    const enrollmentCounts = new Map<number, number>(
+      countRows.map((row) => [row.courseId, Number(row.total) || 0])
+    );
 
     const dbCourses = await db.query.courses.findMany({
       with: { lessons: true },
@@ -64,7 +92,43 @@ export class CourseRepository {
     });
 
     const filtered = includeDrafts ? dbCourses : dbCourses.filter((c) => c.status !== "draft");
-    return filtered.map((c) => mapDbCourseToFrontend(c, completedLessonIds));
+    return filtered.map((c) =>
+      mapDbCourseToFrontend(c, completedLessonIds, enrolledCourseIds, enrollmentCounts)
+    );
+  }
+
+  static async enrollCourse(dbUserId: number, courseIdStr: string) {
+    const course = await db.query.courses.findFirst({
+      where: eq(courses.courseId, courseIdStr),
+    });
+    if (!course) throw new Error("Kursus tidak ditemukan.");
+
+    const existing = await db.query.courseEnrollments.findFirst({
+      where: and(
+        eq(courseEnrollments.userId, dbUserId),
+        eq(courseEnrollments.courseId, course.id)
+      ),
+    });
+
+    let alreadyEnrolled = Boolean(existing);
+    if (!existing) {
+      await db
+        .insert(courseEnrollments)
+        .values({ userId: dbUserId, courseId: course.id })
+        .onConflictDoNothing();
+    }
+
+    const [countRow] = await db
+      .select({ total: sql<number>`count(*)::int` })
+      .from(courseEnrollments)
+      .where(eq(courseEnrollments.courseId, course.id));
+
+    return {
+      enrolled: true,
+      alreadyEnrolled,
+      enrolledCount: Number(countRow?.total) || 1,
+      courseTitle: course.title,
+    };
   }
 
   static async getCourseByCourseId(courseIdStr: string) {
@@ -194,7 +258,7 @@ export class CourseRepository {
 
   static async addLesson(
     courseIdStr: string,
-    data: { title: string; xp?: number; contentMarkdown?: string; estimatedMinutes?: number; questions?: any[] }
+    data: { title: string; xp?: number; contentMarkdown?: string; estimatedMinutes?: number; questions?: any[]; videoUrl?: string }
   ) {
     const existing = await db.query.courses.findFirst({
       where: eq(courses.courseId, courseIdStr),
@@ -202,16 +266,30 @@ export class CourseRepository {
     });
     if (!existing) throw new Error("Kursus tidak ditemukan.");
 
+    const rawVideo = typeof data.videoUrl === "string" ? data.videoUrl.trim() : "";
+    let safeVideoUrl: string | null = null;
+    if (rawVideo) {
+      try {
+        const parsed = new URL(rawVideo);
+        if (parsed.protocol === "https:" || parsed.protocol === "http:") {
+          safeVideoUrl = rawVideo;
+        }
+      } catch {
+        throw new Error("URL video tidak valid. Gunakan tautan http:// atau https://.");
+      }
+    }
+
     const nextIdx = existing.lessons.length;
     await db.insert(lessons).values({
       lessonId: `les_${Date.now()}_${Math.random().toString(36).slice(2, 5)}`,
       courseId: existing.id,
       title: data.title.trim(),
-      type: "quiz",
+      type: safeVideoUrl ? "video" : "quiz",
       orderIndex: nextIdx,
       xpReward: Number(data.xp) || 100,
       contentMarkdown: data.contentMarkdown || `### ${data.title}\n\nMateri pembelajaran interaktif.`,
       estimatedMinutes: Number(data.estimatedMinutes) || 15,
+      videoUrl: safeVideoUrl,
       questionsData: Array.isArray(data.questions) ? data.questions : [],
     });
 

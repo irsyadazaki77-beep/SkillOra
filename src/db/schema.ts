@@ -163,6 +163,17 @@ export const bookmarks = pgTable('bookmarks', {
   index('bookmarks_course_id_idx').on(t.courseId),
 ]);
 
+export const courseEnrollments = pgTable('course_enrollments', {
+  id: serial('id').primaryKey(),
+  userId: integer('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  courseId: integer('course_id').references(() => courses.id, { onDelete: 'cascade' }).notNull(),
+  enrolledAt: timestamp('enrolled_at').defaultNow().notNull(),
+}, (t) => [
+  unique('course_enrollments_user_course_uniq').on(t.userId, t.courseId),
+  index('course_enrollments_user_id_idx').on(t.userId),
+  index('course_enrollments_course_id_idx').on(t.courseId),
+]);
+
 export const quizAttempts = pgTable('quiz_attempts', {
   id: serial('id').primaryKey(),
   userId: integer('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
@@ -835,6 +846,11 @@ export const userProgressRelations = relations(userProgress, ({ one }) => ({
 export const bookmarksRelations = relations(bookmarks, ({ one }) => ({
   user: one(users, { fields: [bookmarks.userId], references: [users.id] }),
   course: one(courses, { fields: [bookmarks.courseId], references: [courses.id] }),
+}));
+
+export const courseEnrollmentsRelations = relations(courseEnrollments, ({ one }) => ({
+  user: one(users, { fields: [courseEnrollments.userId], references: [users.id] }),
+  course: one(courses, { fields: [courseEnrollments.courseId], references: [courses.id] }),
 }));
 
 export const quizAttemptsRelations = relations(quizAttempts, ({ one }) => ({
