@@ -37,10 +37,10 @@ export const userContextMiddleware = async (
     }
 
     if (token === "guest-demo-token") {
-      if (process.env.NODE_ENV === "production" && process.env.ALLOW_GUEST_DEMO !== "true") {
+      if (process.env.DISABLE_GUEST_DEMO === "true") {
         return res.status(401).json({
           success: false,
-          error: { code: "UNAUTHORIZED", message: "Mode tamu demo dinonaktifkan di lingkungan produksi." }
+          error: { code: "UNAUTHORIZED", message: "Mode tamu demo dinonaktifkan oleh administrator." }
         });
       }
       req.userId = "user-dev-default";

@@ -22,7 +22,7 @@ async function resolveWsIdentity(token: string | null): Promise<AuthenticatedWsI
   if (!token) return null;
 
   if (token === "guest-demo-token") {
-    if (process.env.NODE_ENV === "production" && process.env.ALLOW_GUEST_DEMO !== "true") {
+    if (process.env.DISABLE_GUEST_DEMO === "true") {
       return null;
     }
     const userRow = await UserRepository.getOrCreateUser("user-dev-default", "guest@skillora.app", "Tamu Skillora");

@@ -228,12 +228,10 @@ describe("Security Hardening Regression Tests", () => {
     expect(nextFunction).toHaveBeenCalled();
   });
 
-  // 9. Guest Demo Token Blocked in Production
-  it("should reject guest-demo-token when NODE_ENV is production and ALLOW_GUEST_DEMO is not true", async () => {
-    const prevNodeEnv = process.env.NODE_ENV;
-    const prevAllow = process.env.ALLOW_GUEST_DEMO;
-    process.env.NODE_ENV = "production";
-    delete process.env.ALLOW_GUEST_DEMO;
+  // 9. Guest Demo Token Blocked when DISABLE_GUEST_DEMO=true
+  it("should reject guest-demo-token when DISABLE_GUEST_DEMO is true", async () => {
+    const prevDisable = process.env.DISABLE_GUEST_DEMO;
+    process.env.DISABLE_GUEST_DEMO = "true";
 
     try {
       mockReq.headers = { authorization: "Bearer guest-demo-token" };
@@ -248,8 +246,8 @@ describe("Security Hardening Regression Tests", () => {
         })
       );
     } finally {
-      process.env.NODE_ENV = prevNodeEnv;
-      if (prevAllow !== undefined) process.env.ALLOW_GUEST_DEMO = prevAllow;
+      if (prevDisable !== undefined) process.env.DISABLE_GUEST_DEMO = prevDisable;
+      else delete process.env.DISABLE_GUEST_DEMO;
     }
   });
 

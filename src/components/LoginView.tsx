@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { apiClient } from "../api/apiClient";
+import { apiClient, userApi } from "../api/apiClient";
 import { motion, AnimatePresence } from "motion/react";
 import { Mail, Lock, User, Briefcase, Eye, EyeOff, ShieldCheck, Sparkles, ArrowRight, UserPlus, LogIn, CheckCircle2 } from "lucide-react";
 import { Profile } from "../types";
@@ -130,21 +130,23 @@ export function LoginView({ onLoginSuccess, showToast }: LoginViewProps) {
     }
   };
 
-  const handleGuestLogin = async (customName?: string) => {
+  const handleGuestLogin = async () => {
     setLoading(true);
     setErrorMessage("");
     try {
       localStorage.setItem("skillora_guest_mode", "true");
-      const { profile } = await apiClient.post("/auth/sync", { name: customName || "Tamu Skillora", email: "guest@skillora.app", uid: "user-dev-default" });
+      const profile = await userApi.getProfile();
       if (profile) {
         showToast(`Selamat datang di mode demo, ${profile.name}!`, "success");
         localStorage.setItem("skillora_logged_in", "true");
         onLoginSuccess(profile);
       } else {
+        localStorage.removeItem("skillora_guest_mode");
         setErrorMessage("Gagal masuk mode demo");
       }
     } catch (err: any) {
-      setErrorMessage(err.message || "Gagal masuk mode demo");
+      localStorage.removeItem("skillora_guest_mode");
+      setErrorMessage(err?.message || "Gagal masuk mode demo");
     } finally {
       setLoading(false);
     }
@@ -427,7 +429,7 @@ export function LoginView({ onLoginSuccess, showToast }: LoginViewProps) {
 
             <button
               type="button"
-              onClick={() => handleGuestLogin("Pengguna Mode Demo")}
+              onClick={() => handleGuestLogin()}
               disabled={loading}
               className="w-full border border-slate-800 bg-slate-950/50 hover:bg-slate-950 text-slate-300 hover:text-white font-medium text-xs sm:text-sm py-2 px-4 rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer"
             >
