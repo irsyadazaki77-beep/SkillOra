@@ -119,4 +119,29 @@ export class CourseController {
       });
     }
   }
+
+  static async getLearningPaths(req: AuthenticatedRequest, res: Response) {
+    try {
+      const data = await CourseService.getLearningPaths(req.userId);
+      return res.json({ success: true, data });
+    } catch (err: any) {
+      return res.status(500).json({
+        success: false,
+        error: { code: "SERVER_ERROR", message: err.message },
+      });
+    }
+  }
+
+  static async enrollLearningPath(req: AuthenticatedRequest, res: Response) {
+    try {
+      const data = await CourseService.enrollLearningPath(req.userId!, req.params.slug);
+      return res.json({ success: true, data });
+    } catch (err: any) {
+      const status = err.message?.includes("tidak ditemukan") ? 404 : 400;
+      return res.status(status).json({
+        success: false,
+        error: { code: status === 404 ? "NOT_FOUND" : "BAD_REQUEST", message: err.message },
+      });
+    }
+  }
 }

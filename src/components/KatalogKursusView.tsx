@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import {
   Search,
   Heart,
@@ -9,9 +9,11 @@ import {
   CheckCircle2,
   Compass,
   ArrowRight,
+  Award,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { Course, Profile } from "../types";
+import { Course, LearningPathRecord, Profile } from "../types";
+import { courseApi } from "../api/apiClient";
 import { CourseCard } from "./CourseCard";
 import { useDebounce } from "../hooks/useDebounce";
 import { getCourseProgress } from "../utils/courseUtils";
@@ -37,6 +39,21 @@ export function KatalogKursusView({ courses, profile, onBookmarkToggle }: Katalo
   const [showOnlyBookmarked, setShowOnlyBookmarked] = useState(false);
   const [showOnlyEnrolled, setShowOnlyEnrolled] = useState(false);
   const [layout, setLayout] = useState<"grid" | "list">("grid");
+  const [dbPaths, setDbPaths] = useState<LearningPathRecord[]>([]);
+  const [enrollingPathSlug, setEnrollingPathSlug] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    courseApi
+      .getLearningPaths()
+      .then((paths) => {
+        if (active && Array.isArray(paths)) setDbPaths(paths);
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, [courses.length]);
 
   const categoryCounts = useMemo(() => {
     const counts: Record<string, number> = { Semua: courses.length };
@@ -57,27 +74,34 @@ export function KatalogKursusView({ courses, profile, onBookmarkToggle }: Katalo
     [courses]
   );
 
-  // Curated free learning paths (Coursera Specialization / Dicoding Learning Path equivalent)
-  const careerPaths = useMemo(() => {
+  // Curated free learning paths backed by PostgreSQL (with offline fallback)
+  const careerPaths: LearningPathRecord[] = useMemo(() => {
+    if (dbPaths.length > 0) return dbPaths;
     const groups = [
       {
-        id: "path-tech",
+        slug: "path-software-cloud",
         title: "Jalur Software & Cloud Engineer",
-        subtitle: "Dari fondasi pemrograman, database, hingga cloud & DevOps siap kerja.",
+        description: "Dari fondasi pemrograman, database, hingga cloud & DevOps siap kerja.",
+        targetRole: "Full-Stack / Cloud Engineer",
+        level: "Pemula hingga Mahir",
         match: (c: Course) =>
           /tekno|cloud|devops|back|web|software|react|api/i.test(`${c.category || ""} ${c.title}`),
       },
       {
-        id: "path-data-ai",
+        slug: "path-ai-data-product",
         title: "Jalur AI, Data & Product Specialist",
-        subtitle: "Analisis data, otomatisasi AI, dan riset produk digital bersertifikat.",
+        description: "Analisis data, otomatisasi AI, dan riset produk digital bersertifikat.",
+        targetRole: "AI & Data Analyst / Product",
+        level: "Menengah hingga Mahir",
         match: (c: Course) =>
           /ai|data|produk|ux|otomasi|analit/i.test(`${c.category || ""} ${c.title}`),
       },
       {
-        id: "path-bumn-cpns",
+        slug: "path-bumn-cpns",
         title: "Jalur Persiapan BUMN, CPNS & Karier",
-        subtitle: "Latihan TKD, studi kasus industri, dan kesiapan wawancara tanpa biaya.",
+        description: "Latihan TKD, studi kasus industri, dan kesiapan wawancara tanpa biaya.",
+        targetRole: "Officer / Management Trainee",
+        level: "Terbuka Semua Latar Belakang",
         match: (c: Course) =>
           /bumn|cpns|finan|bisnis|karier/i.test(`${c.category || ""} ${c.title}`),
       },
@@ -87,22 +111,49 @@ export function KatalogKursusView({ courses, profile, onBookmarkToggle }: Katalo
       .map((g) => {
         const items = courses.filter(g.match);
         const totalModules = items.reduce((sum, c) => sum + (c.lessons?.length || 0), 0);
-        const avgProgress =
+        const progressPercent =
           items.length > 0
             ? Math.round(
                 items.reduce((sum, c) => sum + getCourseProgress(c).percentage, 0) / items.length
               )
             : 0;
         return {
-          ...g,
-          courses: items,
+          slug: g.slug,
+          title: g.title,
+          description: g.description,
+          targetRole: g.targetRole,
+          level: g.level,
+          courses: items.map((c, idx) => ({
+            id: c.id,
+            title: c.title,
+            difficulty: c.difficulty,
+            duration: c.duration,
+            lessonsCount: c.lessons?.length || 0,
+            completedLessonsCount: getCourseProgress(c).completedCount,
+            isEnrolled: Boolean(c.isEnrolled),
+            stepOrder: idx,
+          })),
           totalModules,
-          avgProgress,
+          progressPercent,
           firstCourseId: items[0]?.id || courses[0]?.id || "",
+          allEnrolled: items.length > 0 && items.every((c) => Boolean(c.isEnrolled)),
         };
       })
       .filter((p) => p.courses.length > 0);
-  }, [courses]);
+  }, [dbPaths, courses]);
+
+  const handleEnrollPath = async (slug: string) => {
+    setEnrollingPathSlug(slug);
+    try {
+      await courseApi.enrollLearningPath(slug);
+      const fresh = await courseApi.getLearningPaths();
+      if (Array.isArray(fresh)) setDbPaths(fresh);
+    } catch {
+      // silent if offline or guest
+    } finally {
+      setEnrollingPathSlug(null);
+    }
+  };
 
   const filteredCourses = useMemo(() => {
     const safeList = Array.isArray(courses) ? courses : [];
@@ -370,19 +421,22 @@ export function KatalogKursusView({ courses, profile, onBookmarkToggle }: Katalo
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
             {careerPaths.map((path) => (
               <div
-                key={path.id}
+                key={path.slug}
                 className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-4 flex flex-col justify-between gap-3"
               >
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between text-[11px] font-mono text-emerald-700 dark:text-emerald-400 font-semibold">
                     <span>{path.courses.length} Kursus · {path.totalModules} Modul</span>
-                    <span>{path.avgProgress}%</span>
+                    <span className="inline-flex items-center gap-1">
+                      {path.progressPercent === 100 && <Award className="w-3.5 h-3.5 text-amber-500" />}
+                      {path.progressPercent}%
+                    </span>
                   </div>
                   <h3 className="font-display font-bold text-sm text-zinc-950 dark:text-white leading-snug">
                     {path.title}
                   </h3>
                   <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed">
-                    {path.subtitle}
+                    {path.description}
                   </p>
                 </div>
 
@@ -390,17 +444,35 @@ export function KatalogKursusView({ courses, profile, onBookmarkToggle }: Katalo
                   <div className="w-full h-1.5 bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden">
                     <div
                       className="h-full bg-emerald-600 rounded-full transition-all duration-300"
-                      style={{ width: `${path.avgProgress}%` }}
+                      style={{ width: `${path.progressPercent}%` }}
                     />
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => navigate(`/belajar/lms?courseId=${encodeURIComponent(path.firstCourseId)}`)}
-                    className="w-full py-2 px-3 rounded-lg bg-zinc-950 dark:bg-zinc-100 text-white dark:text-zinc-950 text-xs font-semibold flex items-center justify-center gap-1.5 hover:opacity-90 transition-opacity cursor-pointer"
-                  >
-                    <span>Mulai Jalur di LMS</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
-                  </button>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      disabled={path.allEnrolled || enrollingPathSlug === path.slug}
+                      onClick={() => handleEnrollPath(path.slug)}
+                      className={`px-3 py-2 rounded-lg text-xs font-semibold border transition-colors cursor-pointer ${
+                        path.allEnrolled
+                          ? "bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 cursor-default"
+                          : "border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-800"
+                      }`}
+                    >
+                      {path.allEnrolled
+                        ? "Terdaftar ✓"
+                        : enrollingPathSlug === path.slug
+                          ? "..."
+                          : "Daftar Jalur"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => navigate(`/belajar/lms?courseId=${encodeURIComponent(path.firstCourseId)}`)}
+                      className="flex-1 py-2 px-3 rounded-lg bg-zinc-950 dark:bg-zinc-100 text-white dark:text-zinc-950 text-xs font-semibold flex items-center justify-center gap-1.5 hover:opacity-90 transition-opacity cursor-pointer"
+                    >
+                      <span>Mulai di LMS</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}

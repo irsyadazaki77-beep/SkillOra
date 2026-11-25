@@ -125,10 +125,48 @@ Berikan penilaian objektif, konstruktif, dan profesional.`;
     };
   }
 
+  private static async inspectPublicGithubRepo(projectUrl: string): Promise<string> {
+    try {
+      const parsed = new URL(projectUrl.trim());
+      if (parsed.protocol !== "https:" || parsed.hostname.toLowerCase() !== "github.com") {
+        return "";
+      }
+      const segments = parsed.pathname.split("/").filter(Boolean);
+      if (segments.length < 2) return "";
+      const [owner, rawRepo] = segments;
+      const repo = rawRepo.replace(/\.git$/i, "");
+      if (!/^[a-zA-Z0-9_.-]{1,100}$/.test(owner) || !/^[a-zA-Z0-9_.-]{1,100}$/.test(repo)) {
+        return "";
+      }
+
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 3500);
+      try {
+        const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents`;
+        const resp = await fetch(apiUrl, {
+          headers: { Accept: "application/vnd.github.v3+json", "User-Agent": "SkillOra-Inspector" },
+          signal: controller.signal,
+        });
+        if (!resp.ok) return "";
+        const items = (await resp.json()) as Array<{ name: string; type: string }>;
+        const files = Array.isArray(items)
+          ? items.slice(0, 25).map((f) => `${f.name} (${f.type})`).join(", ")
+          : "";
+        return files ? `Struktur file root GitHub (${owner}/${repo}): ${files}` : "";
+      } finally {
+        clearTimeout(timer);
+      }
+    } catch {
+      return "";
+    }
+  }
+
   static async submitProject(userId: string, courseId: string, projectUrl: string, studentNotes?: string) {
     const userRow = await UserRepository.getOrCreateUser(userId, "user@skillora.app", "Siswa");
     const course = await CourseRepository.getCourseByCourseId(courseId);
     if (!course) throw new Error("Kursus tidak ditemukan");
+
+    const githubAuditSummary = await AIService.inspectPublicGithubRepo(projectUrl);
 
     const ai = getGeminiClient();
     const prompt = `Evaluasi submission proyek portofolio siswa pada platform LMS Skillora.
@@ -142,6 +180,10 @@ Rubrik Penilaian: ${course.projectRubric || "Kesesuaian dengan topik kursus, ars
 URL Proyek: ${projectUrl}
 Catatan Siswa: ${studentNotes || "Tidak ada catatan"}
 </student_submission>
+
+<github_repo_audit>
+${githubAuditSummary || "Tidak tersedia inspeksi repositori GitHub otomatis (URL non-GitHub atau privat)."}
+</github_repo_audit>
 
 Nilai secara objektif (0-100) berdasarkan rubrik di atas. Jika score >= 75, status wajib "PASS", jika < 75 wajib "RETRY".`;
 

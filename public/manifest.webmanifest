@@ -1,0 +1,22 @@
+{
+  "name": "SkillOra — Akademi Pelatihan & Karier Gratis",
+  "short_name": "SkillOra",
+  "description": "Platform pelatihan industri, sandbox coding, persiapan BUMN/CPNS, dan sertifikasi terverifikasi 100% gratis.",
+  "start_url": "/belajar",
+  "display": "standalone",
+  "background_color": "#09090b",
+  "theme_color": "#059669",
+  "lang": "id",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "/logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

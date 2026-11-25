@@ -251,6 +251,33 @@ async function runEnsureSchema(): Promise<void> {
       "enrolled_at" timestamp DEFAULT now() NOT NULL,
       CONSTRAINT "course_enrollments_user_course_uniq" UNIQUE ("user_id", "course_id")
     );`,
+    `CREATE TABLE IF NOT EXISTS "learning_paths" (
+      "id" serial PRIMARY KEY,
+      "slug" text NOT NULL UNIQUE,
+      "title" text NOT NULL,
+      "description" text NOT NULL,
+      "target_role" text NOT NULL,
+      "level" text DEFAULT 'Pemula hingga Mahir' NOT NULL,
+      "badge_icon" text DEFAULT 'compass' NOT NULL,
+      "created_at" timestamp DEFAULT now()
+    );`,
+    `CREATE TABLE IF NOT EXISTS "learning_path_courses" (
+      "id" serial PRIMARY KEY,
+      "path_id" integer NOT NULL,
+      "course_id" integer NOT NULL,
+      "step_order" integer DEFAULT 0 NOT NULL,
+      CONSTRAINT "learning_path_courses_uniq" UNIQUE ("path_id", "course_id")
+    );`,
+    `CREATE TABLE IF NOT EXISTS "peer_reviews" (
+      "id" serial PRIMARY KEY,
+      "submission_id" integer NOT NULL,
+      "reviewer_user_id" integer NOT NULL,
+      "score" integer NOT NULL,
+      "rubric_breakdown" jsonb DEFAULT '[]' NOT NULL,
+      "feedback" text NOT NULL,
+      "created_at" timestamp DEFAULT now(),
+      CONSTRAINT "peer_reviews_sub_reviewer_uniq" UNIQUE ("submission_id", "reviewer_user_id")
+    );`,
   ];
 
   for (const sql of statements) {

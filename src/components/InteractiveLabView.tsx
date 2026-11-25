@@ -20,6 +20,7 @@ import { LabChallenge, LabSubmissionRecord, Profile } from "../types";
 import { labApi } from "../api/apiClient";
 import { resolveCourseImage } from "../utils/resolveAsset";
 import { CopilotContextInfo } from "./MentorChatSidebar";
+import { runJsInWorker, runSqlSandboxPreview, SqlPreviewResult } from "../utils/sandboxRunner";
 
 interface InteractiveLabViewProps {
   profile: Profile;
@@ -42,45 +43,6 @@ const TRACK_TABS = [
   { id: "bumn", label: "BUMN Case" },
 ];
 
-function runIsolatedJsTests(challenge: LabChallenge, userCode: string): ClientTestResult[] {
-  const cases = Array.isArray(challenge.testCases) ? challenge.testCases : [];
-  if (cases.length === 0) return [];
-
-  // Validate syntax upfront so syntax errors are clearly reported
-  try {
-    new Function(`"use strict";\n${userCode}`);
-  } catch (err: any) {
-    return cases.map((tc) => ({
-      label: tc.label,
-      passed: false,
-      details: `Syntax Error: ${err?.message || "Gagal mengompilasi kode"}`,
-    }));
-  }
-
-  return cases.map((tc) => {
-    try {
-      const runner = new Function(`"use strict";\n${userCode}\nreturn (${tc.expression});`);
-      const actual = runner();
-      const expectedStr = JSON.stringify(tc.expected);
-      const actualStr = JSON.stringify(actual);
-      const passed = expectedStr === actualStr;
-      return {
-        label: tc.label,
-        passed,
-        details: passed
-          ? `Sesuai: ${actualStr}`
-          : `Harapan: ${expectedStr} | Hasil: ${actualStr ?? "undefined"}`,
-      };
-    } catch (err: any) {
-      return {
-        label: tc.label,
-        passed: false,
-        details: `Runtime Error: ${err?.message || "Error saat eksekusi"}`,
-      };
-    }
-  });
-}
-
 export function InteractiveLabView({
   onProfileUpdate,
   showToast,
@@ -98,6 +60,9 @@ export function InteractiveLabView({
   const [leftTab, setLeftTab] = useState<"brief" | "rubric" | "history">("brief");
   const [revealedHints, setRevealedHints] = useState(0);
   const [testResults, setTestResults] = useState<ClientTestResult[] | null>(null);
+  const [sandboxLogs, setSandboxLogs] = useState<string[]>([]);
+  const [sqlPreview, setSqlPreview] = useState<SqlPreviewResult | null>(null);
+  const [runningSandbox, setRunningSandbox] = useState(false);
   const [evaluating, setEvaluating] = useState(false);
   const [latestEvaluation, setLatestEvaluation] = useState<LabSubmissionRecord | null>(null);
   const [submissions, setSubmissions] = useState<LabSubmissionRecord[]>([]);
@@ -128,6 +93,8 @@ export function InteractiveLabView({
     if (!activeLab) return;
     setCode(activeLab.starterCode || "");
     setTestResults(null);
+    setSandboxLogs([]);
+    setSqlPreview(null);
     setLatestEvaluation(null);
     setRevealedHints(0);
     setLeftTab("brief");
@@ -156,21 +123,41 @@ export function InteractiveLabView({
 
   const completedCount = challenges.filter((c) => c.passed).length;
 
-  const handleRunTests = () => {
-    if (!activeLab) return;
-    if (activeLab.language !== "javascript") {
-      showToast?.("Lab SQL/Case dievaluasi penuh menggunakan Evaluasi AI Rubrik.", "info");
+  const handleRunTests = async () => {
+    if (!activeLab || runningSandbox) return;
+
+    if (activeLab.language === "sql") {
+      const preview = runSqlSandboxPreview(code);
+      setSqlPreview(preview);
+      setTestResults(null);
+      showToast?.(preview.message, preview.valid ? "success" : "error");
       return;
     }
-    const results = runIsolatedJsTests(activeLab, code);
-    setTestResults(results);
-    const passedCount = results.filter((r) => r.passed).length;
-    showToast?.(
-      passedCount === results.length
-        ? `Semua ${results.length} uji otomatis lulus! Lanjutkan ke Evaluasi AI.`
-        : `${passedCount} dari ${results.length} uji otomatis lulus.`,
-      passedCount === results.length ? "success" : "info"
-    );
+
+    if (activeLab.language !== "javascript") {
+      showToast?.("Studi kasus teks/BUMN dievaluasi penuh menggunakan Evaluasi AI Rubrik.", "info");
+      return;
+    }
+
+    setRunningSandbox(true);
+    try {
+      const execResult = await runJsInWorker(code, activeLab.testCases || [], 2000);
+      setTestResults(execResult.results);
+      setSandboxLogs(execResult.logs || []);
+      const passedCount = execResult.results.filter((r) => r.passed).length;
+      if (execResult.timedOut) {
+        showToast?.("Sandbox dihentikan otomatis karena melebihi batas waktu 2 detik.", "error");
+      } else {
+        showToast?.(
+          passedCount === execResult.results.length
+            ? `Semua ${execResult.results.length} uji otomatis Web Worker lulus!`
+            : `${passedCount} dari ${execResult.results.length} uji otomatis lulus.`,
+          passedCount === execResult.results.length ? "success" : "info"
+        );
+      }
+    } finally {
+      setRunningSandbox(false);
+    }
   };
 
   const handleEvaluateAi = async () => {
@@ -182,8 +169,10 @@ export function InteractiveLabView({
 
     let currentReport = testResults;
     if (activeLab.language === "javascript" && !currentReport) {
-      currentReport = runIsolatedJsTests(activeLab, code);
+      const execResult = await runJsInWorker(code, activeLab.testCases || [], 2000);
+      currentReport = execResult.results;
       setTestResults(currentReport);
+      setSandboxLogs(execResult.logs || []);
     }
 
     const passedCount = currentReport ? currentReport.filter((r) => r.passed).length : 0;
@@ -232,7 +221,9 @@ export function InteractiveLabView({
 
   // --- WORKSPACE VIEW (When a lab is selected) ---
   if (routeLabId && activeLab) {
-    const canRunJs = activeLab.language === "javascript" && activeLab.testCases.length > 0;
+    const canRunSandbox =
+      (activeLab.language === "javascript" && activeLab.testCases.length > 0) ||
+      activeLab.language === "sql";
 
     return (
       <div className="space-y-4 pb-16 lg:pb-6">
@@ -476,13 +467,14 @@ export function InteractiveLabView({
                 </span>
 
                 <div className="flex items-center gap-2">
-                  {canRunJs && (
+                  {canRunSandbox && (
                     <button
                       onClick={handleRunTests}
-                      className="px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-xs font-semibold text-zinc-800 dark:text-zinc-200 flex items-center gap-1.5 cursor-pointer"
+                      disabled={runningSandbox}
+                      className="px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-50 text-xs font-semibold text-zinc-800 dark:text-zinc-200 flex items-center gap-1.5 cursor-pointer"
                     >
                       <Play className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                      Jalankan Uji
+                      {runningSandbox ? "Menjalankan..." : activeLab.language === "sql" ? "Preview SQL" : "Jalankan Uji"}
                     </button>
                   )}
 
@@ -511,12 +503,17 @@ export function InteractiveLabView({
               <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-4 space-y-3">
                 <div className="flex items-center justify-between">
                   <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-                    Hasil Eksekusi Sandbox
+                    Hasil Eksekusi Web Worker Sandbox
                   </h3>
                   <span className="text-xs font-mono font-semibold tabular-nums text-zinc-900 dark:text-zinc-100">
                     {testResults.filter((t) => t.passed).length}/{testResults.length} Lulus
                   </span>
                 </div>
+                {sandboxLogs.length > 0 && (
+                  <pre className="p-3 rounded-lg bg-zinc-950 text-emerald-300 font-mono text-[11px] overflow-x-auto">
+                    {sandboxLogs.join("\n")}
+                  </pre>
+                )}
                 <div className="divide-y divide-zinc-200 dark:divide-zinc-800 border border-zinc-200 dark:border-zinc-800 rounded-lg">
                   {testResults.map((res, idx) => (
                     <div key={idx} className="p-3 flex items-start gap-2.5 text-xs">
@@ -534,6 +531,43 @@ export function InteractiveLabView({
                     </div>
                   ))}
                 </div>
+              </div>
+            )}
+
+            {/* In-Browser SQL Preview Table */}
+            {sqlPreview && (
+              <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-4 space-y-3">
+                <div className="flex items-center justify-between gap-2">
+                  <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+                    SQL Sandbox Preview
+                  </h3>
+                  <span className={`text-xs font-semibold ${sqlPreview.valid ? "text-emerald-600" : "text-rose-500"}`}>
+                    {sqlPreview.valid ? "Query Valid" : "Perlu Perbaikan"}
+                  </span>
+                </div>
+                <p className="text-xs text-zinc-600 dark:text-zinc-300">{sqlPreview.message}</p>
+                {sqlPreview.valid && sqlPreview.rows.length > 0 && (
+                  <div className="overflow-x-auto rounded-lg border border-zinc-200 dark:border-zinc-800">
+                    <table className="w-full text-left text-[11px] font-mono">
+                      <thead className="bg-zinc-50 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200">
+                        <tr>
+                          {sqlPreview.columns.map((col) => (
+                            <th key={col} className="px-3 py-2 border-b border-zinc-200 dark:border-zinc-700">{col}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800 text-zinc-700 dark:text-zinc-300">
+                        {sqlPreview.rows.map((r, rIdx) => (
+                          <tr key={rIdx}>
+                            {sqlPreview.columns.map((col) => (
+                              <td key={col} className="px-3 py-2">{String(r[col] ?? "")}</td>
+                            ))}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </div>
             )}
 

@@ -264,6 +264,7 @@ export class CareerExpansionService {
         passedLabs: labHighlights.length,
         avgLabScore,
         avgAssessmentScore,
+        jobReadyVerified: certs.length >= 1 && labHighlights.length >= 1 && projects.length >= 1,
       },
       certificates: certs.map((c) => {
         const meta = courseMap.get(c.courseId);

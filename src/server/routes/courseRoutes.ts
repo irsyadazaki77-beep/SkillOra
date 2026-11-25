@@ -5,6 +5,8 @@ import { requireAccountRole, requireAuth, requireRegistered } from "../middlewar
 const router = Router();
 
 router.get("/courses", CourseController.getCourses);
+router.get("/learning-paths", CourseController.getLearningPaths);
+router.post("/learning-paths/:slug/enroll", requireRegistered, CourseController.enrollLearningPath);
 router.post("/courses/:id/enroll", requireRegistered, CourseController.enrollCourse);
 router.post("/courses/complete-lesson", requireRegistered, CourseController.completeLesson);
 router.get("/quiz/flash", requireAuth, CourseController.getFlashChallenge);

@@ -1,5 +1,14 @@
 import { db } from "../../db/index.js";
-import { courses, lessons, userProgress, bookmarks, quizAttempts, courseEnrollments } from "../../db/schema.js";
+import {
+  courses,
+  lessons,
+  userProgress,
+  bookmarks,
+  quizAttempts,
+  courseEnrollments,
+  learningPaths,
+  learningPathCourses,
+} from "../../db/schema.js";
 import { ensureSeeded } from "../db/seedData.js";
 import { eq, and, asc, desc, sql } from "drizzle-orm";
 
@@ -258,7 +267,16 @@ export class CourseRepository {
 
   static async addLesson(
     courseIdStr: string,
-    data: { title: string; xp?: number; contentMarkdown?: string; estimatedMinutes?: number; questions?: any[]; videoUrl?: string }
+    data: {
+      title: string;
+      xp?: number;
+      contentMarkdown?: string;
+      estimatedMinutes?: number;
+      questions?: any[];
+      inlineChecks?: any[];
+      flashcards?: any[];
+      videoUrl?: string;
+    }
   ) {
     const existing = await db.query.courses.findFirst({
       where: eq(courses.courseId, courseIdStr),
@@ -291,6 +309,8 @@ export class CourseRepository {
       estimatedMinutes: Number(data.estimatedMinutes) || 15,
       videoUrl: safeVideoUrl,
       questionsData: Array.isArray(data.questions) ? data.questions : [],
+      inlineChecks: Array.isArray(data.inlineChecks) ? data.inlineChecks : [],
+      flashcards: Array.isArray(data.flashcards) ? data.flashcards : [],
     });
 
     const full = await db.query.courses.findFirst({
@@ -298,6 +318,79 @@ export class CourseRepository {
       with: { lessons: true },
     });
     return mapDbCourseToFrontend(full, new Set());
+  }
+
+  static async getLearningPaths(dbUserId: number) {
+    await ensureSeeded();
+
+    const pathRows = await db.select().from(learningPaths).orderBy(asc(learningPaths.id));
+    const linkRows = await db.select().from(learningPathCourses).orderBy(asc(learningPathCourses.stepOrder));
+    const allCourses = await CourseRepository.getCourses(dbUserId, false);
+    const byDbId = new Map<number, any>(allCourses.map((c: any) => [c.dbId, c]));
+
+    return pathRows
+      .map((path) => {
+        const links = linkRows.filter((l) => l.pathId === path.id);
+        const mappedCourses = links
+          .map((l) => {
+            const c = byDbId.get(l.courseId);
+            if (!c) return null;
+            const completedLessonsCount = c.lessons.filter((les: any) => les.completed).length;
+            return {
+              id: c.id,
+              title: c.title,
+              difficulty: c.difficulty,
+              duration: c.duration,
+              lessonsCount: c.lessons.length,
+              completedLessonsCount,
+              isEnrolled: Boolean(c.isEnrolled),
+              stepOrder: l.stepOrder,
+            };
+          })
+          .filter(Boolean) as any[];
+
+        const totalModules = mappedCourses.reduce((sum, c) => sum + c.lessonsCount, 0);
+        const completedModules = mappedCourses.reduce((sum, c) => sum + c.completedLessonsCount, 0);
+        const progressPercent = totalModules > 0 ? Math.round((completedModules / totalModules) * 100) : 0;
+
+        return {
+          slug: path.slug,
+          title: path.title,
+          description: path.description,
+          targetRole: path.targetRole,
+          level: path.level,
+          courses: mappedCourses,
+          totalModules,
+          progressPercent,
+          firstCourseId: mappedCourses[0]?.id || "",
+          allEnrolled: mappedCourses.length > 0 && mappedCourses.every((c) => c.isEnrolled),
+        };
+      })
+      .filter((p) => p.courses.length > 0);
+  }
+
+  static async enrollLearningPath(dbUserId: number, pathSlug: string) {
+    await ensureSeeded();
+    const [path] = await db.select().from(learningPaths).where(eq(learningPaths.slug, pathSlug));
+    if (!path) throw new Error("Jalur karier tidak ditemukan.");
+
+    const links = await db
+      .select()
+      .from(learningPathCourses)
+      .where(eq(learningPathCourses.pathId, path.id));
+
+    for (const link of links) {
+      await db
+        .insert(courseEnrollments)
+        .values({ userId: dbUserId, courseId: link.courseId })
+        .onConflictDoNothing();
+    }
+
+    return {
+      slug: path.slug,
+      title: path.title,
+      enrolledCourses: links.length,
+    };
   }
 
   static async completeLesson(dbUserId: number, courseIdStr: string, lessonIdStr: string) {

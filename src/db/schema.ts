@@ -794,6 +794,41 @@ export const simulationAttempts = pgTable('simulation_attempts', {
   index('simulation_attempts_user_type_idx').on(t.userId, t.simType),
 ]);
 
+export const learningPaths = pgTable('learning_paths', {
+  id: serial('id').primaryKey(),
+  slug: text('slug').notNull().unique(),
+  title: text('title').notNull(),
+  description: text('description').notNull(),
+  targetRole: text('target_role').notNull(),
+  level: text('level').default('Pemula hingga Mahir').notNull(),
+  badgeIcon: text('badge_icon').default('compass').notNull(),
+  createdAt: timestamp('created_at').defaultNow(),
+});
+
+export const learningPathCourses = pgTable('learning_path_courses', {
+  id: serial('id').primaryKey(),
+  pathId: integer('path_id').references(() => learningPaths.id, { onDelete: 'cascade' }).notNull(),
+  courseId: integer('course_id').references(() => courses.id, { onDelete: 'cascade' }).notNull(),
+  stepOrder: integer('step_order').default(0).notNull(),
+}, (t) => [
+  unique('learning_path_courses_uniq').on(t.pathId, t.courseId),
+  index('learning_path_courses_path_idx').on(t.pathId),
+]);
+
+export const peerReviews = pgTable('peer_reviews', {
+  id: serial('id').primaryKey(),
+  submissionId: integer('submission_id').references(() => projectSubmissions.id, { onDelete: 'cascade' }).notNull(),
+  reviewerUserId: integer('reviewer_user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  score: integer('score').notNull(),
+  rubricBreakdown: jsonb('rubric_breakdown').default('[]').notNull(),
+  feedback: text('feedback').notNull(),
+  createdAt: timestamp('created_at').defaultNow(),
+}, (t) => [
+  unique('peer_reviews_sub_reviewer_uniq').on(t.submissionId, t.reviewerUserId),
+  index('peer_reviews_sub_idx').on(t.submissionId),
+  index('peer_reviews_reviewer_idx').on(t.reviewerUserId),
+]);
+
 // Relations
 export const companiesRelations = relations(companies, ({ many }) => ({
   recruiters: many(users),

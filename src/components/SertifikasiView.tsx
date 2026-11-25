@@ -5,6 +5,7 @@ import { getCourseTemplates } from "./sertifikasi/sertifikasiTemplates";
 import { playSound } from "../utils/sound";
 import { aiApi } from "../api/apiClient";
 import { AutoCvModal } from "./AutoCvModal";
+import { PeerReviewPanel } from "./sertifikasi/PeerReviewPanel";
 
 interface SertifikasiViewProps {
   courses: Course[];
@@ -568,6 +569,8 @@ export function SertifikasiView({
           </div>
         </div>
       </div>
+
+      <PeerReviewPanel profile={profile} showToast={showToast} />
 
       {showAutoCv && (
         <AutoCvModal

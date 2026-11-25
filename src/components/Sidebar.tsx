@@ -206,20 +206,18 @@ export const Sidebar = memo(function Sidebar({ profile, onLogout }: SidebarProps
         )}
       </div>
 
-      {/* Clean Footer: Upgrade + Profile + Logout */}
+      {/* Clean Footer: Scholarship Mission + Profile + Logout */}
       <div className="p-3 border-t border-zinc-200/80 dark:border-zinc-800/80 space-y-2">
-        {!isPro && (
-          <Link
-            to={ROUTES.upgrade}
-            className="flex items-center justify-between px-2.5 py-2 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 hover:border-emerald-500/50 transition-colors text-xs font-semibold text-zinc-800 dark:text-zinc-200"
-          >
-            <span className="flex items-center gap-2">
-              <Sparkles className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-              Upgrade Pro
-            </span>
-            <span className="text-[11px] text-zinc-400">→</span>
-          </Link>
-        )}
+        <Link
+          to={ROUTES.upgrade}
+          className="flex items-center justify-between px-2.5 py-2 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 hover:border-emerald-500/50 transition-colors text-xs font-semibold text-zinc-800 dark:text-zinc-200"
+        >
+          <span className="flex items-center gap-2">
+            <Sparkles className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+            <span>{isPro ? "Mitra & Sponsor Aktif" : "Sponsor & Mitra HRD"}</span>
+          </span>
+          <span className="text-[11px] text-zinc-400">→</span>
+        </Link>
 
         <div className="flex items-center justify-between gap-2 px-1.5 pt-1">
           <Link

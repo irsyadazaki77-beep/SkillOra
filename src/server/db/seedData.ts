@@ -15,6 +15,8 @@ import {
   events,
   labChallenges,
   campusCohorts,
+  learningPaths,
+  learningPathCourses,
 } from "../../db/schema.ts";
 import { defaultCourses } from "../data/coursesData.ts";
 import {
@@ -1124,5 +1126,70 @@ Tulis rekomendasi strategis yang mencakup:
         featuredLabs: ["lab-sql-merchant-retention", "lab-bumn-case-akhlak"],
       },
     ]).onConflictDoNothing();
+  }
+
+  // 13. Seed Free Structured Career Learning Paths (idempotent)
+  const existingPaths = await db.select({ total: count() }).from(learningPaths);
+  if ((existingPaths[0]?.total || 0) === 0) {
+    const allDbCourses = await db.select().from(courses);
+    const seedPathSpecs = [
+      {
+        slug: "path-software-cloud",
+        title: "Jalur Software & Cloud Engineer",
+        description: "Kurikulum gratis terurut dari fundamental Frontend, Backend API, SQL, hingga Cloud & DevOps.",
+        targetRole: "Full-Stack / Cloud Engineer",
+        level: "Pemula hingga Mahir",
+        matcher: (c: any) => /tekno|cloud|devops|back|web|software|react|api/i.test(`${c.category || ""} ${c.title}`),
+      },
+      {
+        slug: "path-ai-data-product",
+        title: "Jalur AI, Data & Product Specialist",
+        description: "Jalur penguasaan analisis data SQL, otomasi AI, serta riset & desain produk digital.",
+        targetRole: "AI & Data Analyst / Product",
+        level: "Menengah hingga Mahir",
+        matcher: (c: any) => /ai|data|produk|ux|otomasi|analit/i.test(`${c.category || ""} ${c.title}`),
+      },
+      {
+        slug: "path-bumn-cpns",
+        title: "Jalur Persiapan BUMN, CPNS & Karier",
+        description: "Persiapan lengkap TKD, AKHLAK BUMN, literasi keuangan, dan wawancara HRD tanpa biaya.",
+        targetRole: "Officer / Management Trainee",
+        level: "Terbuka Semua Latar Belakang",
+        matcher: (c: any) => /bumn|cpns|finan|bisnis|karier/i.test(`${c.category || ""} ${c.title}`),
+      },
+    ];
+
+    for (const spec of seedPathSpecs) {
+      const [insertedPath] = await db
+        .insert(learningPaths)
+        .values({
+          slug: spec.slug,
+          title: spec.title,
+          description: spec.description,
+          targetRole: spec.targetRole,
+          level: spec.level,
+          badgeIcon: "compass",
+        })
+        .onConflictDoNothing()
+        .returning();
+
+      const targetPath =
+        insertedPath ||
+        (await db.select().from(learningPaths).where(eq(learningPaths.slug, spec.slug)))[0];
+      if (!targetPath) continue;
+
+      const matched = allDbCourses.filter(spec.matcher);
+      let stepOrder = 0;
+      for (const c of matched) {
+        await db
+          .insert(learningPathCourses)
+          .values({
+            pathId: targetPath.id,
+            courseId: c.id,
+            stepOrder: stepOrder++,
+          })
+          .onConflictDoNothing();
+      }
+    }
   }
 }

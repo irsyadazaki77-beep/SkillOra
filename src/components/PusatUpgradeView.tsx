@@ -90,26 +90,26 @@ export function PusatUpgradeView({ profile, onProfileUpdate, showToast }: PusatU
 
   return (
     <div className="max-w-6xl mx-auto space-y-6 py-2 font-sans">
-      {/* Header & Account Wallet Summary */}
+      {/* Header & Free-Education Mission Summary */}
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-xs flex flex-col lg:flex-row lg:items-center justify-between gap-6">
         <div className="space-y-1.5">
           <div className="flex items-center gap-2 text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">
             <Sparkles className="w-4 h-4" />
-            <span>Billing, Langganan Pro & Buku Kas Dompet</span>
+            <span>100% Gratis Untuk Pelajar · Didukung Sponsor &amp; Mitra HRD</span>
           </div>
           <h1 className="text-2xl md:text-3xl font-display font-bold text-slate-900 dark:text-white tracking-tight">
-            {isPro ? "Keanggotaan Skillora PRO Aktif" : "Tingkatkan Akses ke Skillora PRO"}
+            {isPro ? "Kontributor & Mitra Resmi Aktif" : "Dukung Beasiswa Terbuka & Mitra Rekrutmen"}
           </h1>
           <p className="text-sm text-slate-500 dark:text-slate-400 max-w-2xl">
-            Buka Mock Interview Suara AI tanpa batas, Asesmen Adaptif CAT penuh, Kredit Sertifikat Industri, serta top up saldo Gems dengan pencatatan buku kas teraudit.
+            Pelajar tidak perlu membayar biaya langganan atau sertifikat apa pun: seluruh kelas, Asesmen Adaptif, Mock Interview AI, dan Sertifikat QR + LinkedIn gratis 100%. Kontribusi di bawah bersifat sukarela bagi donatur &amp; perusahaan HRD.
           </p>
         </div>
 
         <div className="grid grid-cols-3 gap-3 shrink-0">
           <div className="px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700">
-            <span className="text-[11px] font-bold uppercase text-slate-400 block">Status Paket</span>
-            <span className={`text-sm font-bold mt-0.5 block ${isPro ? "text-emerald-600 dark:text-emerald-400" : "text-slate-800 dark:text-white"}`}>
-              {isPro ? "PRO Member" : "Gratis"}
+            <span className="text-[11px] font-bold uppercase text-slate-400 block">Akses Belajar</span>
+            <span className="text-sm font-bold mt-0.5 block text-emerald-600 dark:text-emerald-400">
+              {isPro ? "Gratis + Sponsor" : "100% Gratis"}
             </span>
           </div>
           <div className="px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700">
@@ -119,9 +119,9 @@ export function PusatUpgradeView({ profile, onProfileUpdate, showToast }: PusatU
             </span>
           </div>
           <div className="px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700">
-            <span className="text-[11px] font-bold uppercase text-slate-400 block">Kredit Sertifikat</span>
-            <span className="text-sm font-bold text-slate-900 dark:text-white mt-0.5 block tabular-nums">
-              {profile?.certCredits ?? 1}
+            <span className="text-[11px] font-bold uppercase text-slate-400 block">Biaya Sertifikat</span>
+            <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400 mt-0.5 block tabular-nums">
+              Rp 0 (Gratis)
             </span>
           </div>
         </div>
@@ -192,19 +192,25 @@ export function PusatUpgradeView({ profile, onProfileUpdate, showToast }: PusatU
                 <div className="space-y-4">
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-400">
-                      {item.type === "gems_pack" ? (
+                      {item.type === "supporter" || item.type === "gems_pack" ? (
                         <Gem className="w-4 h-4 text-emerald-500" />
-                      ) : item.type === "cert_voucher" ? (
+                      ) : item.type === "sponsor_scholarship" || item.type === "cert_voucher" ? (
                         <Award className="w-4 h-4 text-amber-500" />
                       ) : (
                         <ShieldCheck className="w-4 h-4 text-emerald-600" />
                       )}
                       <span>
-                        {item.type === "gems_pack"
+                        {item.type === "sponsor_scholarship"
+                          ? "Sponsor Beasiswa"
+                          : item.type === "hrd_partner"
+                          ? "Mitra HRD (B2B)"
+                          : item.type === "supporter"
+                          ? "Dukungan Sukarela"
+                          : item.type === "gems_pack"
                           ? "Paket Gems"
                           : item.type === "cert_voucher"
                           ? "Kredit Sertifikat"
-                          : "Langganan PRO"}
+                          : "Mitra Resmi"}
                       </span>
                     </div>
                     {item.badge && (
@@ -224,7 +230,7 @@ export function PusatUpgradeView({ profile, onProfileUpdate, showToast }: PusatU
                       {formatIdr(item.priceIdr)}
                     </div>
                     <div className="text-xs text-slate-400 mt-0.5">
-                      {item.proDaysGranted ? `Aktif ${item.proDaysGranted} hari` : "Pembelian satu kali"}
+                      {item.proDaysGranted ? `Paket B2B ${item.proDaysGranted} hari` : "Kontribusi satu kali (opsional)"}
                     </div>
                   </div>
 

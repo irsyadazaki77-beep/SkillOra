@@ -5,7 +5,14 @@ import { eq, desc, and } from "drizzle-orm";
 
 export interface BillingProduct {
   id: string;
-  type: "pro_monthly" | "pro_yearly" | "gems_pack" | "cert_voucher";
+  type:
+    | "sponsor_scholarship"
+    | "hrd_partner"
+    | "supporter"
+    | "pro_monthly"
+    | "pro_yearly"
+    | "gems_pack"
+    | "cert_voucher";
   name: string;
   subtitle: string;
   priceIdr: number;
@@ -18,74 +25,57 @@ export interface BillingProduct {
 
 export const BILLING_CATALOG: BillingProduct[] = [
   {
-    id: "pro_monthly",
-    type: "pro_monthly",
-    name: "Skillora Pro Bulanan",
-    subtitle: "Akses penuh AI Career Suite, Mock Interview Suara & Asesmen Adaptif Tanpa Batas",
-    priceIdr: 79000,
-    gemsGranted: 150,
-    certCreditsGranted: 2,
+    id: "sponsor_scholarship_1",
+    type: "sponsor_scholarship",
+    name: "Sponsori 1 Pelajar Prasejahtera",
+    subtitle: "Subsisdi silang penuh agar 1 pelajar tanpa biaya mendapat bimbingan AI & jalur karier gratis.",
+    priceIdr: 49000,
+    gemsGranted: 200,
+    badge: "Dampak Sosial",
+    features: [
+      "Seluruh kursus, ujian, & sertifikat tetap 100% gratis untuk pelajar",
+      "Mendanai biaya server & kuota AI mentor bagi peserta beasiswa",
+      "Lencana Kontributor Pendidikan Terbuka + +200 Bonus Gems",
+    ],
+  },
+  {
+    id: "sponsor_scholarship_10",
+    type: "sponsor_scholarship",
+    name: "Beasiswa Komunitas & Kampus (10 Pelajar)",
+    subtitle: "Program CSR & alumni untuk mendukung 10 pembelajar aktif hingga lulus proyek portofolio.",
+    priceIdr: 399000,
+    gemsGranted: 800,
+    badge: "Best Impact",
+    features: [
+      "Mendukung 10 pembelajar prasejahtera pada jalur Software, AI, atau BUMN",
+      "Laporan ringkas dampak kelulusan & proyek terverifikasi",
+      "+800 Bonus Gems komunitas pada buku kas teraudit",
+    ],
+  },
+  {
+    id: "hrd_talent_pass",
+    type: "hrd_partner",
+    name: "Mitra Rekrutmen HRD Perusahaan (B2B)",
+    subtitle: "Paket rekrutmen resmi untuk menemukan talenta teruji dari proyek & lab SkillOra.",
+    priceIdr: 499000,
     proDaysGranted: 30,
-    badge: "Populer",
+    badge: "Untuk Perusahaan",
     features: [
-      "Mock Interview Suara AI real-time tanpa batas kuota",
-      "Asesmen AI Adaptif CAT & diagnostik skill-gap mendalam",
-      "CV ATS Builder + Optimasi Bullet AI per lowongan",
-      "+150 Bonus Gems & +2 Kredit Sertifikat Resmi",
+      "Pencarian talenta terverifikasi lintas portofolio & nilai lab",
+      "Badge Mitra Industri Resmi di Portal HRD & lowongan kerja",
+      "Undangan wawancara terarah langsung ke kandidat siap kerja",
     ],
   },
   {
-    id: "pro_yearly",
-    type: "pro_yearly",
-    name: "Skillora Pro Tahunan",
-    subtitle: "Hemat 37% untuk akselerasi karir penuh selama 12 bulan",
-    priceIdr: 599000,
-    gemsGranted: 600,
-    certCreditsGranted: 10,
-    proDaysGranted: 365,
-    badge: "Hemat 37%",
-    features: [
-      "Semua benefit Skillora Pro selama 365 hari penuh",
-      "Prioritas matchmaking talent ke HRD Perusahaan Mitra",
-      "+600 Bonus Gems & +10 Kredit Sertifikat Industri",
-      "Lencana eksklusif Skillora Pro Member di profil",
-    ],
-  },
-  {
-    id: "gems_150",
-    type: "gems_pack",
-    name: "Paket 150 Gems Starter",
-    subtitle: "Top up Gems instan untuk Toko Skillora & sesi mentoring 1-on-1",
+    id: "supporter_plus",
+    type: "supporter",
+    name: "Supporter Ekosistem Gratis",
+    subtitle: "Dukungan sukarela agar SkillOra terus bebas paywall bagi pencari kerja tanpa biaya.",
     priceIdr: 25000,
     gemsGranted: 150,
     features: [
-      "150 Gems langsung masuk ke dompet akun",
-      "Gunakan untuk Streak Freeze, XP Booster 2x, atau Booking Mentor",
-    ],
-  },
-  {
-    id: "gems_500",
-    type: "gems_pack",
-    name: "Paket 500 Gems Akselerator",
-    subtitle: "Saldo Gems besar untuk mentoring intensif & item Toko lengkap",
-    priceIdr: 69000,
-    gemsGranted: 500,
-    badge: "Best Value",
-    features: [
-      "500 Gems langsung dikreditkan dengan audit wallet ledger",
-      "Setara hingga 10x sesi mentoring premium",
-    ],
-  },
-  {
-    id: "cert_voucher_3",
-    type: "cert_voucher",
-    name: "Bundle 3 Kredit Sertifikat Industri",
-    subtitle: "Kredit penerbitan sertifikat terverifikasi untuk lulusan proyek",
-    priceIdr: 99000,
-    certCreditsGranted: 3,
-    features: [
-      "+3 Kredit Sertifikat Resmi dengan kode verifikasi publik",
-      "Cocok untuk verifikasi portofolio lintas jalur kompetensi",
+      "100% sukarela — seluruh materi & sertifikat tetap gratis tanpa paket ini",
+      "+150 Gems apresiasi untuk item Toko Skillora & avatar eksklusif",
     ],
   },
 ];

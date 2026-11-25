@@ -439,7 +439,7 @@ export const TopNavbar = memo(function TopNavbar({
                           className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 font-semibold cursor-pointer"
                         >
                           <Sparkles className="w-3.5 h-3.5" />
-                          {profile.subscriptionTier === "pro" ? "Skillora PRO Aktif" : "Upgrade Skillora PRO"}
+                          {profile.subscriptionTier === "pro" ? "Mitra & Sponsor Aktif" : "Dukung Beasiswa & Mitra HRD"}
                         </button>
                       </div>
 

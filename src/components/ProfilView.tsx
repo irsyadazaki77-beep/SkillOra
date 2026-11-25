@@ -136,14 +136,14 @@ export function ProfilView({ profile, onSettingsSaved, showToast }: ProfilViewPr
       color: "text-emerald-500 bg-emerald-50 dark:bg-emerald-950/40",
     },
     {
-      label: "Kredit Sertifikasi",
-      value: `${profile.certCredits ?? 1} Kredit`,
+      label: "Biaya Sertifikasi",
+      value: "100% Gratis",
       icon: BookOpen,
       color: "text-blue-500 bg-blue-50 dark:bg-blue-950/40",
     },
     {
-      label: "Status Paket",
-      value: profile.subscriptionTier === "pro" ? "Skillora PRO" : "Paket Gratis",
+      label: "Akses Pelajar",
+      value: profile.subscriptionTier === "pro" ? "Supporter & Gratis" : "Terbuka Penuh",
       icon: Sparkles,
       color: "text-indigo-500 bg-indigo-50 dark:bg-indigo-950/40",
     },
@@ -154,7 +154,7 @@ export function ProfilView({ profile, onSettingsSaved, showToast }: ProfilViewPr
       <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl md:text-3xl font-display font-bold tracking-tight text-slate-900 dark:text-white">
-            Profil, Peran & Kredensial
+            Profil, Peran &amp; Kredensial
           </h1>
           <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">
             Kelola identitas profesional, ganti portal peran (Mahasiswa / Mentor / HRD), dan pantau sertifikat terverifikasi Anda.
@@ -165,7 +165,7 @@ export function ProfilView({ profile, onSettingsSaved, showToast }: ProfilViewPr
           className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-2 self-start cursor-pointer transition-colors"
         >
           <Sparkles className="w-4 h-4" />
-          <span>{profile.subscriptionTier === "pro" ? "Kelola Langganan PRO" : "Upgrade ke Skillora PRO"}</span>
+          <span>{profile.subscriptionTier === "pro" ? "Kelola Status Sponsor" : "Beasiswa & Mitra HRD"}</span>
         </button>
       </header>
 

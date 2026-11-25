@@ -91,6 +91,14 @@ export function PublicPortfolioView() {
                       <span className="text-emerald-600 dark:text-emerald-400 font-semibold">
                         Terverifikasi Skillora
                       </span>
+                      {data.stats.jobReadyVerified && (
+                        <>
+                          <span>·</span>
+                          <span className="px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 font-semibold">
+                            Siap Kerja Terverifikasi ✓
+                          </span>
+                        </>
+                      )}
                       <span>·</span>
                       <span>Lv.{data.level}</span>
                       <span>·</span>

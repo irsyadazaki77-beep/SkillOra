@@ -245,9 +245,21 @@ export const courseApi = {
     apiClient.post<{ enrolled: boolean; alreadyEnrolled: boolean; enrolledCount: number }>(
       `/courses/${courseId}/enroll`
     ),
+  getLearningPaths: () => apiClient.get<any[]>("/learning-paths"),
+  enrollLearningPath: (slug: string) =>
+    apiClient.post<{ slug: string; enrolledCourses: number; title: string }>(`/learning-paths/${slug}/enroll`),
   addLesson: (
     courseId: string,
-    lessonData: { title: string; xp?: number; estimatedMinutes?: number; contentMarkdown?: string; videoUrl?: string }
+    lessonData: {
+      title: string;
+      xp?: number;
+      estimatedMinutes?: number;
+      contentMarkdown?: string;
+      videoUrl?: string;
+      questions?: any[];
+      inlineChecks?: any[];
+      flashcards?: any[];
+    }
   ) => apiClient.post<any>(`/courses/${courseId}/lessons`, lessonData),
 };
 
@@ -259,6 +271,37 @@ export const aiApi = {
     apiClient.post<{ evaluation: any }>("/simulasi/evaluate-star", { question, situation, action, result }),
   submitProject: (courseId: string, projectUrl: string, studentCodeNotes?: string) =>
     apiClient.post<{ review: MentorReview; profile: Profile }>("/projects/submit", { courseId, projectUrl, studentCodeNotes })
+};
+
+export const peerReviewApi = {
+  getQueue: () =>
+    apiClient.get<{
+      queue: Array<{
+        submissionId: number;
+        courseId: string;
+        projectUrl: string;
+        studentNotes: string;
+        aiStatus: string;
+        authorName: string;
+        submittedAt: string;
+      }>;
+      givenCount: number;
+      received: Array<{
+        id: number;
+        courseId: string;
+        score: number;
+        feedback: string;
+        rubricBreakdown: Array<{ criterion: string; score: number }>;
+        reviewerName: string;
+        createdAt: string;
+      }>;
+    }>("/peer-reviews/queue"),
+  submitReview: (payload: {
+    submissionId: number;
+    score: number;
+    rubricBreakdown?: Array<{ criterion: string; score: number }>;
+    feedback: string;
+  }) => apiClient.post<{ earnedXp: number; submissionId: number; score: number; profile: Profile }>("/peer-reviews", payload),
 };
 
 export const jobApi = {

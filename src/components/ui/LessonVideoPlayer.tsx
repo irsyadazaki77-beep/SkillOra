@@ -1,4 +1,5 @@
-import { ExternalLink, PlayCircle, Video } from "lucide-react";
+import { useState } from "react";
+import { ExternalLink, PlayCircle, Video, Wifi } from "lucide-react";
 import { parseVideoUrl } from "../../utils/videoUtils";
 
 interface LessonVideoPlayerProps {
@@ -8,7 +9,18 @@ interface LessonVideoPlayerProps {
 
 export function LessonVideoPlayer({ videoUrl, title }: LessonVideoPlayerProps) {
   const source = parseVideoUrl(videoUrl);
+  const [dataSaverActive] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem("skillora_data_saver") === "true";
+    } catch {
+      return false;
+    }
+  });
+  const [userLoadedVideo, setUserLoadedVideo] = useState(false);
+
   if (!source) return null;
+
+  const shouldDeferEmbed = dataSaverActive && !userLoadedVideo;
 
   return (
     <div className="rounded-2xl overflow-hidden border border-zinc-200 dark:border-zinc-800 bg-zinc-950 shadow-sm">
@@ -28,7 +40,27 @@ export function LessonVideoPlayer({ videoUrl, title }: LessonVideoPlayerProps) {
         </a>
       </div>
 
-      {source.kind === "youtube" || source.kind === "vimeo" ? (
+      {shouldDeferEmbed ? (
+        <div className="p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-zinc-900 text-zinc-200 text-xs">
+          <div className="flex items-start gap-3">
+            <Wifi className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
+            <div className="space-y-0.5">
+              <p className="font-semibold text-white">Mode Hemat Kuota Aktif</p>
+              <p className="text-zinc-400">
+                Pemutaran video ditunda untuk menghemat paket data Anda. Anda tetap dapat membaca teks materi di bawah secara penuh.
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setUserLoadedVideo(true)}
+            className="px-3.5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shrink-0 inline-flex items-center gap-1.5 cursor-pointer"
+          >
+            <PlayCircle className="w-4 h-4" />
+            <span>Muat Video Sekarang</span>
+          </button>
+        </div>
+      ) : source.kind === "youtube" || source.kind === "vimeo" ? (
         <div className="relative aspect-video w-full bg-black">
           <iframe
             src={source.embedUrl!}

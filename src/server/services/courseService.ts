@@ -85,8 +85,26 @@ export class CourseService {
       contentMarkdown: body.contentMarkdown,
       estimatedMinutes: body.estimatedMinutes,
       questions: body.questions,
+      inlineChecks: body.inlineChecks,
+      flashcards: body.flashcards,
       videoUrl: body.videoUrl,
     });
+  }
+
+  static async getLearningPaths(userId?: string) {
+    if (!userId) return CourseRepository.getLearningPaths(0);
+    const profile = await UserRepository.getFullProfile(userId);
+    return CourseRepository.getLearningPaths(profile.id);
+  }
+
+  static async enrollLearningPath(userId: string, slug: string) {
+    const profile = await UserRepository.getFullProfile(userId);
+    const result = await CourseRepository.enrollLearningPath(profile.id, slug);
+    await NotificationRepository.addNotification(
+      profile.id,
+      `🧭 Terdaftar gratis pada jalur '${result.title}' (${result.enrolledCourses} kursus siap belajar)!`
+    );
+    return result;
   }
 
   static async enrollCourse(userId: string, courseId: string) {

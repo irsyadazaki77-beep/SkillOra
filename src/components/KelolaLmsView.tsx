@@ -33,6 +33,13 @@ export function KelolaLmsView({ courses, onCoursesUpdated, showToast }: KelolaLm
   const [newLessonXp, setNewLessonXp] = useState("50");
   const [newLessonVideoUrl, setNewLessonVideoUrl] = useState("");
   const [newLessonContent, setNewLessonContent] = useState("");
+  const [showInteractiveStudio, setShowInteractiveStudio] = useState(false);
+  const [quizQuestionText, setQuizQuestionText] = useState("");
+  const [quizOptionA, setQuizOptionA] = useState("");
+  const [quizOptionB, setQuizOptionB] = useState("");
+  const [quizCorrectIdx, setQuizCorrectIdx] = useState<0 | 1>(0);
+  const [flashcardFront, setFlashcardFront] = useState("");
+  const [flashcardBack, setFlashcardBack] = useState("");
 
   const refreshFromDb = async () => {
     try {
@@ -124,6 +131,44 @@ export function KelolaLmsView({ courses, onCoursesUpdated, showToast }: KelolaLm
     if (!selectedCourse || !newLessonTitle.trim()) return;
     setSaving(true);
     try {
+      const questionsPayload =
+        quizQuestionText.trim() && quizOptionA.trim() && quizOptionB.trim()
+          ? [
+              {
+                id: `q_${Date.now()}`,
+                text: quizQuestionText.trim(),
+                options: [quizOptionA.trim(), quizOptionB.trim()],
+                answerIndex: quizCorrectIdx,
+                explanation: `Jawaban tepat untuk modul ${newLessonTitle.trim()}.`,
+              },
+            ]
+          : [];
+
+      const inlineChecksPayload =
+        quizQuestionText.trim() && quizOptionA.trim() && quizOptionB.trim()
+          ? [
+              {
+                id: `chk_${Date.now()}`,
+                question: quizQuestionText.trim(),
+                options: [quizOptionA.trim(), quizOptionB.trim()],
+                answerIndex: quizCorrectIdx,
+                explanation: `Penjelasan singkat seputar ${newLessonTitle.trim()}.`,
+              },
+            ]
+          : [];
+
+      const flashcardsPayload =
+        flashcardFront.trim() && flashcardBack.trim()
+          ? [
+              {
+                id: `fc_${Date.now()}`,
+                front: flashcardFront.trim(),
+                back: flashcardBack.trim(),
+                tag: selectedCourse.category || "Inti",
+              },
+            ]
+          : [];
+
       await courseApi.addLesson(selectedCourse.id, {
         title: newLessonTitle.trim(),
         xp: Number(newLessonXp) || 50,
@@ -132,10 +177,18 @@ export function KelolaLmsView({ courses, onCoursesUpdated, showToast }: KelolaLm
         contentMarkdown:
           newLessonContent.trim() ||
           `### ${newLessonTitle.trim()}\n\nPelajari konsep inti serta implementasi praktis pada modul ${newLessonTitle.trim()}.`,
+        questions: questionsPayload,
+        inlineChecks: inlineChecksPayload,
+        flashcards: flashcardsPayload,
       });
       setNewLessonTitle("");
       setNewLessonVideoUrl("");
       setNewLessonContent("");
+      setQuizQuestionText("");
+      setQuizOptionA("");
+      setQuizOptionB("");
+      setFlashcardFront("");
+      setFlashcardBack("");
       await refreshFromDb();
       showToast(`Modul "${newLessonTitle}" berhasil ditambahkan ke PostgreSQL!`, "success");
     } catch (err: any) {
@@ -425,6 +478,71 @@ export function KelolaLmsView({ courses, onCoursesUpdated, showToast }: KelolaLm
                   placeholder="Ringkasan materi Markdown opsional (mendukung # Heading, ```kode```, tabel, daftar)..."
                   className="w-full p-2.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:border-emerald-500 text-slate-900 dark:text-white resize-none"
                 />
+
+                <div className="pt-1">
+                  <button
+                    type="button"
+                    onClick={() => setShowInteractiveStudio(!showInteractiveStudio)}
+                    className="text-[11px] font-bold text-emerald-700 dark:text-emerald-400 hover:underline cursor-pointer"
+                  >
+                    {showInteractiveStudio
+                      ? "− Sembunyikan Studio Kuis, Cek Paham & Flashcard"
+                      : "+ Tambah Soal Kuis, Cek Paham & Flashcard SM-2 (Opsional)"}
+                  </button>
+
+                  {showInteractiveStudio && (
+                    <div className="mt-2.5 p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 space-y-2.5">
+                      <input
+                        type="text"
+                        value={quizQuestionText}
+                        onChange={(e) => setQuizQuestionText(e.target.value)}
+                        placeholder="Pertanyaan Kuis & Cek Paham (opsional)..."
+                        className="w-full p-2 text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white"
+                      />
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                        <input
+                          type="text"
+                          value={quizOptionA}
+                          onChange={(e) => setQuizOptionA(e.target.value)}
+                          placeholder="Opsi A"
+                          className="p-2 text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white"
+                        />
+                        <input
+                          type="text"
+                          value={quizOptionB}
+                          onChange={(e) => setQuizOptionB(e.target.value)}
+                          placeholder="Opsi B"
+                          className="p-2 text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white"
+                        />
+                        <select
+                          aria-label="Jawaban Benar Kuis"
+                          value={quizCorrectIdx}
+                          onChange={(e) => setQuizCorrectIdx(Number(e.target.value) === 1 ? 1 : 0)}
+                          className="p-2 text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white"
+                        >
+                          <option value={0}>Jawaban Benar: Opsi A</option>
+                          <option value={1}>Jawaban Benar: Opsi B</option>
+                        </select>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+                        <input
+                          type="text"
+                          value={flashcardFront}
+                          onChange={(e) => setFlashcardFront(e.target.value)}
+                          placeholder="Flashcard Depan (Istilah / Konsep)"
+                          className="p-2 text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white"
+                        />
+                        <input
+                          type="text"
+                          value={flashcardBack}
+                          onChange={(e) => setFlashcardBack(e.target.value)}
+                          placeholder="Flashcard Belakang (Definisi / Jawaban)"
+                          className="p-2 text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div className="space-y-2 pt-2">

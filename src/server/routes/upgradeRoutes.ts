@@ -6,6 +6,7 @@ import { StudyWorkspaceService } from "../services/studyWorkspaceService.js";
 import { ArenaService } from "../services/arenaService.js";
 import { CareerExpansionService } from "../services/careerExpansionService.js";
 import { TrainingEngineService } from "../services/trainingEngineService.js";
+import { PeerReviewService } from "../services/peerReviewService.js";
 
 const router = Router();
 
@@ -410,6 +411,25 @@ router.post("/training/simulations/star-evaluate", requireRegistered, aiLimiter,
     res.json({ success: true, data });
   } catch (err: any) {
     res.status(500).json({ success: false, error: { message: err.message } });
+  }
+});
+
+// Peer Code Review Routes (Coursera-style free project feedback)
+router.get("/peer-reviews/queue", requireAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    const data = await PeerReviewService.getQueue(req.userId!);
+    res.json({ success: true, data });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: { message: err.message } });
+  }
+});
+
+router.post("/peer-reviews", requireRegistered, async (req: AuthenticatedRequest, res) => {
+  try {
+    const data = await PeerReviewService.submitReview(req.userId!, req.body || {});
+    res.json({ success: true, data });
+  } catch (err: any) {
+    res.status(400).json({ success: false, error: { message: err.message } });
   }
 });
 

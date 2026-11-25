@@ -100,7 +100,14 @@ export interface CompanyProfile {
 
 export interface BillingProduct {
   id: string;
-  type: "pro_monthly" | "pro_yearly" | "gems_pack" | "cert_voucher";
+  type:
+    | "sponsor_scholarship"
+    | "hrd_partner"
+    | "supporter"
+    | "pro_monthly"
+    | "pro_yearly"
+    | "gems_pack"
+    | "cert_voucher";
   name: string;
   subtitle: string;
   priceIdr: number;
@@ -554,6 +561,30 @@ export interface Course {
   casePrompt?: CourseCasePrompt | null;
 }
 
+export interface LearningPathCourseItem {
+  id: string;
+  title: string;
+  difficulty: string;
+  duration: string;
+  lessonsCount: number;
+  completedLessonsCount: number;
+  isEnrolled: boolean;
+  stepOrder: number;
+}
+
+export interface LearningPathRecord {
+  slug: string;
+  title: string;
+  description: string;
+  targetRole: string;
+  level: string;
+  courses: LearningPathCourseItem[];
+  totalModules: number;
+  progressPercent: number;
+  firstCourseId: string;
+  allEnrolled: boolean;
+}
+
 export interface TeamMember {
   name: string;
   role: string;
@@ -835,6 +866,7 @@ export interface PublicPortfolioData {
     passedLabs: number;
     avgLabScore: number;
     avgAssessmentScore: number;
+    jobReadyVerified?: boolean;
   };
   certificates: Array<{
     id: string;
