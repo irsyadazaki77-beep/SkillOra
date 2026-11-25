@@ -170,13 +170,23 @@ export class CareerExpansionService {
       where: eq(users.portfolioSlug, cleaned),
     });
 
-    // Fallback: match default generated slug pattern `<username>-<id>`
+    // Fallback: match default generated slug pattern `<username>-<id>` in O(1) without full-table scan
     if (!userRow) {
-      const allUsers = await db.select().from(users);
-      userRow = allUsers.find((u) => {
-        const computed = sanitizeSlug(`${u.username || u.name || "pelajar"}-${u.id}`);
-        return computed === cleaned;
-      });
+      const idMatch = cleaned.match(/-(\d+)$/);
+      if (idMatch) {
+        const candidateId = Number(idMatch[1]);
+        if (Number.isInteger(candidateId) && candidateId > 0) {
+          const candidate = await db.query.users.findFirst({
+            where: eq(users.id, candidateId),
+          });
+          if (candidate) {
+            const computed = sanitizeSlug(`${candidate.username || candidate.name || "pelajar"}-${candidate.id}`);
+            if (computed === cleaned) {
+              userRow = candidate;
+            }
+          }
+        }
+      }
     }
 
     if (!userRow || !userRow.portfolioPublic) {

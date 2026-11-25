@@ -17,6 +17,7 @@ import { and, desc, eq, inArray } from "drizzle-orm";
 import { Type } from "@google/genai";
 import { getGeminiClient } from "./aiService.js";
 import { AI_MODELS } from "../config/aiConfig.js";
+import { fisherYatesShuffle } from "../utils/shuffle.js";
 import { UserRepository } from "../repositories/UserRepository.js";
 import { ensureSeeded } from "../db/seedData.js";
 import crypto from "crypto";
@@ -29,13 +30,40 @@ function computeLeagueTier(weeklyXp: number): string {
   return "bronze";
 }
 
-async function grantTrainingXp(userIdNum: number, deltaXp: number, notifText?: string) {
-  if (deltaXp <= 0) return;
-  await db.transaction(async (tx) => {
+const MAX_DAILY_REPEATABLE_TRAINING_XP = 500;
+
+function getJakartaDateStr(): string {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Jakarta",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
+}
+
+async function grantTrainingXp(
+  userIdNum: number,
+  deltaXp: number,
+  notifText?: string,
+  options?: { enforceDailyCap?: boolean }
+): Promise<number> {
+  if (deltaXp <= 0) return 0;
+  return await db.transaction(async (tx) => {
     const [u] = await tx.select().from(users).where(eq(users.id, userIdNum)).for("update");
-    if (!u) return;
-    const newXp = u.xp + deltaXp;
-    const newWeeklyXp = u.weeklyXp + deltaXp;
+    if (!u) return 0;
+
+    let awarded = deltaXp;
+    const todayStr = getJakartaDateStr();
+    const usedToday = u.lastQuizXpDate === todayStr ? (u.dailyQuizXpCount || 0) : 0;
+
+    if (options?.enforceDailyCap) {
+      const remaining = Math.max(0, MAX_DAILY_REPEATABLE_TRAINING_XP - usedToday);
+      awarded = Math.min(deltaXp, remaining);
+      if (awarded <= 0) return 0;
+    }
+
+    const newXp = u.xp + awarded;
+    const newWeeklyXp = u.weeklyXp + awarded;
     const newLevel = Math.floor(newXp / 500) + 1;
     await tx
       .update(users)
@@ -44,6 +72,9 @@ async function grantTrainingXp(userIdNum: number, deltaXp: number, notifText?: s
         weeklyXp: newWeeklyXp,
         level: newLevel,
         leagueTier: computeLeagueTier(newWeeklyXp),
+        ...(options?.enforceDailyCap
+          ? { dailyQuizXpCount: usedToday + awarded, lastQuizXpDate: todayStr }
+          : {}),
         updatedAt: new Date(),
       })
       .where(eq(users.id, userIdNum));
@@ -56,6 +87,8 @@ async function grantTrainingXp(userIdNum: number, deltaXp: number, notifText?: s
         read: false,
       });
     }
+
+    return awarded;
   });
 }
 
@@ -712,7 +745,7 @@ Tulis analisis diagnostik ringkas dalam Bahasa Indonesia (maksimal 3 paragraf pe
         },
       });
 
-    await grantTrainingXp(userRow.id, 5);
+    const awardedXp = await grantTrainingXp(userRow.id, 5, undefined, { enforceDailyCap: true });
     const profile = await UserRepository.getFullProfile(uid);
 
     return {
@@ -722,7 +755,7 @@ Tulis analisis diagnostik ringkas dalam Bahasa Indonesia (maksimal 3 paragraf pe
       repetitions,
       lastQuality: payload.quality,
       nextReviewAt: nextReviewDate.toISOString(),
-      earnedXp: 5,
+      earnedXp: awardedXp,
       profile,
     };
   }
@@ -913,10 +946,9 @@ Nilai jawaban peserta secara jujur berdasarkan kedalaman substansi, kesesuaian d
       }
     }
 
-    const shuffle = <T,>(arr: T[]) => [...arr].sort(() => Math.random() - 0.5);
     const chosen = [
-      ...shuffle(prioritized).slice(0, count),
-      ...shuffle(general),
+      ...fisherYatesShuffle(prioritized).slice(0, count),
+      ...fisherYatesShuffle(general),
     ].slice(0, Math.min(count, 15));
 
     return {
@@ -954,10 +986,11 @@ Nilai jawaban peserta secara jujur berdasarkan kedalaman substansi, kesesuaian d
       })
       .returning();
 
-    await grantTrainingXp(
+    const awardedXp = await grantTrainingXp(
       userRow.id,
       xp,
-      `🎯 Simulasi '${payload.title}' selesai dengan skor ${clampedScore}/100 (+${xp} XP).`
+      `🎯 Simulasi '${payload.title}' selesai dengan skor ${clampedScore}/100 (+${xp} XP).`,
+      { enforceDailyCap: true }
     );
 
     const profile = await UserRepository.getFullProfile(uid);

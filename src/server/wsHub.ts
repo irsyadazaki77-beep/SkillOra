@@ -9,6 +9,7 @@ import { resolveTierFromXp } from "./services/arenaService.js";
 import { ensureSeeded } from "./db/seedData.js";
 import { db } from "../db/index.js";
 import { AI_MODELS } from "./config/aiConfig.js";
+import { fisherYatesShuffle } from "./utils/shuffle.js";
 import { arenaMatches, interviewSessions, questionsBank, users } from "../db/schema.js";
 import { eq } from "drizzle-orm";
 
@@ -233,9 +234,10 @@ export function attachWsHub(httpServer: HttpServer) {
         finishedAt: new Date(),
       });
 
-      // Award XP & weeklyXp to each participant
+      // Award XP & weeklyXp to each registered participant (skip guest demo account)
       for (let i = 0; i < ranked.length; i++) {
         const p = ranked[i];
+        if (p.uid === "user-dev-default") continue;
         const xpGain = Math.max(25, Math.min(200, Math.round(p.score / 12) + (i === 0 ? 45 : 20)));
         const existingUser = await db.query.users.findFirst({ where: eq(users.id, p.dbUserId) });
         if (existingUser) {
@@ -413,8 +415,7 @@ export function attachWsHub(httpServer: HttpServer) {
             topic === "Semua"
               ? allQ
               : allQ.filter((q) => q.category.toLowerCase() === topic.toLowerCase());
-          const poolQ = (filtered.length >= 5 ? filtered : allQ)
-            .sort(() => Math.random() - 0.5)
+          const poolQ = fisherYatesShuffle(filtered.length >= 5 ? filtered : allQ)
             .slice(0, 6)
             .map((q) => ({
               id: q.id,
