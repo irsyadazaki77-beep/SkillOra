@@ -1,6 +1,6 @@
 import { db } from "../../db/index.js";
 import { arenaMatches, questionsBank, tryoutAttempts, users, walletLedger } from "../../db/schema.js";
-import { desc, eq } from "drizzle-orm";
+import { desc, eq, gt, or, and, sql } from "drizzle-orm";
 import { UserRepository } from "../repositories/UserRepository.js";
 import { NotificationRepository } from "../repositories/NotificationRepository.js";
 import { ensureSeeded } from "../db/seedData.js";
@@ -52,20 +52,52 @@ export class ArenaService {
   static async getLeagueOverview(uid: string, filterTier?: string) {
     await ensureSeeded();
     const userRow = await UserRepository.getOrCreateUser(uid);
-    const allUsers = await db.select().from(users);
 
     const myTier = resolveTierFromXp(userRow.weeklyXp || 0);
     const activeTier = filterTier && LEAGUE_TIERS.some((t) => t.id === filterTier) ? filterTier : myTier;
 
-    const sortedAll = [...allUsers].sort((a, b) => (b.weeklyXp || 0) - (a.weeklyXp || 0) || b.xp - a.xp);
-    const tierUsers = sortedAll.filter((u) => resolveTierFromXp(u.weeklyXp || 0) === activeTier);
-    const displayList = tierUsers.length >= 3 ? tierUsers : sortedAll;
+    const standingCols = {
+      id: users.id,
+      name: users.name,
+      avatar: users.avatar,
+      level: users.level,
+      weeklyXp: users.weeklyXp,
+      xp: users.xp,
+      campusName: users.campusName,
+    };
+
+    const [tierUsers, higherRankRow] = await Promise.all([
+      db
+        .select(standingCols)
+        .from(users)
+        .where(eq(users.leagueTier, activeTier))
+        .orderBy(desc(users.weeklyXp), desc(users.xp))
+        .limit(25),
+      db
+        .select({ count: sql<number>`count(*)` })
+        .from(users)
+        .where(
+          or(
+            gt(users.weeklyXp, userRow.weeklyXp || 0),
+            and(eq(users.weeklyXp, userRow.weeklyXp || 0), gt(users.xp, userRow.xp || 0))
+          )
+        ),
+    ]);
+
+    const displayList =
+      tierUsers.length >= 3
+        ? tierUsers
+        : await db
+            .select(standingCols)
+            .from(users)
+            .orderBy(desc(users.weeklyXp), desc(users.xp))
+            .limit(25);
 
     const totalCount = displayList.length;
     const promoteCutoff = Math.max(1, Math.ceil(totalCount * 0.3));
     const relegateCutoff = totalCount >= 5 ? Math.floor(totalCount * 0.8) : totalCount + 1;
 
-    const standings = displayList.slice(0, 25).map((u, idx) => {
+    const standings = displayList.map((u, idx) => {
       const rank = idx + 1;
       const zone: "promote" | "safe" | "relegate" =
         rank <= promoteCutoff ? "promote" : rank > relegateCutoff ? "relegate" : "safe";
@@ -83,7 +115,7 @@ export class ArenaService {
       };
     });
 
-    const myRankIdx = sortedAll.findIndex((u) => u.id === userRow.id);
+    const myRank = Number(higherRankRow[0]?.count || 0) + 1;
     const tierIdx = LEAGUE_TIERS.findIndex((t) => t.id === myTier);
     const nextTier = tierIdx >= 0 && tierIdx < LEAGUE_TIERS.length - 1 ? LEAGUE_TIERS[tierIdx + 1].label : null;
 
@@ -96,7 +128,7 @@ export class ArenaService {
       currentTier: myTier,
       activeTier,
       nextTier,
-      myRank: myRankIdx >= 0 ? myRankIdx + 1 : 1,
+      myRank,
       myWeeklyXp: userRow.weeklyXp || 0,
       daysRemaining,
       tiers: LEAGUE_TIERS,

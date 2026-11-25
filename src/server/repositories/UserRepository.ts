@@ -465,39 +465,35 @@ export class UserRepository {
   static async getLeaderboard(currentUid: string) {
     const currentUserProfile = await UserRepository.getFullProfile(currentUid);
 
-    const allUsers = await db.select().from(users);
+    const leaderboardCols = {
+      id: users.id,
+      name: users.name,
+      avatar: users.avatar,
+      level: users.level,
+      xp: users.xp,
+      weeklyXp: users.weeklyXp,
+      role: users.role,
+    };
 
-    const weeklyList = [...allUsers]
-      .sort((a, b) => b.weeklyXp - a.weeklyXp)
-      .slice(0, 10)
-      .map((u, index) => ({
-        rank: index + 1,
-        name: u.name,
-        avatar: u.avatar || "🦁",
-        level: u.level,
-        xp: u.xp,
-        weeklyXp: u.weeklyXp,
-        title: u.role || "Pelajar Siap Kerja",
-        isCurrentUser: u.id === currentUserProfile.id,
-      }));
+    const [weeklyRows, allTimeRows] = await Promise.all([
+      db.select(leaderboardCols).from(users).orderBy(desc(users.weeklyXp), desc(users.xp)).limit(10),
+      db.select(leaderboardCols).from(users).orderBy(desc(users.xp)).limit(10),
+    ]);
 
-    const allTimeList = [...allUsers]
-      .sort((a, b) => b.xp - a.xp)
-      .slice(0, 10)
-      .map((u, index) => ({
-        rank: index + 1,
-        name: u.name,
-        avatar: u.avatar || "🦁",
-        level: u.level,
-        xp: u.xp,
-        weeklyXp: u.weeklyXp,
-        title: u.role || "Pelajar Siap Kerja",
-        isCurrentUser: u.id === currentUserProfile.id,
-      }));
+    const mapEntry = (u: typeof weeklyRows[number], index: number) => ({
+      rank: index + 1,
+      name: u.name,
+      avatar: u.avatar || "🦁",
+      level: u.level,
+      xp: u.xp,
+      weeklyXp: u.weeklyXp,
+      title: u.role || "Pelajar Siap Kerja",
+      isCurrentUser: u.id === currentUserProfile.id,
+    });
 
     return {
-      weekly: weeklyList,
-      allTime: allTimeList,
+      weekly: weeklyRows.map(mapEntry),
+      allTime: allTimeRows.map(mapEntry),
       resetDaysRemaining: 3,
     };
   }

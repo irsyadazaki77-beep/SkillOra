@@ -13,18 +13,34 @@ import {
 import { ensureSeeded } from "../db/seedData.js";
 import { UserRepository } from "../repositories/UserRepository.js";
 import { NotificationRepository } from "../repositories/NotificationRepository.js";
-import { eq, and, desc } from "drizzle-orm";
+import { eq, and, desc, inArray } from "drizzle-orm";
 import { safeParse } from "../../utils/safeJson.js";
 
 export class MentorService {
   static async getSubmissionsQueue() {
     await ensureSeeded();
     const subs = await db.select().from(projectSubmissions).orderBy(desc(projectSubmissions.submittedAt));
-    const allUsers = await db.select().from(users);
-    const allCourses = await db.select().from(courses);
+    if (subs.length === 0) return [];
 
-    const userMap = new Map(allUsers.map((u) => [u.id, u]));
-    const courseMap = new Map(allCourses.map((c) => [c.courseId, c]));
+    const studentIds = Array.from(new Set(subs.map((s) => s.userId)));
+    const courseIds = Array.from(new Set(subs.map((s) => s.courseId)));
+
+    const [scopedUsers, scopedCourses] = await Promise.all([
+      db
+        .select({
+          id: users.id,
+          name: users.name,
+          email: users.email,
+          avatar: users.avatar,
+          level: users.level,
+        })
+        .from(users)
+        .where(inArray(users.id, studentIds)),
+      db.select().from(courses).where(inArray(courses.courseId, courseIds)),
+    ]);
+
+    const userMap = new Map(scopedUsers.map((u) => [u.id, u]));
+    const courseMap = new Map(scopedCourses.map((c) => [c.courseId, c]));
 
     return subs.map((s) => {
       const student = userMap.get(s.userId);
@@ -306,11 +322,10 @@ export class MentorService {
     await ensureSeeded();
     const userRow = await UserRepository.getOrCreateUser(userId, "user@skillora.app", "Pengguna");
     const allBookings = await db.select().from(mentoringBookings).orderBy(desc(mentoringBookings.createdAt));
-    const allSlots = await db.select().from(mentoringSlots);
-    const allUsers = await db.select().from(users);
+    if (allBookings.length === 0) return [];
 
+    const allSlots = await db.select().from(mentoringSlots);
     const slotMap = new Map(allSlots.map((s) => [s.id, s]));
-    const userMap = new Map(allUsers.map((u) => [u.id, u]));
 
     const relevant = allBookings.filter((b) => {
       const slot = slotMap.get(b.slotId);
@@ -320,6 +335,18 @@ export class MentorService {
       if (userRow.accountRole === "admin") return true;
       return b.studentUserId === userRow.id;
     });
+    if (relevant.length === 0) return [];
+
+    const studentIds = Array.from(new Set(relevant.map((b) => b.studentUserId)));
+    const scopedUsers = await db
+      .select({
+        id: users.id,
+        name: users.name,
+        email: users.email,
+      })
+      .from(users)
+      .where(inArray(users.id, studentIds));
+    const userMap = new Map(scopedUsers.map((u) => [u.id, u]));
 
     return relevant.map((b) => {
       const slot = slotMap.get(b.slotId);

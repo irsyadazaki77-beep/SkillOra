@@ -9,7 +9,7 @@ import {
   certificates,
 } from "../../db/schema.js";
 import { ensureSeeded } from "../db/seedData.js";
-import { eq, and, desc } from "drizzle-orm";
+import { eq, and, desc, inArray } from "drizzle-orm";
 import { safeParse } from "../../utils/safeJson.js";
 
 export class CareerRepository {
@@ -181,20 +181,38 @@ export class CareerRepository {
 
     const allApps = await db.select().from(jobApplications).orderBy(desc(jobApplications.appliedAt));
     const relevantApps = allApps.filter((a) => recruiterJobIds.has(a.jobId));
+    if (relevantApps.length === 0) return [];
 
-    const allUsers = await db.select().from(users);
-    const userMap = new Map(allUsers.map((u) => [u.id, u]));
+    const candidateIds = Array.from(new Set(relevantApps.map((a) => a.userId)));
 
-    const allCvs = await db.select().from(cvDocuments);
-    const cvMap = new Map(allCvs.map((cv) => [cv.id, cv]));
+    const [scopedUsers, scopedCvs, scopedCerts] = await Promise.all([
+      db
+        .select({
+          id: users.id,
+          name: users.name,
+          email: users.email,
+          avatar: users.avatar,
+          level: users.level,
+          xp: users.xp,
+          skills: users.skills,
+        })
+        .from(users)
+        .where(inArray(users.id, candidateIds)),
+      db.select().from(cvDocuments).where(inArray(cvDocuments.userId, candidateIds)),
+      db
+        .select()
+        .from(certificates)
+        .where(and(inArray(certificates.userId, candidateIds), eq(certificates.status, "valid"))),
+    ]);
 
-    const allCerts = await db.select().from(certificates);
+    const userMap = new Map(scopedUsers.map((u) => [u.id, u]));
+    const cvMap = new Map(scopedCvs.map((cv) => [cv.id, cv]));
 
     return relevantApps.map((app) => {
       const candidate = userMap.get(app.userId);
       const job = jobMap.get(app.jobId);
-      const cv = app.cvDocumentId ? cvMap.get(app.cvDocumentId) : allCvs.find((c) => c.userId === app.userId);
-      const candidateCerts = allCerts.filter((c) => c.userId === app.userId && c.status === "valid");
+      const cv = app.cvDocumentId ? cvMap.get(app.cvDocumentId) : scopedCvs.find((c) => c.userId === app.userId);
+      const candidateCerts = scopedCerts.filter((c) => c.userId === app.userId);
 
       return {
         applicationId: app.id,

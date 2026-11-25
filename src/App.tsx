@@ -11,6 +11,7 @@ import { LoadingScreen } from "./components/LoadingScreen";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { TopNavbar } from "./components/TopNavbar";
 import { NetworkStatusBanner } from "./components/NetworkStatusBanner";
+import { GuestModeBanner } from "./components/GuestModeBanner";
 import { MobileBottomNav } from "./components/MobileBottomNav";
 import { motion, AnimatePresence } from "motion/react";
 import { safeStorage } from "./utils/storage";
@@ -392,6 +393,8 @@ export default function App() {
             onOpenMentorChat={() => openCopilotWithContext(undefined)}
           />
         </div>
+
+        <GuestModeBanner profile={profile} onSignInClick={handleLogout} />
 
         {/* EXPANDED FULL-WIDTH MAIN CONTENT AREA */}
         <main id="main-content" className="flex-1 overflow-y-auto bg-[#fafafa] dark:bg-[#09090b] flex flex-col relative w-full scroll-smooth z-10 transition-colors duration-200" tabIndex={-1}>

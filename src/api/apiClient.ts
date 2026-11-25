@@ -111,7 +111,12 @@ class ApiClient {
       }
 
       if (!response.ok) {
-        const errorMsg = data.error?.message || data.error || data.message || `Request failed with status ${response.status}`;
+        const rawMsg = data.error?.message || data.error || data.message || `Request failed with status ${response.status}`;
+        const isGuestForbidden =
+          response.status === 403 && localStorage.getItem("skillora_guest_mode") === "true";
+        const errorMsg = isGuestForbidden
+          ? "Mode Tamu hanya untuk melihat-lihat. Silakan daftar atau masuk dengan akun terdaftar untuk menyimpan progres & menggunakan AI."
+          : rawMsg;
         throw new ApiError(errorMsg, response.status, data);
       }
 
