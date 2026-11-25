@@ -10,9 +10,10 @@ import {
   ClipboardCheck,
   Video,
 } from "lucide-react";
+import { Link } from "react-router-dom";
 import { Course, MentorSubmissionItem, MentoringBooking, MentoringSlot, Profile } from "../types";
 import { mentorApi, mentoringApi } from "../api/apiClient";
-import { KelolaLmsView } from "./KelolaLmsView";
+import { ROUTES } from "../routes";
 
 interface PortalMentorViewProps {
   profile: Profile;
@@ -21,8 +22,8 @@ interface PortalMentorViewProps {
   showToast: (message: string, type?: "success" | "error" | "info") => void;
 }
 
-export function PortalMentorView({ profile, courses, onCoursesUpdated, showToast }: PortalMentorViewProps) {
-  const [activeTab, setActiveTab] = useState<"submissions" | "mentoring" | "lms">("submissions");
+export function PortalMentorView({ profile, showToast }: PortalMentorViewProps) {
+  const [activeTab, setActiveTab] = useState<"submissions" | "mentoring">("submissions");
   const [submissions, setSubmissions] = useState<MentorSubmissionItem[]>([]);
   const [slots, setSlots] = useState<MentoringSlot[]>([]);
   const [bookings, setBookings] = useState<MentoringBooking[]>([]);
@@ -165,35 +166,42 @@ export function PortalMentorView({ profile, courses, onCoursesUpdated, showToast
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="inline-flex bg-slate-100 dark:bg-slate-900 p-1 rounded-xl border border-slate-200 dark:border-slate-800">
-        {[
-          { id: "submissions" as const, label: `Review Proyek (${submissions.length})`, icon: ClipboardCheck },
-          { id: "mentoring" as const, label: `Sesi Mentoring (${slots.length})`, icon: Calendar },
-          { id: "lms" as const, label: `Kurikulum LMS (${courses.length})`, icon: BookOpen },
-        ].map((tab) => {
-          const Icon = tab.icon;
-          const active = activeTab === tab.id;
-          return (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-2 transition-colors cursor-pointer ${
-                active
-                  ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-2xs"
-                  : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
-              }`}
-            >
-              <Icon className="w-3.5 h-3.5" />
-              <span>{tab.label}</span>
-            </button>
-          );
-        })}
+      {/* Tabs & LMS Studio Link */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="inline-flex bg-slate-100 dark:bg-slate-900 p-1 rounded-xl border border-slate-200 dark:border-slate-800">
+          {[
+            { id: "submissions" as const, label: `Review Proyek (${submissions.length})`, icon: ClipboardCheck },
+            { id: "mentoring" as const, label: `Sesi Mentoring (${slots.length})`, icon: Calendar },
+          ].map((tab) => {
+            const Icon = tab.icon;
+            const active = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-2 transition-colors cursor-pointer ${
+                  active
+                    ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-2xs"
+                    : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
+                }`}
+              >
+                <Icon className="w-3.5 h-3.5" />
+                <span>{tab.label}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        <Link
+          to={ROUTES.lms}
+          className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold inline-flex items-center gap-2 transition-colors"
+        >
+          <BookOpen className="w-3.5 h-3.5" />
+          <span>Buka LMS Studio →</span>
+        </Link>
       </div>
 
-      {activeTab === "lms" ? (
-        <KelolaLmsView courses={courses} onCoursesUpdated={onCoursesUpdated} showToast={showToast} />
-      ) : loading ? (
+      {loading ? (
         <div className="p-12 text-center text-sm text-slate-500 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800">
           Memuat data antrean mentor...
         </div>

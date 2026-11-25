@@ -10,6 +10,7 @@ export const ROUTES = {
   learning: {
     root: "/belajar",
     catalog: "/belajar/katalog",
+    lmsWorkspace: "/belajar/lms",
     courseDetail: (id: string) => `/belajar/kursus/${id}`,
     lessonMateri: (courseId: string, lessonId: string) => `/belajar/kursus/${courseId}/materi/${lessonId}`,
     lessonLatihan: (courseId: string, lessonId: string) => `/belajar/kursus/${courseId}/latihan/${lessonId}`,

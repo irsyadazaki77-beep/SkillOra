@@ -62,6 +62,7 @@ export const Sidebar = memo(function Sidebar({ profile, onLogout }: SidebarProps
   ];
 
   const workspaceShortcuts = [
+    { id: ROUTES.learning.lmsWorkspace, label: "Ruang LMS (Fokus)", icon: Layers },
     { id: ROUTES.learning.practice, label: "Latihan & Bank Soal", icon: Zap },
     { id: ROUTES.learning.project, label: "Proyek & Sertifikat", icon: Award },
     { id: ROUTES.career.cvBuilder, label: "CV ATS & Interview AI", icon: FileText },

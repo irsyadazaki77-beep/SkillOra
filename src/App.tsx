@@ -91,6 +91,7 @@ const VoiceInterviewView = lazyWithRetry(() => import("./components/VoiceIntervi
 const InteractiveLabView = lazyWithRetry(() => import("./components/InteractiveLabView").then(m => ({ default: m.InteractiveLabView || (m as any).default })));
 const ArenaView = lazyWithRetry(() => import("./components/ArenaView").then(m => ({ default: m.ArenaView || (m as any).default })));
 const PublicPortfolioView = lazyWithRetry(() => import("./components/PublicPortfolioView").then(m => ({ default: m.PublicPortfolioView || (m as any).default })));
+const LmsWorkspaceView = lazyWithRetry(() => import("./components/LmsWorkspaceView").then(m => ({ default: m.LmsWorkspaceView || (m as any).default })));
 import type { CopilotContextInfo } from "./components/MentorChatSidebar";
 
 export default function App() {
@@ -144,6 +145,7 @@ export default function App() {
       "/": "Dashboard Belajar",
       "/belajar": "Dashboard Belajar",
       "/belajar/katalog": "Katalog Kursus",
+      "/belajar/lms": "Ruang LMS Terfokus",
       "/belajar/proyek": "Proyek Portfolio",
       "/jelajahi": "Eksplorasi Fitur",
       "/katalog": "Katalog Kursus",
@@ -479,6 +481,17 @@ export default function App() {
                       onBookmarkToggle={handleBookmarkCourse} 
                     />
                   } />
+                  <Route path="/belajar/lms" element={
+                    <LmsWorkspaceView
+                      courses={courses}
+                      profile={profile}
+                      onCoursesUpdated={setCourses}
+                      onProfileUpdate={setProfile}
+                      showToast={showToast}
+                      onOpenCopilot={openCopilotWithContext}
+                    />
+                  } />
+                  <Route path="/lms" element={<Navigate to="/belajar/lms" replace />} />
                   <Route path="/belajar/kursus/:id" element={
                     <DetailKursusView 
                       courses={courses} 
