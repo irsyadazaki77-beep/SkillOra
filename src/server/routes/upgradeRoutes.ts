@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { requireAuth, AuthenticatedRequest } from "../middlewares/authMiddleware.js";
+import { requireAuth, requireRegistered, AuthenticatedRequest } from "../middlewares/authMiddleware.js";
 import { aiLimiter } from "../middlewares/rateLimiters.js";
 import { LabService } from "../services/labService.js";
 import { StudyWorkspaceService } from "../services/studyWorkspaceService.js";
@@ -29,7 +29,7 @@ router.get("/labs/submissions", requireAuth, async (req: AuthenticatedRequest, r
   }
 });
 
-router.post("/labs/evaluate", requireAuth, aiLimiter, async (req: AuthenticatedRequest, res) => {
+router.post("/labs/evaluate", requireRegistered, aiLimiter, async (req: AuthenticatedRequest, res) => {
   try {
     const { challengeId, codeOrAnswer, testPassedCount, testTotalCount, testReport } = req.body || {};
     if (!challengeId || typeof codeOrAnswer !== "string") {
@@ -64,7 +64,7 @@ router.get("/notes", requireAuth, async (req: AuthenticatedRequest, res) => {
   }
 });
 
-router.post("/notes", requireAuth, async (req: AuthenticatedRequest, res) => {
+router.post("/notes", requireRegistered, async (req: AuthenticatedRequest, res) => {
   try {
     const { courseId, lessonId, content, isPinned } = req.body || {};
     if (!courseId || !lessonId || typeof content !== "string") {
@@ -86,7 +86,7 @@ router.post("/notes", requireAuth, async (req: AuthenticatedRequest, res) => {
   }
 });
 
-router.delete("/notes", requireAuth, async (req: AuthenticatedRequest, res) => {
+router.delete("/notes", requireRegistered, async (req: AuthenticatedRequest, res) => {
   try {
     const courseId = String(req.query.courseId || req.body?.courseId || "");
     const lessonId = String(req.query.lessonId || req.body?.lessonId || "");
@@ -113,7 +113,7 @@ router.get("/roadmap", requireAuth, async (req: AuthenticatedRequest, res) => {
   }
 });
 
-router.post("/roadmap/generate", requireAuth, aiLimiter, async (req: AuthenticatedRequest, res) => {
+router.post("/roadmap/generate", requireRegistered, aiLimiter, async (req: AuthenticatedRequest, res) => {
   try {
     const { targetRole, hoursPerWeek } = req.body || {};
     const data = await StudyWorkspaceService.generateRoadmap(
@@ -127,7 +127,7 @@ router.post("/roadmap/generate", requireAuth, aiLimiter, async (req: Authenticat
   }
 });
 
-router.post("/roadmap/toggle", requireAuth, async (req: AuthenticatedRequest, res) => {
+router.post("/roadmap/toggle", requireRegistered, async (req: AuthenticatedRequest, res) => {
   try {
     const { roadmapId, taskId } = req.body || {};
     if (!roadmapId || !taskId) {
@@ -144,7 +144,7 @@ router.post("/roadmap/toggle", requireAuth, async (req: AuthenticatedRequest, re
 });
 
 // --- Contextual Study Copilot ---
-router.post("/ai/copilot", requireAuth, aiLimiter, async (req: AuthenticatedRequest, res) => {
+router.post("/ai/copilot", requireRegistered, aiLimiter, async (req: AuthenticatedRequest, res) => {
   try {
     const { message, context } = req.body || {};
     if (!message || typeof message !== "string" || !message.trim()) {
@@ -180,7 +180,7 @@ router.get("/arena/tryouts", requireAuth, async (req: AuthenticatedRequest, res)
   }
 });
 
-router.post("/arena/tryouts/submit", requireAuth, async (req: AuthenticatedRequest, res) => {
+router.post("/arena/tryouts/submit", requireRegistered, async (req: AuthenticatedRequest, res) => {
   try {
     const { tryoutId, answers, durationSeconds } = req.body || {};
     if (!tryoutId) {
@@ -219,7 +219,7 @@ router.get("/career/talent-match", requireAuth, async (req: AuthenticatedRequest
   }
 });
 
-router.put("/portfolio/settings", requireAuth, async (req: AuthenticatedRequest, res) => {
+router.put("/portfolio/settings", requireRegistered, async (req: AuthenticatedRequest, res) => {
   try {
     const { portfolioSlug, portfolioPublic, portfolioHeadline, campusName, majorName, bio } = req.body || {};
     const profile = await CareerExpansionService.updatePortfolioSettings(req.userId!, {
@@ -245,7 +245,7 @@ router.get("/career/campus", requireAuth, async (req: AuthenticatedRequest, res)
   }
 });
 
-router.post("/career/campus/join", requireAuth, async (req: AuthenticatedRequest, res) => {
+router.post("/career/campus/join", requireRegistered, async (req: AuthenticatedRequest, res) => {
   try {
     const { cohortId, majorName } = req.body || {};
     if (!cohortId) {
@@ -282,7 +282,7 @@ router.get("/training/course/:courseId/exam/:examType", requireAuth, async (req:
   }
 });
 
-router.post("/training/course/:courseId/exam/submit", requireAuth, async (req: AuthenticatedRequest, res) => {
+router.post("/training/course/:courseId/exam/submit", requireRegistered, async (req: AuthenticatedRequest, res) => {
   try {
     const { examType, answers, questionIds, durationSeconds } = req.body || {};
     const resolvedType = examType === "final" ? "final" : "pretest";
@@ -309,7 +309,7 @@ router.get("/training/flashcards", requireAuth, async (req: AuthenticatedRequest
   }
 });
 
-router.post("/training/flashcards/review", requireAuth, async (req: AuthenticatedRequest, res) => {
+router.post("/training/flashcards/review", requireRegistered, async (req: AuthenticatedRequest, res) => {
   try {
     const { courseId, lessonId, cardId, quality } = req.body || {};
     if (!courseId || !lessonId || !cardId || !["again", "hard", "good", "easy"].includes(quality)) {
@@ -330,7 +330,7 @@ router.post("/training/flashcards/review", requireAuth, async (req: Authenticate
   }
 });
 
-router.post("/training/course/:courseId/assignment", requireAuth, aiLimiter, async (req: AuthenticatedRequest, res) => {
+router.post("/training/course/:courseId/assignment", requireRegistered, aiLimiter, async (req: AuthenticatedRequest, res) => {
   try {
     const { answerText } = req.body || {};
     if (typeof answerText !== "string" || answerText.trim().length < 40) {
@@ -371,9 +371,9 @@ router.get("/training/simulations/history", requireAuth, async (req: Authenticat
   }
 });
 
-router.post("/training/simulations/record", requireAuth, async (req: AuthenticatedRequest, res) => {
+router.post("/training/simulations/record", requireRegistered, async (req: AuthenticatedRequest, res) => {
   try {
-    const { simType, title, score, metrics, aiFeedback, earnedXp } = req.body || {};
+    const { simType, title, score, metrics, aiFeedback } = req.body || {};
     if (!["tkd", "kraepelin", "decision", "star"].includes(simType) || !title) {
       return res.status(400).json({
         success: false,
@@ -386,7 +386,6 @@ router.post("/training/simulations/record", requireAuth, async (req: Authenticat
       score: Number(score || 0),
       metrics: metrics && typeof metrics === "object" ? metrics : {},
       aiFeedback: typeof aiFeedback === "string" ? aiFeedback : undefined,
-      earnedXp: typeof earnedXp === "number" ? earnedXp : undefined,
     });
     res.json({ success: true, data });
   } catch (err: any) {
@@ -394,7 +393,7 @@ router.post("/training/simulations/record", requireAuth, async (req: Authenticat
   }
 });
 
-router.post("/training/simulations/star-evaluate", requireAuth, aiLimiter, async (req: AuthenticatedRequest, res) => {
+router.post("/training/simulations/star-evaluate", requireRegistered, aiLimiter, async (req: AuthenticatedRequest, res) => {
   try {
     const { question, answer, role } = req.body || {};
     if (!question || typeof answer !== "string" || answer.trim().length < 40) {

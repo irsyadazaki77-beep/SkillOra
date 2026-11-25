@@ -3,6 +3,7 @@ import { lessonNotes, studyRoadmaps } from "../../db/schema.js";
 import { and, desc, eq } from "drizzle-orm";
 import { Type } from "@google/genai";
 import { getGeminiClient } from "./aiService.js";
+import { AI_MODELS } from "../config/aiConfig.js";
 import { UserRepository } from "../repositories/UserRepository.js";
 
 export class StudyWorkspaceService {
@@ -143,7 +144,7 @@ ATURAN:
 - Buat ringkasan (summary) 1-2 kalimat lugas tanpa basa-basi.`;
 
     const response = await ai.models.generateContent({
-      model: "gemini-4-hydrogen",
+      model: AI_MODELS.text,
       contents: prompt,
       config: {
         responseMimeType: "application/json",
@@ -312,7 +313,7 @@ ATURAN:
     const fullPrompt = `${ctxParts.length > 0 ? `[KONTEKS RUANG KERJA]\n${ctxParts.join("\n")}\n\n` : ""}Pertanyaan Pengguna:\n${message.slice(0, 1200)}`;
 
     const response = await ai.models.generateContent({
-      model: "gemini-4-hydrogen",
+      model: AI_MODELS.text,
       contents: fullPrompt,
       config: { systemInstruction },
     });
