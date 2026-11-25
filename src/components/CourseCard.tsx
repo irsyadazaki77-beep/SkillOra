@@ -109,6 +109,8 @@ export const CourseCard = memo(function CourseCard({
             </div>
 
             <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-zinc-500 dark:text-zinc-400 font-mono tabular-nums">
+              <span className="text-emerald-700 dark:text-emerald-400 font-semibold">100% Gratis</span>
+              <span>·</span>
               <span className="inline-flex items-center gap-1 text-zinc-800 dark:text-zinc-200 font-semibold">
                 <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
                 {rating}
@@ -119,6 +121,18 @@ export const CourseCard = memo(function CourseCard({
               <span>{course.duration}</span>
               <span>·</span>
               <span>{totalCount} Sesi</span>
+              {typeof course.enrolledCount === "number" && course.enrolledCount > 0 && (
+                <>
+                  <span>·</span>
+                  <span>{course.enrolledCount} peserta</span>
+                </>
+              )}
+              {course.isEnrolled && (
+                <>
+                  <span>·</span>
+                  <span className="text-emerald-700 dark:text-emerald-400 font-semibold">Terdaftar ✓</span>
+                </>
+              )}
               {labCount > 0 && (
                 <>
                   <span>·</span>
@@ -186,6 +200,17 @@ export const CourseCard = memo(function CourseCard({
         />
         <div className="absolute inset-0 bg-gradient-to-t from-zinc-950/75 via-zinc-950/15 to-transparent" />
 
+        <div className="absolute top-2.5 left-2.5 flex items-center gap-1.5 z-10">
+          <span className="px-2 py-0.5 rounded-md bg-emerald-600/95 text-white text-[10px] font-bold tracking-wide shadow-xs">
+            100% Gratis
+          </span>
+          {course.isEnrolled && (
+            <span className="px-2 py-0.5 rounded-md bg-zinc-950/80 text-emerald-300 text-[10px] font-semibold">
+              Terdaftar ✓
+            </span>
+          )}
+        </div>
+
         {onBookmarkToggle && (
           <button
             type="button"
@@ -229,6 +254,9 @@ export const CourseCard = memo(function CourseCard({
         {/* Unboxed Metadata Strip (Zero-Pill) */}
         <p className="text-xs text-zinc-500 dark:text-zinc-400 font-mono tabular-nums mb-4 leading-relaxed">
           {course.difficulty} · {course.duration} · {totalCount} Sesi
+          {typeof course.enrolledCount === "number" && course.enrolledCount > 0
+            ? ` · ${course.enrolledCount} peserta`
+            : ""}
           {labCount > 0 ? ` · ${labCount} Lab` : ""}
         </p>
 

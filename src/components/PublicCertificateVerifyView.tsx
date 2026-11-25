@@ -75,17 +75,31 @@ export function PublicCertificateVerifyView() {
             <span className="text-xl font-bold text-white">S</span>
           </div>
           <div>
-            <h1 className="text-lg font-black tracking-tight text-white leading-tight">Skillora Pro</h1>
-            <p className="text-xs text-amber-500 font-bold uppercase tracking-wider">Verifikasi Kredensial</p>
+            <h1 className="text-lg font-black tracking-tight text-white leading-tight">SkillOra Academy</h1>
+            <p className="text-xs text-amber-500 font-bold uppercase tracking-wider">Verifikasi Kredensial Gratis</p>
           </div>
         </div>
-        <button 
-          onClick={() => window.print()}
-          className="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-sm font-semibold transition-colors"
-        >
-          <span>🖨️</span>
-          <span className="hidden sm:inline">Cetak Dokumen</span>
-        </button>
+        <div className="flex items-center gap-2">
+          <a
+            href={`https://www.linkedin.com/profile/add?startTask=CERTIFICATION_NAME&name=${encodeURIComponent(
+              cert.courseId || "Sertifikasi SkillOra"
+            )}&organizationName=${encodeURIComponent("SkillOra Academy")}&certId=${encodeURIComponent(
+              cert.certificateId || ""
+            )}&certUrl=${encodeURIComponent(typeof window !== "undefined" ? window.location.href : "")}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 px-3.5 py-2 bg-[#0A66C2] hover:bg-[#004182] text-white rounded-lg text-xs sm:text-sm font-semibold transition-colors"
+          >
+            <span>Tambahkan ke LinkedIn</span>
+          </a>
+          <button
+            onClick={() => window.print()}
+            className="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-sm font-semibold transition-colors cursor-pointer"
+          >
+            <span>🖨️</span>
+            <span className="hidden sm:inline">Cetak Dokumen</span>
+          </button>
+        </div>
       </header>
 
       <main className="flex-1 w-full max-w-6xl mx-auto p-4 sm:p-6 lg:p-8 flex flex-col lg:flex-row gap-8 items-start">
@@ -146,10 +160,10 @@ export function PublicCertificateVerifyView() {
                     </div>
                     
                     <div className="mb-8">
-                      <h2 className="font-display text-4xl md:text-5xl font-black tracking-tight from-white via-indigo-100 to-violet-300 bg-clip-text text-transparent">
+                      <h2 className="font-display text-4xl md:text-5xl font-black tracking-tight bg-gradient-to-r from-white via-indigo-100 to-violet-300 bg-clip-text text-transparent">
                         {cert.recipientName}
                       </h2>
-                      <div className="h-1 w-32 mt-4 from-amber-500 to-yellow-400 bg-gradient-to-r rounded-full"></div>
+                      <div className="h-1 w-32 mt-4 bg-gradient-to-r from-amber-500 to-yellow-400 rounded-full"></div>
                     </div>
                     
                     <p className="text-sm md:text-base leading-relaxed text-slate-300 mb-6 max-w-xl">
@@ -190,7 +204,7 @@ export function PublicCertificateVerifyView() {
       </main>
 
       <footer className="mt-auto border-t border-white/5 py-6 text-center text-sm text-slate-500">
-        <p>&copy; 2026 SKILLORA PRO &bull; Industrial Tech Academy &bull; Kredensial Terverifikasi Secara Resmi.</p>
+        <p>&copy; 2026 SKILLORA ACADEMY &bull; Pelatihan Terbuka 100% Gratis &bull; Kredensial Terverifikasi Secara Resmi.</p>
       </footer>
 
       <style>{`

@@ -6,6 +6,9 @@ import {
   List,
   RefreshCw,
   X,
+  CheckCircle2,
+  Compass,
+  ArrowRight,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Course, Profile } from "../types";
@@ -28,10 +31,11 @@ export function KatalogKursusView({ courses, profile, onBookmarkToggle }: Katalo
   const [selectedCategory, setSelectedCategory] = useState("Semua");
   const [selectedDifficulty, setSelectedDifficulty] = useState("Semua");
   const [selectedStatus, setSelectedStatus] = useState<
-    "Semua" | "Belum Dimulai" | "Sedang Dipelajari" | "Selesai"
+    "Semua" | "Terdaftar" | "Belum Dimulai" | "Sedang Dipelajari" | "Selesai"
   >("Semua");
   const [selectedSort, setSelectedSort] = useState<"Populer" | "Terbaru" | "Durasi">("Populer");
   const [showOnlyBookmarked, setShowOnlyBookmarked] = useState(false);
+  const [showOnlyEnrolled, setShowOnlyEnrolled] = useState(false);
   const [layout, setLayout] = useState<"grid" | "list">("grid");
 
   const categoryCounts = useMemo(() => {
@@ -48,6 +52,57 @@ export function KatalogKursusView({ courses, profile, onBookmarkToggle }: Katalo
 
   const difficulties = ["Semua", "Pemula", "Menengah", "Lanjutan"];
   const bookmarkedCourses = profile.bookmarkedCourses || [];
+  const enrolledCoursesCount = useMemo(
+    () => courses.filter((c) => c.isEnrolled).length,
+    [courses]
+  );
+
+  // Curated free learning paths (Coursera Specialization / Dicoding Learning Path equivalent)
+  const careerPaths = useMemo(() => {
+    const groups = [
+      {
+        id: "path-tech",
+        title: "Jalur Software & Cloud Engineer",
+        subtitle: "Dari fondasi pemrograman, database, hingga cloud & DevOps siap kerja.",
+        match: (c: Course) =>
+          /tekno|cloud|devops|back|web|software|react|api/i.test(`${c.category || ""} ${c.title}`),
+      },
+      {
+        id: "path-data-ai",
+        title: "Jalur AI, Data & Product Specialist",
+        subtitle: "Analisis data, otomatisasi AI, dan riset produk digital bersertifikat.",
+        match: (c: Course) =>
+          /ai|data|produk|ux|otomasi|analit/i.test(`${c.category || ""} ${c.title}`),
+      },
+      {
+        id: "path-bumn-cpns",
+        title: "Jalur Persiapan BUMN, CPNS & Karier",
+        subtitle: "Latihan TKD, studi kasus industri, dan kesiapan wawancara tanpa biaya.",
+        match: (c: Course) =>
+          /bumn|cpns|finan|bisnis|karier/i.test(`${c.category || ""} ${c.title}`),
+      },
+    ];
+
+    return groups
+      .map((g) => {
+        const items = courses.filter(g.match);
+        const totalModules = items.reduce((sum, c) => sum + (c.lessons?.length || 0), 0);
+        const avgProgress =
+          items.length > 0
+            ? Math.round(
+                items.reduce((sum, c) => sum + getCourseProgress(c).percentage, 0) / items.length
+              )
+            : 0;
+        return {
+          ...g,
+          courses: items,
+          totalModules,
+          avgProgress,
+          firstCourseId: items[0]?.id || courses[0]?.id || "",
+        };
+      })
+      .filter((p) => p.courses.length > 0);
+  }, [courses]);
 
   const filteredCourses = useMemo(() => {
     const safeList = Array.isArray(courses) ? courses : [];
@@ -66,13 +121,15 @@ export function KatalogKursusView({ courses, profile, onBookmarkToggle }: Katalo
       const { percentage } = getCourseProgress(c);
       const matchStatus =
         selectedStatus === "Semua" ||
+        (selectedStatus === "Terdaftar" && Boolean(c.isEnrolled)) ||
         (selectedStatus === "Belum Dimulai" && percentage === 0) ||
         (selectedStatus === "Sedang Dipelajari" && percentage > 0 && percentage < 100) ||
         (selectedStatus === "Selesai" && percentage === 100);
 
       const matchBookmark = !showOnlyBookmarked || bookmarkedCourses.includes(c.id);
+      const matchEnrolled = !showOnlyEnrolled || Boolean(c.isEnrolled);
 
-      return matchSearch && matchCategory && matchDifficulty && matchStatus && matchBookmark;
+      return matchSearch && matchCategory && matchDifficulty && matchStatus && matchBookmark && matchEnrolled;
     });
 
     if (selectedSort === "Populer") {
@@ -97,6 +154,7 @@ export function KatalogKursusView({ courses, profile, onBookmarkToggle }: Katalo
     selectedStatus,
     selectedSort,
     showOnlyBookmarked,
+    showOnlyEnrolled,
     bookmarkedCourses,
   ]);
 
@@ -105,7 +163,8 @@ export function KatalogKursusView({ courses, profile, onBookmarkToggle }: Katalo
     selectedCategory !== "Semua" ||
     selectedDifficulty !== "Semua" ||
     selectedStatus !== "Semua" ||
-    showOnlyBookmarked;
+    showOnlyBookmarked ||
+    showOnlyEnrolled;
 
   const handleResetFilters = () => {
     setSearch("");
@@ -114,6 +173,7 @@ export function KatalogKursusView({ courses, profile, onBookmarkToggle }: Katalo
     setSelectedStatus("Semua");
     setSelectedSort("Populer");
     setShowOnlyBookmarked(false);
+    setShowOnlyEnrolled(false);
   };
 
   return (
@@ -122,17 +182,30 @@ export function KatalogKursusView({ courses, profile, onBookmarkToggle }: Katalo
       <header className="flex flex-col md:flex-row md:items-end md:justify-between gap-3 border-b border-zinc-200 dark:border-zinc-800 pb-4">
         <div className="space-y-1">
           <p className="text-xs font-mono uppercase tracking-wider text-emerald-700 dark:text-emerald-400 font-semibold">
-            {courses.length} Jalur Pelatihan · Pra-Tes · Modul · Lab AI · Sertifikasi
+            {courses.length} Pelatihan · 100% Gratis Tanpa Paywall · Pra-Tes · Modul · Lab AI · Sertifikasi
           </p>
           <h1 className="text-2xl sm:text-3xl font-display font-bold tracking-tight text-zinc-950 dark:text-white">
             Katalog Pelatihan Industri
           </h1>
           <p className="text-zinc-600 dark:text-zinc-400 text-sm max-w-2xl">
-            Setiap pelatihan dilengkapi Pra-Tes Diagnostik, materi dengan Cek Paham & Flashcard SM-2, studi kasus berevaluasi AI, dan Ujian Sertifikasi Akhir.
+            Setiap pelatihan terbuka gratis lengkap dengan Pra-Tes Diagnostik, materi video &amp; kode, Flashcard SM-2, studi kasus berevaluasi AI, dan sertifikat terverifikasi.
           </p>
         </div>
 
-        <div className="flex items-center gap-2 self-start md:self-auto shrink-0">
+        <div className="flex flex-wrap items-center gap-2 self-start md:self-auto shrink-0">
+          <button
+            type="button"
+            onClick={() => setShowOnlyEnrolled(!showOnlyEnrolled)}
+            className={`px-3 py-2 rounded-lg border text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer whitespace-nowrap ${
+              showOnlyEnrolled
+                ? "bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-900/50 text-emerald-700 dark:text-emerald-300"
+                : "bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800"
+            }`}
+          >
+            <CheckCircle2 className="w-3.5 h-3.5" />
+            <span>Terdaftar ({enrolledCoursesCount})</span>
+          </button>
+
           <button
             type="button"
             onClick={() => setShowOnlyBookmarked(!showOnlyBookmarked)}
@@ -246,6 +319,7 @@ export function KatalogKursusView({ courses, profile, onBookmarkToggle }: Katalo
               className="px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs font-semibold text-zinc-700 dark:text-zinc-200 outline-none focus:border-emerald-500 cursor-pointer"
             >
               <option value="Semua">Semua Status</option>
+              <option value="Terdaftar">Sudah Terdaftar</option>
               <option value="Sedang Dipelajari">Sedang Dipelajari</option>
               <option value="Belum Dimulai">Belum Dimulai</option>
               <option value="Selesai">Selesai (100%)</option>
@@ -279,6 +353,60 @@ export function KatalogKursusView({ courses, profile, onBookmarkToggle }: Katalo
           )}
         </div>
       </div>
+
+      {/* Curated Career Learning Paths */}
+      {careerPaths.length > 0 && !hasActiveFilters && (
+        <section aria-label="Jalur Karier Terstruktur" className="space-y-3">
+          <div className="flex items-center justify-between gap-2">
+            <h2 className="font-display font-bold text-sm sm:text-base text-zinc-950 dark:text-white flex items-center gap-2">
+              <Compass className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+              <span>Jalur Karier Terstruktur (100% Gratis)</span>
+            </h2>
+            <span className="text-[11px] font-mono text-zinc-500 dark:text-zinc-400">
+              Urutan belajar dari nol hingga siap kerja
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
+            {careerPaths.map((path) => (
+              <div
+                key={path.id}
+                className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-4 flex flex-col justify-between gap-3"
+              >
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between text-[11px] font-mono text-emerald-700 dark:text-emerald-400 font-semibold">
+                    <span>{path.courses.length} Kursus · {path.totalModules} Modul</span>
+                    <span>{path.avgProgress}%</span>
+                  </div>
+                  <h3 className="font-display font-bold text-sm text-zinc-950 dark:text-white leading-snug">
+                    {path.title}
+                  </h3>
+                  <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed">
+                    {path.subtitle}
+                  </p>
+                </div>
+
+                <div className="space-y-2.5 pt-1">
+                  <div className="w-full h-1.5 bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-emerald-600 rounded-full transition-all duration-300"
+                      style={{ width: `${path.avgProgress}%` }}
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => navigate(`/belajar/lms?courseId=${encodeURIComponent(path.firstCourseId)}`)}
+                    className="w-full py-2 px-3 rounded-lg bg-zinc-950 dark:bg-zinc-100 text-white dark:text-zinc-950 text-xs font-semibold flex items-center justify-center gap-1.5 hover:opacity-90 transition-opacity cursor-pointer"
+                  >
+                    <span>Mulai Jalur di LMS</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Course Grid / List */}
       {filteredCourses.length === 0 ? (
