@@ -6,6 +6,7 @@ import { Badge } from "./ui/Badge";
 import { Button } from "./ui/Button";
 import { getCourseProgress } from "../utils/courseUtils";
 import defaultCourseImg from "../assets/images/course_tech_engineering_1794974031663.jpg";
+import { resolveCourseImage } from "../utils/resolveAsset";
 
 interface CourseCardProps {
   course: Course;
@@ -60,7 +61,7 @@ export const CourseCard = memo(function CourseCard({
       >
         <div className="w-full sm:w-44 h-32 rounded-xl bg-slate-100 dark:bg-slate-800 overflow-hidden relative shrink-0">
           <img
-            src={course.image || defaultCourseImg}
+            src={resolveCourseImage(course.image)}
             alt={course.title}
             width="176"
             height="128"
@@ -175,7 +176,7 @@ export const CourseCard = memo(function CourseCard({
       {/* Thumbnail Aspect Ratio */}
       <div className="relative aspect-video w-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
         <img
-          src={course.image || defaultCourseImg}
+          src={resolveCourseImage(course.image)}
           alt={course.title}
           width="320"
           height="180"

@@ -55,19 +55,25 @@ export const TopNavbar = memo(function TopNavbar({
   const [prefJobs, setPrefJobs] = useState<boolean>(true);
   const [prefStreak, setPrefStreak] = useState<boolean>(true);
 
-  // Command palette shortcut
+  // Command palette shortcut & Escape close for dropdowns
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === "k") {
         e.preventDefault();
         setShowSearchModal(prev => !prev);
+      } else if (e.key === "Escape") {
+        if (showNotifications) setShowNotifications(false);
+        if (showProfileDropdown) setShowProfileDropdown(false);
       }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, []);
+  }, [showNotifications, showProfileDropdown, setShowNotifications, setShowProfileDropdown]);
 
-  // Quick navigation items for search
+  const isMentorOrAdmin = ["mentor", "admin"].includes(profile?.accountRole || "") || profile?.role?.toLowerCase() === "developer";
+  const isRecruiterOrAdmin = ["recruiter", "admin"].includes(profile?.accountRole || "") || profile?.role?.toLowerCase() === "developer";
+
+  // Quick navigation items for search (filtered by user role)
   const quickNavItems = [
     { title: "Dasbor Pembelajaran", category: "Menu", icon: BookOpen, path: ROUTES.learning.root },
     { title: "Katalog Kursus", category: "Kursus", icon: GraduationCap, path: ROUTES.learning.catalog },
@@ -76,8 +82,8 @@ export const TopNavbar = memo(function TopNavbar({
     { title: "Mock Interview Suara Real-Time", category: "AI Suite", icon: MessageSquare, path: ROUTES.career.voiceInterview },
     { title: "Bursa Kerja & Magang", category: "Karir", icon: Briefcase, path: ROUTES.career.jobs },
     { title: "Sertifikasi & Proyek", category: "Sertifikasi", icon: Award, path: ROUTES.learning.project },
-    { title: "Portal Mentor & Kelola LMS", category: "Portal Mitra", icon: GraduationCap, path: ROUTES.mentor.root },
-    { title: "Portal HRD & Rekrutmen", category: "Portal Mitra", icon: Briefcase, path: ROUTES.recruiter.root },
+    ...(isMentorOrAdmin ? [{ title: "Portal Mentor & Kelola LMS", category: "Portal Mitra", icon: GraduationCap, path: ROUTES.mentor.root }] : []),
+    ...(isRecruiterOrAdmin ? [{ title: "Portal HRD & Rekrutmen", category: "Portal Mitra", icon: Briefcase, path: ROUTES.recruiter.root }] : []),
     { title: "Forum Komunitas & Kolaborasi", category: "Komunitas", icon: MessageSquare, path: ROUTES.community.forum },
     { title: "Upgrade Skillora PRO & Billing", category: "Billing", icon: Sparkles, path: ROUTES.upgrade },
     { title: "Jelajahi Platform", category: "Navigasi", icon: Compass, path: "/jelajahi" },
@@ -88,17 +94,52 @@ export const TopNavbar = memo(function TopNavbar({
     item.category.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  // Normalize backend notifications ({ id, text, time, type, read }) to display model
+  const normalizedBackendNotifs = Array.isArray(notifications)
+    ? notifications.map((n: any, idx: number) => {
+        const messageText = n.message || n.text || "";
+        const category =
+          n.category ||
+          (n.type === "job"
+            ? "Lowongan"
+            : n.type === "certification" || n.type === "reward"
+              ? "Gamifikasi"
+              : "Pembelajaran");
+        const title =
+          n.title ||
+          (category === "Lowongan"
+            ? "Pembaruan Karir"
+            : category === "Gamifikasi"
+              ? "Pencapaian & Hadiah"
+              : "Aktivitas Belajar");
+        const link =
+          n.link ||
+          (category === "Lowongan"
+            ? ROUTES.career.jobs
+            : category === "Gamifikasi"
+              ? ROUTES.learning.project
+              : undefined);
+        return {
+          ...n,
+          id: n.id || `notif_${idx}`,
+          title,
+          message: messageText,
+          category,
+          link,
+          timeLabel: n.time || "",
+        };
+      })
+    : [];
 
-  // Default sample notifications if none provided
-  const initialNotifs = (Array.isArray(notifications) && notifications.length > 0) ? notifications : [
-    { id: "1", title: "Kuis Baru Tersedia", message: "Kuis React Fundamentals level 2 siap dikerjakan!", type: "info", category: "Pembelajaran", link: ROUTES.learning.root, timestamp: Date.now() - 3600000 },
-    { id: "2", title: "Lowongan Cocok dengan Skill", message: "Tokopedia membuka lowongan Junior Frontend Developer.", type: "reward", category: "Lowongan", link: ROUTES.career.jobs, timestamp: Date.now() - 7200000 },
-    { id: "3", title: "Streak 5 Hari Dicapai!", message: "Selamat! Anda mendapatkan bonus 50 XP & 10 Gems.", type: "success", category: "Gamifikasi", link: ROUTES.profile.analytics, timestamp: Date.now() - 14400000 }
+  const initialNotifs = normalizedBackendNotifs.length > 0 ? normalizedBackendNotifs : [
+    { id: "1", title: "Kuis Baru Tersedia", message: "Kuis React Fundamentals level 2 siap dikerjakan!", type: "info", category: "Pembelajaran", link: ROUTES.learning.root, timeLabel: "Baru saja" },
+    { id: "2", title: "Lowongan Cocok dengan Skill", message: "Tokopedia membuka lowongan Junior Frontend Developer.", type: "reward", category: "Lowongan", link: ROUTES.career.jobs, timeLabel: "Hari ini" },
+    { id: "3", title: "Streak 5 Hari Dicapai!", message: "Selamat! Anda mendapatkan bonus 50 XP & 10 Gems.", type: "success", category: "Gamifikasi", link: ROUTES.profile.analytics, timeLabel: "Hari ini" }
   ];
 
-  // Deduplicate notifications by message content to avoid repeat notifications
+  // Deduplicate notifications by message content or id
   const uniqueNotifications = Array.from(
-    new Map(initialNotifs.map(item => [item.message || item.title, item])).values()
+    new Map(initialNotifs.map(item => [item.message || item.title || item.id, item])).values()
   );
 
   const isRead = (id: string) => readNotifIds.includes(id);

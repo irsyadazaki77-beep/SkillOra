@@ -5,6 +5,7 @@ import { Card } from "../../../components/ui/Card";
 import { Button } from "../../../components/ui/Button";
 import { Badge } from "../../../components/ui/Badge";
 import defaultCourseImg from "../../../assets/images/course_tech_engineering_1794974031663.jpg";
+import { resolveCourseImage } from "../../../utils/resolveAsset";
 
 interface RecommendedCoursesSectionProps {
   categories: string[];
@@ -96,7 +97,7 @@ export function RecommendedCoursesSection({
                 <div className="space-y-2.5">
                   <div className="h-32 bg-slate-100 dark:bg-slate-800 relative overflow-hidden">
                     <img
-                      src={course.image || defaultCourseImg}
+                      src={resolveCourseImage(course.image)}
                       alt={course.title}
                       onError={(e) => {
                         (e.currentTarget as HTMLImageElement).src = defaultCourseImg;

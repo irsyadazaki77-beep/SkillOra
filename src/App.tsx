@@ -105,7 +105,7 @@ export default function App() {
     reviews, setReviews,
     loading, setLoading,
     loadData
-  } = useAppEngine(isLoggedIn);
+  } = useAppEngine(isLoggedIn, location.pathname);
   useEffect(() => {
     if (isLoggedIn && !loading && !profile) {
       safeStorage.clearAuthSession();
@@ -399,7 +399,7 @@ export default function App() {
                 transition={{ duration: 0.2 }}
                 className="w-full"
               >
-                <ErrorBoundary>
+                <ErrorBoundary resetKey={location.pathname}>
                   <Suspense fallback={<PageSkeleton />}><Routes location={location}>
                   <Route path="/" element={<Navigate to="/belajar" replace />} />
                   

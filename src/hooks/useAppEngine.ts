@@ -14,15 +14,22 @@ import type { ForumPost } from "../components/ForumView";
  * Domain-orchestrated App Data Flow Hook
  * Backed by TanStack Query cache with zero localStorage state duplication or aggressive polling.
  */
-export function useAppEngine(isLoggedIn: boolean) {
+export function useAppEngine(isLoggedIn: boolean, pathname: string = "/belajar") {
   const queryClient = useQueryClient();
+
+  const shouldLoadJobs =
+    isLoggedIn && (pathname.startsWith("/karier") || pathname.startsWith("/karir") || pathname.startsWith("/bursa-kerja"));
+  const shouldLoadForum =
+    isLoggedIn && (pathname === "/komunitas" || pathname.startsWith("/forum"));
+  const shouldLoadCollab =
+    isLoggedIn && (pathname.startsWith("/komunitas/kolaborasi") || pathname.startsWith("/kolaborasi"));
 
   const profileQuery = useProfileQuery(isLoggedIn);
   const coursesQuery = useCoursesQuery(isLoggedIn);
   const notificationsQuery = useNotificationsQuery(isLoggedIn);
-  const jobsQuery = useJobsQuery(isLoggedIn);
-  const forumQuery = useForumQuery(isLoggedIn);
-  const collabQuery = useCollaborationQuery(isLoggedIn);
+  const jobsQuery = useJobsQuery(shouldLoadJobs);
+  const forumQuery = useForumQuery(shouldLoadForum);
+  const collabQuery = useCollaborationQuery(shouldLoadCollab);
   const reviewsQuery = useProjectReviewsQuery(isLoggedIn);
 
   // Overall initial loading state

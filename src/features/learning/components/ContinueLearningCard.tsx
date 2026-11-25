@@ -6,6 +6,7 @@ import { Button } from "../../../components/ui/Button";
 import { Badge } from "../../../components/ui/Badge";
 import { ProgressBar } from "../../../components/ui/ProgressBar";
 import defaultCourseImg from "../../../assets/images/course_tech_engineering_1794974031663.jpg";
+import { resolveCourseImage } from "../../../utils/resolveAsset";
 
 interface ContinueLearningCardProps {
   primaryActiveCourse?: Course;
@@ -123,7 +124,7 @@ export function ContinueLearningCard({
             className="w-full md:w-48 h-32 md:h-auto rounded-xl bg-slate-200 dark:bg-slate-800 overflow-hidden relative shrink-0 cursor-pointer group shadow-xs"
           >
             <img
-              src={primaryActiveCourse.image || defaultCourseImg}
+              src={resolveCourseImage(primaryActiveCourse.image)}
               alt={primaryActiveCourse.title}
               onError={(e) => {
                 (e.currentTarget as HTMLImageElement).src = defaultCourseImg;

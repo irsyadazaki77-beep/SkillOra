@@ -93,7 +93,15 @@ export function MentorChatSidebar({
     if (!textToSend.trim() || loadingMentor) return;
 
     if (requestCount >= MAX_REQUESTS_PER_SESSION) {
-      alert(`Anda telah mencapai batas kuota ${MAX_REQUESTS_PER_SESSION} pertanyaan per sesi. Silakan coba lagi nanti.`);
+      const timeNow = new Date().toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
+      setMentorMessages((prev) => [
+        ...prev,
+        {
+          sender: "owl",
+          text: `⚠️ Anda telah mencapai batas kuota ${MAX_REQUESTS_PER_SESSION} pertanyaan per sesi. Muat ulang halaman atau coba lagi nanti ya! 🦉`,
+          timestamp: timeNow,
+        },
+      ]);
       return;
     }
 

@@ -11,6 +11,7 @@ export function SimulasiSTARTab() {
   const [resultText, setResultText] = useState("");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [aiFeedback, setAiFeedback] = useState<any | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
 
   // HR Chat State
   const [chatMessages, setChatMessages] = useState<{ sender: "hr" | "user"; text: string }[]>([
@@ -23,10 +24,11 @@ export function SimulasiSTARTab() {
   const [isChatLoading, setIsChatLoading] = useState(false);
 
   const handleEvaluateStar = async () => {
-    if (!situation || !action || !resultText) {
-      alert("Harap lengkapi poin Situation, Action, dan Result!");
+    if (!situation.trim() || !action.trim() || !resultText.trim()) {
+      setFormError("Harap lengkapi poin Situation, Action, dan Result sebelum evaluasi.");
       return;
     }
+    setFormError(null);
     setIsAnalyzing(true);
     playSound("click");
 
@@ -36,8 +38,9 @@ export function SimulasiSTARTab() {
         setAiFeedback(data.evaluation);
         playSound("levelUp");
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
+      setFormError(err?.message || "Gagal mengevaluasi jawaban. Silakan coba lagi.");
     } finally {
       setIsAnalyzing(false);
     }
@@ -140,6 +143,15 @@ export function SimulasiSTARTab() {
                 />
               </div>
             </div>
+
+            {formError && (
+              <div
+                role="alert"
+                className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 text-xs font-semibold"
+              >
+                {formError}
+              </div>
+            )}
 
             <button
               onClick={handleEvaluateStar}

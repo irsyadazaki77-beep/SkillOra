@@ -5,6 +5,7 @@ import { Card } from "../../../components/ui/Card";
 import { Button } from "../../../components/ui/Button";
 import { Badge } from "../../../components/ui/Badge";
 import defaultCourseImg from "../../../assets/images/course_tech_engineering_1794974031663.jpg";
+import { resolveCourseImage } from "../../../utils/resolveAsset";
 
 interface NewUserOnboardingCardProps {
   userName: string;
@@ -70,7 +71,7 @@ export function NewUserOnboardingCard({
               <div className="space-y-2">
                 <div className="h-24 rounded-lg overflow-hidden relative bg-slate-200 dark:bg-slate-800">
                   <img
-                    src={course.image || defaultCourseImg}
+                    src={resolveCourseImage(course.image)}
                     alt={course.title}
                     onError={(e) => {
                       (e.currentTarget as HTMLImageElement).src = defaultCourseImg;

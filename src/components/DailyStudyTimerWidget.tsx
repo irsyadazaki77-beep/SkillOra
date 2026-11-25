@@ -8,11 +8,24 @@ interface DailyStudyTimerWidgetProps {
   showToast?: (message: string, type?: "success" | "error" | "info") => void;
 }
 
+function getTodayDateKey(): string {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+}
+
 export function DailyStudyTimerWidget({ onAddXp, showToast }: DailyStudyTimerWidgetProps) {
+  const todayKey = getTodayDateKey();
+  const isNewDay = storage.get("today_study_date", "") !== todayKey;
+  if (isNewDay) {
+    storage.set("today_study_date", todayKey);
+    storage.set("today_study_seconds", 0);
+    storage.set("target_claimed_today", false);
+  }
+
   const [targetMinutes, setTargetMinutes] = useState<number>(() => storage.get("daily_target_mins", 15));
-  const [elapsedSeconds, setElapsedSeconds] = useState<number>(() => storage.get("today_study_seconds", 0));
+  const [elapsedSeconds, setElapsedSeconds] = useState<number>(() => (isNewDay ? 0 : storage.get("today_study_seconds", 0)));
   const [isRunning, setIsRunning] = useState<boolean>(false);
-  const [isCompletedToday, setIsCompletedToday] = useState<boolean>(() => storage.get("target_claimed_today", false));
+  const [isCompletedToday, setIsCompletedToday] = useState<boolean>(() => (isNewDay ? false : storage.get("target_claimed_today", false)));
 
   useEffect(() => {
     let interval: any = null;
