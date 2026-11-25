@@ -342,7 +342,7 @@ export function DetailKursusView({
           }}
           onOpenCertificates={() => {
             setRunningExam(null);
-            navigate("/profil/sertifikat");
+            navigate("/belajar/proyek");
           }}
           onClose={() => setRunningExam(null)}
           showToast={showToast}
@@ -1151,7 +1151,7 @@ export function DetailKursusView({
                 <Button
                   variant="secondary"
                   size="md"
-                  onClick={() => navigate("/profil/sertifikat")}
+                  onClick={() => navigate("/belajar/proyek")}
                   leftIcon={<Award className="w-4 h-4 text-emerald-600" />}
                 >
                   Lihat Sertifikat

@@ -694,6 +694,7 @@ export default function App() {
                   <Route path="/katalog-kursus" element={<Navigate to="/belajar/katalog" replace />} />
                   <Route path="/bursa-kerja" element={<Navigate to="/karier" replace />} />
                   <Route path="/sertifikasi" element={<Navigate to="/belajar/proyek" replace />} />
+                  <Route path="/profil/sertifikat" element={<Navigate to="/belajar/proyek" replace />} />
                   <Route path="/leaderboard" element={<Navigate to="/profil/analitik" replace />} />
                   <Route path="/latihan" element={<Navigate to="/belajar/latihan" replace />} />
 

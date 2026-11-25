@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Award, CheckCircle2, ExternalLink, MessageSquarePlus, Users } from "lucide-react";
 import { peerReviewApi } from "../../api/apiClient";
+import { queryKeys } from "../../lib/queryKeys";
 import { Profile } from "../../types";
 
 interface PeerReviewPanelProps {
@@ -10,6 +12,7 @@ interface PeerReviewPanelProps {
 }
 
 export function PeerReviewPanel({ profile, onProfileUpdate, showToast }: PeerReviewPanelProps) {
+  const queryClient = useQueryClient();
   const [queue, setQueue] = useState<any[]>([]);
   const [received, setReceived] = useState<any[]>([]);
   const [givenCount, setGivenCount] = useState(0);
@@ -63,8 +66,11 @@ export function PeerReviewPanel({ profile, onProfileUpdate, showToast }: PeerRev
         ],
         feedback: feedback.trim(),
       });
-      if (res?.profile && onProfileUpdate) {
-        onProfileUpdate(res.profile);
+      if (res?.profile) {
+        queryClient.setQueryData(queryKeys.user.profile(), res.profile);
+        onProfileUpdate?.(res.profile);
+      } else {
+        queryClient.invalidateQueries({ queryKey: queryKeys.user.profile() });
       }
       setActiveSubId(null);
       setFeedback("");

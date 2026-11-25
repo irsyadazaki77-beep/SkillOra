@@ -6,7 +6,7 @@ export function useCareerActions() {
   const queryClient = useQueryClient();
 
   const applyJob = async (jobId: string) => {
-    const data = await apiClient.post(`/jobs/${jobId}/apply`);
+    const data = await apiClient.post("/jobs/apply", { jobId });
     // Invalidate jobs to update hasApplied status
     queryClient.invalidateQueries({ queryKey: queryKeys.jobs.list() });
     return data;
@@ -14,7 +14,7 @@ export function useCareerActions() {
 
   
   const bookmarkJob = async (jobId: string) => {
-    const data = await apiClient.post(`/jobs/${jobId}/bookmark`);
+    const data = await apiClient.post("/jobs/bookmark", { jobId });
     queryClient.invalidateQueries({ queryKey: queryKeys.jobs.list() });
     return data;
   };

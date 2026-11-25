@@ -18,7 +18,7 @@ export function useCollabActions() {
   };
 
   const submitProject = async (roomId: string, url: string) => {
-    const data = await apiClient.post(`/collaboration/rooms/${roomId}/submit`, { url });
+    const data = await apiClient.post("/collaboration/submit-project", { roomId, projectUrl: url });
     updateRoomsCache(data.rooms);
     if (data.profile) {
       queryClient.setQueryData(queryKeys.user.profile(), data.profile);
@@ -29,13 +29,13 @@ export function useCollabActions() {
   };
 
   const sendMessage = async (roomId: string, message: string) => {
-    const data = await apiClient.post(`/collaboration/rooms/${roomId}/chat`, { text: message });
+    const data = await apiClient.post("/collaboration/chat", { roomId, text: message });
     updateRoomsCache(data.rooms);
     return data;
   };
 
   const moveTask = async (roomId: string, taskId: string, newStatus: string) => {
-    const data = await apiClient.post(`/collaboration/rooms/${roomId}/tasks/${taskId}/move`, { status: newStatus });
+    const data = await apiClient.post("/collaboration/task-status", { roomId, taskId, status: newStatus });
     updateRoomsCache(data.rooms);
     return data;
   };
