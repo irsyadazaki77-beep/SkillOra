@@ -45,26 +45,26 @@ export function LatihanSimulasiKerjaView({
   }, [loadHistory]);
 
   const tabs = [
-    { id: "tkd" as const, label: "CAT TKD & AKHLAK (20 Soal)", icon: Building2 },
-    { id: "kraepelin" as const, label: "Kraepelin & Kurva Stabilitas", icon: Flame },
-    { id: "decision" as const, label: "Keputusan Multi-Tahap (4 Kasus)", icon: Layers },
-    { id: "interview" as const, label: "Wawancara STAR & HRD AI", icon: ShieldCheck },
+    { id: "tkd" as const, label: "Tes TKD & AKHLAK (20 Soal)", icon: Building2 },
+    { id: "kraepelin" as const, label: "Tes Ketelitian Kraepelin", icon: Flame },
+    { id: "decision" as const, label: "Studi Kasus Kerja (4 Skenario)", icon: Layers },
+    { id: "interview" as const, label: "Latihan Wawancara HRD AI", icon: ShieldCheck },
   ];
 
   return (
-    <div className="max-w-7xl mx-auto space-y-5 pb-12">
+    <div className="w-full space-y-5">
       {/* Modern Editorial SaaS Header */}
       <header className="p-5 sm:p-6 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 space-y-5">
         <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-4">
           <div className="space-y-1.5 max-w-2xl">
             <p className="text-xs font-mono uppercase tracking-wider text-emerald-700 dark:text-emerald-400 font-semibold">
-              Pusat Simulasi Rekrutmen · FHCI BUMN · CPNS · Industri
+              Simulasi Seleksi Kerja Gratis · BUMN · CPNS · Perusahaan
             </p>
             <h1 className="text-2xl sm:text-3xl font-display font-bold tracking-tight text-zinc-950 dark:text-white">
-              Simulasi Kerja, Psikotes & Wawancara AI
+              Simulasi Tes Kerja, Psikotes &amp; Wawancara AI
             </h1>
             <p className="text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed">
-              Latihan CAT TKD & AKHLAK 20 soal 5 subtes, psikotes Kraepelin dengan kurva stabilitas, 4 skenario keputusan kerja multi-tahap, serta evaluasi wawancara STAR 5 dimensi oleh AI.
+              Berlatih soal TKD &amp; AKHLAK 20 nomor, tes ketelitian angka Kraepelin, simulasi pengambilan keputusan di kantor, serta latihan menjawab wawancara HRD dengan penilaian AI.
             </p>
           </div>
 

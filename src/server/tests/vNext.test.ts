@@ -12,6 +12,7 @@ import { CareerRepository } from "../repositories/CareerRepository.js";
 import { UserService } from "../services/userService.js";
 import { adminAuth } from "../../lib/firebase-admin.js";
 import { db } from "../../db/index.js";
+import { SEED_QUESTIONS_BANK } from "../db/seedData.js";
 import { buildFrontendPreviewHtml, runSqlSandboxPreview } from "../../utils/sandboxRunner.js";
 
 vi.mock("../../lib/firebase-admin.js", () => ({
@@ -367,5 +368,26 @@ describe("SkillOra vNext 5-Pillar Tests", () => {
       (tbl) => !new RegExp(`CREATE TABLE IF NOT EXISTS\\s+"${tbl}"`).test(ensureSrc)
     );
     expect(missingTables).toEqual([]);
+  });
+
+  it("Question Bank Relevance: provides >= 6 curated questions with explanations in each of the 5 competency tracks", () => {
+    expect(SEED_QUESTIONS_BANK.length).toBeGreaterThanOrEqual(30);
+    const requiredTracks = [
+      "TKD BUMN",
+      "React & Frontend",
+      "Backend & SQL",
+      "Data Analytics",
+      "Situational Judgment",
+    ];
+    for (const track of requiredTracks) {
+      const items = SEED_QUESTIONS_BANK.filter((q) => q.category === track);
+      expect(items.length).toBeGreaterThanOrEqual(6);
+      for (const q of items) {
+        expect(q.options).toHaveLength(4);
+        expect(q.answerIndex).toBeGreaterThanOrEqual(0);
+        expect(q.answerIndex).toBeLessThan(4);
+        expect(q.explanation.length).toBeGreaterThan(20);
+      }
+    }
   });
 });

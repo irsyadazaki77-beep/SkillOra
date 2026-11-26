@@ -221,10 +221,10 @@ export const TopNavbar = memo(function TopNavbar({
               <button
                 onClick={onOpenMentorChat}
                 className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:border-emerald-500/60 text-xs font-semibold text-zinc-800 dark:text-zinc-200 transition-colors cursor-pointer"
-                title="Buka Study Copilot AI"
+                title="Buka Asisten Belajar AI"
               >
                 <Bot className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                <span className="hidden md:inline">Copilot</span>
+                <span className="hidden md:inline">Tanya AI</span>
               </button>
             )}
 

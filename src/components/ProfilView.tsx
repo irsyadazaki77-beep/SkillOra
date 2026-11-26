@@ -73,7 +73,6 @@ export function ProfilView({ profile, onSettingsSaved, showToast }: ProfilViewPr
     try {
       const res = await userApi.updateSettings({
         name: name.trim(),
-        role: roleTitle.trim(),
         email: email.trim(),
         bio: bio.trim(),
       });

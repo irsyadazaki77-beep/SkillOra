@@ -1,5 +1,5 @@
 import React from "react";
-import { Zap, Compass, RotateCcw, Award, Shuffle, Sparkles, ChevronRight, CheckCircle2 } from "lucide-react";
+import { Zap, Compass, RotateCcw, Award, Shuffle, ChevronRight } from "lucide-react";
 import { DifficultyLevel, HubTab, ModeLatihan } from "../types";
 
 interface DrillsTabProps {
@@ -19,27 +19,26 @@ export function DrillsTab({
   isShuffleEnabled,
   setIsShuffleEnabled,
   startQuizSession,
-  allAvailableQuestions,
-  allWrongQuestions,
-  setActiveHubTab
+  setActiveHubTab,
 }: DrillsTabProps) {
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       {/* Session Controls: Difficulty & Shuffle */}
-      <div className="flex flex-wrap items-center justify-between gap-4 p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
-        <div className="flex items-center gap-2">
-          <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+      <div className="flex flex-wrap items-center justify-between gap-4 p-4 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
             Tingkat Kesulitan:
           </span>
-          <div className="flex items-center gap-1.5 p-1 bg-slate-100 dark:bg-slate-800 rounded-xl">
-            {(["Pemula", "Menengah", "Sulit"] as DifficultyLevel[]).map(d => (
+          <div className="flex items-center gap-1 p-1 bg-zinc-100 dark:bg-zinc-800 rounded-xl">
+            {(["Pemula", "Menengah", "Sulit"] as DifficultyLevel[]).map((d) => (
               <button
                 key={d}
+                type="button"
                 onClick={() => setDifficulty(d)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer ${
                   difficulty === d
-                    ? "bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-sm"
-                    : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                    ? "bg-white dark:bg-zinc-900 text-emerald-600 dark:text-emerald-400 shadow-xs"
+                    : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-950 dark:hover:text-white"
                 }`}
               >
                 {d}
@@ -48,41 +47,39 @@ export function DrillsTab({
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => setIsShuffleEnabled(prev => !prev)}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs font-semibold transition-all cursor-pointer ${
-              isShuffleEnabled
-                ? "bg-indigo-50 dark:bg-indigo-950/50 border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300"
-                : "border-slate-200 dark:border-slate-700 text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800"
-            }`}
-          >
-            <Shuffle className={`w-3.5 h-3.5 ${isShuffleEnabled ? "text-indigo-600" : ""}`} />
-            <span>Acak Urutan Soal: {isShuffleEnabled ? "Aktif" : "Mati"}</span>
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={() => setIsShuffleEnabled((prev) => !prev)}
+          className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs font-semibold transition-colors cursor-pointer ${
+            isShuffleEnabled
+              ? "bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300"
+              : "border-zinc-200 dark:border-zinc-700 text-zinc-500 hover:bg-zinc-50 dark:hover:bg-zinc-800"
+          }`}
+        >
+          <Shuffle className={`w-3.5 h-3.5 ${isShuffleEnabled ? "text-emerald-600 dark:text-emerald-400" : ""}`} />
+          <span>Acak Urutan Soal: {isShuffleEnabled ? "Aktif" : "Mati"}</span>
+        </button>
       </div>
 
       {/* Grid of Practice Modes */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         {/* Mode 1: Quick Quiz */}
-        <div className="p-6 bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/30 dark:to-teal-950/20 border border-emerald-200 dark:border-emerald-800/40 rounded-3xl space-y-4 hover:shadow-lg transition-all flex flex-col justify-between">
-          <div className="space-y-2">
-            <div className="w-12 h-12 rounded-2xl bg-emerald-500 text-white flex items-center justify-center shadow-md shadow-emerald-500/20">
-              <Zap className="w-6 h-6" />
+        <div className="p-5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 hover:border-emerald-500/60 rounded-2xl space-y-4 transition-colors flex flex-col justify-between">
+          <div className="space-y-2.5">
+            <div className="w-11 h-11 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 flex items-center justify-center border border-emerald-200/70 dark:border-emerald-800/50">
+              <Zap className="w-5 h-5" />
             </div>
-            <h2 className="text-lg font-bold text-slate-900 dark:text-white">
-              Latihan Cepat Kilat
+            <h2 className="text-base font-display font-bold text-zinc-950 dark:text-white">
+              Pemanasan 3 Menit
             </h2>
-            <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-              5 soal pilihan ganda acak dari berbagai modul untuk pemanasan harian berdurasi 3 menit.
+            <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">
+              5 soal pilihan ganda singkat dari berbagai materi untuk menjaga ketajaman belajar harianmu.
             </p>
           </div>
           <button
-            onClick={() => {
-              startQuizSession("Latihan Cepat Kilat ⚡", "5 Soal Campuran Pilihan Ganda", "quick");
-            }}
-            className="w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+            type="button"
+            onClick={() => startQuizSession("Pemanasan 3 Menit", "5 Soal Campuran Pilihan Ganda", "quick")}
+            className="w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
           >
             <span>Mulai Pemanasan</span>
             <ChevronRight className="w-4 h-4" />
@@ -90,71 +87,70 @@ export function DrillsTab({
         </div>
 
         {/* Mode 2: Simulated Exam */}
-        <div className="p-6 bg-gradient-to-br from-indigo-50 to-blue-50 dark:from-indigo-950/30 dark:to-blue-950/20 border border-indigo-200 dark:border-indigo-800/40 rounded-3xl space-y-4 hover:shadow-lg transition-all flex flex-col justify-between">
-          <div className="space-y-2">
-            <div className="w-12 h-12 rounded-2xl bg-indigo-600 text-white flex items-center justify-center shadow-md shadow-indigo-600/20">
-              <Award className="w-6 h-6" />
+        <div className="p-5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 hover:border-emerald-500/60 rounded-2xl space-y-4 transition-colors flex flex-col justify-between">
+          <div className="space-y-2.5">
+            <div className="w-11 h-11 rounded-xl bg-sky-50 dark:bg-sky-950/50 text-sky-600 dark:text-sky-400 flex items-center justify-center border border-sky-200/70 dark:border-sky-800/50">
+              <Award className="w-5 h-5" />
             </div>
-            <h2 className="text-lg font-bold text-slate-900 dark:text-white">
-              Simulasi Ujian Kerja
+            <h2 className="text-base font-display font-bold text-zinc-950 dark:text-white">
+              Simulasi Tes Kerja
             </h2>
-            <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-              Mode tantangan intensif dengan batas waktu ketat & 10 soal untuk menguji kesiapan seleksi kerja.
+            <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">
+              10 soal dengan pengatur waktu untuk melatih ketenangan dan kecepatanmu menghadapi seleksi kerja.
             </p>
           </div>
           <button
-            onClick={() => {
-              startQuizSession("Simulasi Ujian Kerja 🎯", "10 Soal Berbatas Waktu Ketat", "simulation");
-            }}
-            className="w-full py-2.5 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+            type="button"
+            onClick={() => startQuizSession("Simulasi Tes Kerja", "10 Soal Berbatas Waktu", "simulation")}
+            className="w-full py-2.5 px-4 bg-zinc-950 dark:bg-zinc-100 hover:bg-zinc-800 dark:hover:bg-white text-white dark:text-zinc-950 font-bold text-xs rounded-xl transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
           >
-            <span>Uji Ketahanan</span>
+            <span>Mulai Simulasi</span>
             <ChevronRight className="w-4 h-4" />
           </button>
         </div>
 
         {/* Mode 3: Mistakes Bank */}
-        <div className="p-6 bg-gradient-to-br from-rose-50 to-amber-50 dark:from-rose-950/30 dark:to-amber-950/20 border border-rose-200 dark:border-rose-800/40 rounded-3xl space-y-4 hover:shadow-lg transition-all flex flex-col justify-between">
-          <div className="space-y-2">
-            <div className="w-12 h-12 rounded-2xl bg-rose-500 text-white flex items-center justify-center shadow-md shadow-rose-500/20">
-              <RotateCcw className="w-6 h-6" />
+        <div className="p-5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 hover:border-rose-400/60 rounded-2xl space-y-4 transition-colors flex flex-col justify-between">
+          <div className="space-y-2.5">
+            <div className="w-11 h-11 rounded-xl bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 flex items-center justify-center border border-rose-200/70 dark:border-rose-800/50">
+              <RotateCcw className="w-5 h-5" />
             </div>
-            <h2 className="text-lg font-bold text-slate-900 dark:text-white">
-              Bank Evaluasi Salah
+            <h2 className="text-base font-display font-bold text-zinc-950 dark:text-white">
+              Ulangi Soal yang Salah
             </h2>
-            <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-              Latih ulang soal-soal yang pernah Anda jawab keliru agar konsepnya benar-benar dipahami.
+            <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">
+              Kerjakan kembali pertanyaan yang sebelumnya masih keliru agar kamu benar-benar paham alasannya.
             </p>
           </div>
           <button
-            onClick={() => {
-              startQuizSession("Bank Evaluasi Jawaban Salah 🔄", "Latih ulang pemahaman konsep yang keliru", "wrong");
-            }}
-            className="w-full py-2.5 px-4 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+            type="button"
+            onClick={() => startQuizSession("Ulangi Soal yang Salah", "Latih kembali materi yang sebelumnya keliru", "wrong")}
+            className="w-full py-2.5 px-4 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs rounded-xl transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
           >
-            <span>Latih Bank Soal Salah</span>
+            <span>Latih Ulang Sekarang</span>
             <ChevronRight className="w-4 h-4" />
           </button>
         </div>
 
         {/* Mode 4: Topic Based */}
-        <div className="p-6 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-950/30 dark:to-pink-950/20 border border-purple-200 dark:border-purple-800/40 rounded-3xl space-y-4 hover:shadow-lg transition-all flex flex-col justify-between">
-          <div className="space-y-2">
-            <div className="w-12 h-12 rounded-2xl bg-purple-600 text-white flex items-center justify-center shadow-md shadow-purple-600/20">
-              <Compass className="w-6 h-6" />
+        <div className="p-5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 hover:border-emerald-500/60 rounded-2xl space-y-4 transition-colors flex flex-col justify-between">
+          <div className="space-y-2.5">
+            <div className="w-11 h-11 rounded-xl bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 flex items-center justify-center border border-amber-200/70 dark:border-amber-800/50">
+              <Compass className="w-5 h-5" />
             </div>
-            <h2 className="text-lg font-bold text-slate-900 dark:text-white">
-              Pilihan Per Modul
+            <h2 className="text-base font-display font-bold text-zinc-950 dark:text-white">
+              Latihan per Materi Kursus
             </h2>
-            <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-              Pilih dari katalog ratusan latihan soal spesifik (React, TypeScript, SQL, TKD BUMN, dll).
+            <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">
+              Pilih latihan sesuai topik kursus yang sedang kamu pelajari (Web, Backend, SQL, Data, hingga BUMN).
             </p>
           </div>
           <button
+            type="button"
             onClick={() => setActiveHubTab("topics")}
-            className="w-full py-2.5 px-4 bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+            className="w-full py-2.5 px-4 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-900 dark:text-zinc-100 font-bold text-xs rounded-xl transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
           >
-            <span>Buka Katalog Topik</span>
+            <span>Pilih Materi</span>
             <ChevronRight className="w-4 h-4" />
           </button>
         </div>

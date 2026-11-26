@@ -23,11 +23,11 @@ export function PracticeHeader({
 }: PracticeHeaderProps) {
   const tabs: { id: HubTab; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
     { id: "drills", label: "Mode Latihan", icon: Zap },
-    { id: "adaptive", label: "Drill Adaptif", icon: Crosshair },
-    { id: "flashcards", label: "Flashcard SM-2", icon: Layers },
-    { id: "topics", label: "Topik & Modul", icon: BookOpen },
-    { id: "mistakes", label: `Bank Evaluasi (${wrongCount})`, icon: RotateCcw },
-    { id: "analytics", label: "Analitik", icon: BarChart2 },
+    { id: "adaptive", label: "Latihan Bertingkat", icon: Crosshair },
+    { id: "flashcards", label: "Kartu Hafalan", icon: Layers },
+    { id: "topics", label: "Per Materi Kursus", icon: BookOpen },
+    { id: "mistakes", label: `Soal Salah Saya (${wrongCount})`, icon: RotateCcw },
+    { id: "analytics", label: "Statistik", icon: BarChart2 },
   ];
 
   return (
@@ -36,13 +36,13 @@ export function PracticeHeader({
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-5">
           <div className="space-y-1.5 max-w-xl">
             <p className="text-xs font-mono uppercase tracking-wider text-emerald-700 dark:text-emerald-400 font-semibold">
-              Pusat Latihan · Drill Adaptif · Spaced Repetition
+              Pusat Latihan Gratis · Bank Soal &amp; Kartu Hafalan
             </p>
             <h1 className="text-2xl sm:text-3xl font-display font-bold tracking-tight text-zinc-950 dark:text-white">
-              Asah Kompetensi & Bank Soal Terarah
+              Latihan Soal &amp; Evaluasi Pemahaman
             </h1>
             <p className="text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed">
-              Latih topik lemah secara otomatis, ulang konsep kunci lewat Flashcard SM-2 lintas 16 pelatihan, atau evaluasi kesalahan sebelumnya.
+              Asah pemahamanmu lewat pemanasan cepat, simulasi tes kerja, kartu hafalan pengingat konsep, atau ulangi soal yang sebelumnya masih keliru.
             </p>
           </div>
 

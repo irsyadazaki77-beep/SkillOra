@@ -76,20 +76,20 @@ export const Sidebar = memo(function Sidebar({ profile, onLogout }: SidebarProps
   };
 
   const primaryPillars = [
-    { id: ROUTES.learning.root, label: "Beranda & Roadmap", icon: LayoutDashboard },
-    { id: ROUTES.lab.root, label: "Lab Interaktif AI", icon: Terminal },
-    { id: ROUTES.learning.catalog, label: "Belajar & Kursus", icon: BookOpen },
-    { id: ROUTES.arena.root, label: "Arena & Liga", icon: Trophy },
-    { id: ROUTES.career.jobs, label: "Karier & Portofolio", icon: Briefcase },
+    { id: ROUTES.learning.root, label: "Beranda Belajar", icon: LayoutDashboard },
+    { id: ROUTES.lab.root, label: "Lab Praktik Kode", icon: Terminal },
+    { id: ROUTES.learning.catalog, label: "Katalog Pelatihan", icon: BookOpen },
+    { id: ROUTES.arena.root, label: "Arena Tryout & Lomba", icon: Trophy },
+    { id: ROUTES.career.jobs, label: "Lowongan & Portofolio", icon: Briefcase },
   ];
 
   const workspaceShortcuts = [
-    { id: ROUTES.learning.lmsWorkspace, label: "Ruang LMS (Fokus)", icon: Layers },
+    { id: ROUTES.learning.lmsWorkspace, label: "Ruang Belajar Fokus", icon: Layers },
     { id: ROUTES.learning.practice, label: "Latihan & Bank Soal", icon: Zap },
     { id: ROUTES.learning.project, label: "Proyek & Sertifikat", icon: Award },
-    { id: ROUTES.career.cvBuilder, label: "CV ATS & Interview AI", icon: FileText },
-    { id: ROUTES.community.forum, label: "Forum Komunitas", icon: Users },
-    { id: ROUTES.community.collaboration, label: "Ruang Kolaborasi", icon: MessageSquare },
+    { id: ROUTES.career.cvBuilder, label: "CV & Wawancara AI", icon: FileText },
+    { id: ROUTES.community.forum, label: "Forum Diskusi", icon: Users },
+    { id: ROUTES.community.collaboration, label: "Kerja Kelompok", icon: MessageSquare },
   ];
 
   const partnerItems: Array<{ id: string; label: string; icon: React.ComponentType<{ className?: string; strokeWidth?: number }> }> = [];

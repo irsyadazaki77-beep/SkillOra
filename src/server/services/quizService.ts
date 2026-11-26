@@ -100,11 +100,40 @@ export class QuizService {
       selectedQuestions = shuffled.slice(0, questionCount || 10).map((p) => p.question);
       durationSeconds = 600;
     } else if (mode === "wrong") {
-      title = "Bank Evaluasi Jawaban Salah 🔄";
-      subtitle = "Latih ulang pemahaman konsep yang keliru";
-      const shuffled = fisherYatesShuffle(allPool);
-      selectedQuestions = shuffled.slice(0, questionCount || 8).map((p) => p.question);
-      durationSeconds = 480;
+      title = "Ulangi Soal yang Pernah Salah";
+      subtitle = "Latih kembali materi yang sebelumnya masih keliru agar benar-benar paham";
+      const targetCount = questionCount || 8;
+      const pastSessions = await db
+        .select({
+          questionsData: quizSessions.questionsData,
+          answers: quizSessions.answers,
+        })
+        .from(quizSessions)
+        .where(and(eq(quizSessions.userId, profile.id), eq(quizSessions.status, "completed")));
+
+      const missedMap = new Map<string, StoredQuestion>();
+      for (const sess of pastSessions) {
+        const qs = safeParse<StoredQuestion[]>(sess.questionsData, []);
+        const ans = safeParse<Record<string, number>>(sess.answers, {});
+        for (const q of qs) {
+          if (!q || !q.id) continue;
+          const userAns = ans[q.id];
+          if (userAns !== undefined && Number(userAns) !== Number(q.answerIndex)) {
+            missedMap.set(q.id, q);
+          }
+        }
+      }
+
+      const missedList = Array.from(missedMap.values());
+      if (missedList.length >= targetCount) {
+        selectedQuestions = fisherYatesShuffle(missedList).slice(0, targetCount);
+      } else {
+        const fallback = fisherYatesShuffle(allPool)
+          .map((p) => p.question)
+          .filter((q) => !missedMap.has(q.id));
+        selectedQuestions = [...missedList, ...fallback].slice(0, targetCount);
+      }
+      durationSeconds = Math.max(300, selectedQuestions.length * 60);
     } else if (mode === "topic") {
       if (courseId && lessonId) {
         const course = allCourses.find((c) => c.id === courseId);
