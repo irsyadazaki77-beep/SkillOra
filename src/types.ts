@@ -85,6 +85,7 @@ export interface Profile {
   campusName?: string | null;
   majorName?: string | null;
   leagueTier?: "bronze" | "silver" | "gold" | "platinum" | "grandmaster" | string;
+  weeklyTargetDays?: number;
 }
 
 export interface CompanyProfile {
@@ -583,6 +584,7 @@ export interface LearningPathRecord {
   progressPercent: number;
   firstCourseId: string;
   allEnrolled: boolean;
+  specializationCertId?: string | null;
 }
 
 export interface TeamMember {

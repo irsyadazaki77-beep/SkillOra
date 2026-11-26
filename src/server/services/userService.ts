@@ -54,8 +54,13 @@ export class UserService {
       }
     }
 
-    const { name, email, bio, mentorTone, notifyEmail, notifyDaily, notifySound, mentorSpecialty, mentorHeadline } = data;
+    const { name, email, bio, mentorTone, notifyEmail, notifyDaily, notifySound, mentorSpecialty, mentorHeadline, weeklyTargetDays } = data;
     const updates: Partial<typeof users.$inferInsert> = { updatedAt: new Date() };
+
+    if (weeklyTargetDays !== undefined) {
+      const parsed = Math.max(1, Math.min(7, Math.round(Number(weeklyTargetDays) || 5)));
+      updates.weeklyTargetDays = parsed;
+    }
 
     if (name && typeof name === "string") {
       updates.name = name.trim();
@@ -286,12 +291,19 @@ export class UserService {
       const newGems = userRow.gems + rewardGems;
       const newLevel = Math.floor(newXp / 500) + 1;
       const leveledUp = newLevel > userRow.level;
+      const nextStreak = (userRow.streak || 0) + 1;
+      const earnedFreeSaver = nextStreak > 0 && nextStreak % 7 === 0;
+      const nextFreezes = earnedFreeSaver
+        ? (userRow.streakFreezes || 0) + 1
+        : userRow.streakFreezes || 0;
 
       await tx.update(users).set({
         dailyClaimedLast: todayStr,
         xp: newXp,
         gems: newGems,
         level: newLevel,
+        streak: nextStreak,
+        streakFreezes: nextFreezes,
         updatedAt: new Date(),
       }).where(eq(users.id, userRow.id));
 
@@ -306,7 +318,9 @@ export class UserService {
 
       await tx.insert(notifications).values({
         userId: userRow.id,
-        text: `🎁 Klaim Harian Sukses! +${rewardXp} XP dan +${rewardGems} Gems ditambahkan!`,
+        text: earnedFreeSaver
+          ? `🎁 Klaim Harian Sukses! +${rewardXp} XP, +${rewardGems} Gems & +1 Streak Saver GRATIS (konsistensi ${nextStreak} hari)!`
+          : `🎁 Klaim Harian Sukses! +${rewardXp} XP dan +${rewardGems} Gems ditambahkan!`,
         type: "system",
         read: false,
       });

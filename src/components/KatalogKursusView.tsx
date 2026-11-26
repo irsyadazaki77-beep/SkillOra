@@ -44,6 +44,9 @@ export function KatalogKursusView({ courses, profile, onBookmarkToggle }: Katalo
   const [layout, setLayout] = useState<"grid" | "list">("grid");
   const [dbPaths, setDbPaths] = useState<LearningPathRecord[]>([]);
   const [enrollingPathSlug, setEnrollingPathSlug] = useState<string | null>(null);
+  const [selectedPath, setSelectedPath] = useState<LearningPathRecord | null>(null);
+  const [claimingSpecSlug, setClaimingSpecSlug] = useState<string | null>(null);
+  const [pathNotice, setPathNotice] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -156,6 +159,26 @@ export function KatalogKursusView({ courses, profile, onBookmarkToggle }: Katalo
       // silent if offline or guest
     } finally {
       setEnrollingPathSlug(null);
+    }
+  };
+
+  const handleClaimSpecializationCert = async (path: LearningPathRecord) => {
+    setClaimingSpecSlug(path.slug);
+    setPathNotice(null);
+    try {
+      const res = await courseApi.claimLearningPathCertificate(path.slug);
+      setPathNotice(`Sertifikat Spesialisasi diterbitkan (ID: ${res.certificateId})!`);
+      const fresh = await courseApi.getLearningPaths();
+      if (Array.isArray(fresh)) {
+        setDbPaths(fresh);
+        const updated = fresh.find((p) => p.slug === path.slug);
+        if (updated) setSelectedPath(updated);
+      }
+      queryClient.invalidateQueries({ queryKey: queryKeys.user.profile() });
+    } catch (err: any) {
+      setPathNotice(err?.message || "Selesaikan seluruh modul dalam jalur ini untuk mengklaim sertifikat.");
+    } finally {
+      setClaimingSpecSlug(null);
     }
   };
 
@@ -470,6 +493,16 @@ export function KatalogKursusView({ courses, profile, onBookmarkToggle }: Katalo
                     </button>
                     <button
                       type="button"
+                      onClick={() => {
+                        setPathNotice(null);
+                        setSelectedPath(path);
+                      }}
+                      className="px-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 text-xs font-semibold text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-800 cursor-pointer"
+                    >
+                      Silabus
+                    </button>
+                    <button
+                      type="button"
                       onClick={() => navigate(`/belajar/lms?courseId=${encodeURIComponent(path.firstCourseId)}`)}
                       className="flex-1 py-2 px-3 rounded-lg bg-zinc-950 dark:bg-zinc-100 text-white dark:text-zinc-950 text-xs font-semibold flex items-center justify-center gap-1.5 hover:opacity-90 transition-opacity cursor-pointer"
                     >
@@ -482,6 +515,111 @@ export function KatalogKursusView({ courses, profile, onBookmarkToggle }: Katalo
             ))}
           </div>
         </section>
+      )}
+
+      {/* Modal Silabus Jalur Karier & Klaim Sertifikat Spesialisasi */}
+      {selectedPath && (
+        <div role="dialog" aria-modal="true" className="fixed inset-0 bg-zinc-950/70 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl max-w-xl w-full p-6 space-y-5 shadow-2xl max-h-[88vh] overflow-y-auto">
+            <div className="flex items-start justify-between gap-3 border-b border-zinc-200 dark:border-zinc-800 pb-3.5">
+              <div>
+                <p className="text-[11px] font-mono uppercase tracking-wider text-emerald-600 dark:text-emerald-400 font-semibold">
+                  Spesialisasi Terbuka 100% Gratis · {selectedPath.targetRole}
+                </p>
+                <h3 className="font-display font-bold text-lg text-zinc-950 dark:text-white mt-0.5">
+                  {selectedPath.title}
+                </h3>
+                <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">{selectedPath.description}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedPath(null)}
+                className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 cursor-pointer"
+                aria-label="Tutup silabus jalur"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="space-y-2.5">
+              {selectedPath.courses.map((c, idx) => {
+                const done = c.lessonsCount > 0 && c.completedLessonsCount >= c.lessonsCount;
+                return (
+                  <div
+                    key={c.id}
+                    className="p-3.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50/70 dark:bg-zinc-950/40 flex items-center justify-between gap-3"
+                  >
+                    <div className="min-w-0">
+                      <p className="text-[11px] font-mono text-zinc-500">
+                        Tahap {idx + 1} · {c.difficulty} · {c.duration}
+                      </p>
+                      <h4 className="text-xs sm:text-sm font-semibold text-zinc-950 dark:text-white truncate">
+                        {c.title}
+                      </h4>
+                      <p className="text-[11px] text-zinc-500 font-mono">
+                        {c.completedLessonsCount}/{c.lessonsCount} modul selesai
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedPath(null);
+                        navigate(`/belajar/lms?courseId=${encodeURIComponent(c.id)}`);
+                      }}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold shrink-0 cursor-pointer ${
+                        done
+                          ? "bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800"
+                          : "bg-zinc-950 dark:bg-zinc-100 text-white dark:text-zinc-950"
+                      }`}
+                    >
+                      {done ? "Selesai ✓" : "Buka Kelas"}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+
+            {pathNotice && (
+              <p className="text-xs font-medium text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 px-3 py-2 rounded-xl">
+                {pathNotice}
+              </p>
+            )}
+
+            <div className="pt-2 border-t border-zinc-200 dark:border-zinc-800 flex flex-wrap items-center justify-between gap-2">
+              <span className="text-xs font-mono text-zinc-500">
+                Progres Spesialisasi: <strong className="text-zinc-950 dark:text-white">{selectedPath.progressPercent}%</strong>
+              </span>
+              {selectedPath.specializationCertId ? (
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => navigate(`/verify/${selectedPath.specializationCertId}`)}
+                    className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <Award className="w-4 h-4" />
+                    <span>Lihat Sertifikat Spesialisasi</span>
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  disabled={selectedPath.progressPercent < 100 || claimingSpecSlug === selectedPath.slug}
+                  onClick={() => handleClaimSpecializationCert(selectedPath)}
+                  className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer"
+                >
+                  <Award className="w-4 h-4" />
+                  <span>
+                    {claimingSpecSlug === selectedPath.slug
+                      ? "Menerbitkan..."
+                      : selectedPath.progressPercent === 100
+                        ? "Klaim Sertifikat Spesialisasi Gratis"
+                        : "Tuntaskan 100% Untuk Sertifikat"}
+                  </span>
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Course Grid / List */}

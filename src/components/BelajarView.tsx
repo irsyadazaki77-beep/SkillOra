@@ -12,7 +12,7 @@ import { DashboardSidebar } from "../features/learning/components/DashboardSideb
 import { NewUserOnboardingCard } from "../features/learning/components/NewUserOnboardingCard";
 import { CareerJourneyStepper } from "../features/learning/components/CareerJourneyStepper";
 import { SmartRoadmapCard } from "./SmartRoadmapCard";
-import { Terminal, Trophy, ArrowUpRight } from "lucide-react";
+import { Terminal, Trophy, ArrowUpRight, Flame, ShieldCheck } from "lucide-react";
 
 const AutoCvModal = lazy(() => import("./AutoCvModal").then(m => ({ default: m.AutoCvModal })));
 const CareerReadinessCalculator = lazy(() => import("./CareerReadinessCalculator").then(m => ({ default: m.CareerReadinessCalculator })));
@@ -45,6 +45,23 @@ export function BelajarView({
   const [selectedCategory, setSelectedCategory] = useState<string>("semua");
   const [selectedActiveCourseIndex, setSelectedActiveCourseIndex] = useState<number>(0);
   const [claimingQuestId, setClaimingQuestId] = useState<string | null>(null);
+  const [savingWeeklyGoal, setSavingWeeklyGoal] = useState(false);
+
+  const weeklyTarget = profile.weeklyTargetDays ?? 5;
+  const activeWeekProgress = Math.min(weeklyTarget, (profile.streak || 0) % 7 || (profile.streak ? 7 : 0));
+
+  const handleSetWeeklyTarget = async (days: number) => {
+    setSavingWeeklyGoal(true);
+    try {
+      const res = await userApi.updateSettings({ weeklyTargetDays: days });
+      if (res?.profile) onProfileUpdate(res.profile);
+      showToast?.(`Target konsistensi mingguan diatur ke ${days} hari/minggu!`, "success");
+    } catch (err: any) {
+      showToast?.(err?.message || "Gagal menyimpan target mingguan.", "error");
+    } finally {
+      setSavingWeeklyGoal(false);
+    }
+  };
 
   // Daily quest claiming handler
   const handleClaimQuest = async (questId: string) => {
@@ -221,6 +238,42 @@ export function BelajarView({
               onNavigateToSertifikasi={onNavigateToSertifikasi}
             />
           )}
+
+          {/* Weekly Free Consistency Goal & Streak Saver */}
+          <section className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2 text-xs font-mono uppercase tracking-wider text-emerald-600 dark:text-emerald-400 font-semibold">
+                <Flame className="w-3.5 h-3.5 text-amber-500" />
+                <span>Target Konsistensi Mingguan · 100% Gratis</span>
+              </div>
+              <h3 className="font-display text-base font-bold text-zinc-950 dark:text-white">
+                {activeWeekProgress}/{weeklyTarget} Hari Aktif Minggu Ini
+              </h3>
+              <p className="text-xs text-zinc-500 dark:text-zinc-400 flex items-center gap-1.5">
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                <span>
+                  Pertahankan streak kelipatan 7 hari untuk hadiah <strong>+1 Streak Saver Gratis</strong> (tersedia: {profile.streakFreezes || 0}).
+                </span>
+              </p>
+            </div>
+            <div className="flex items-center gap-1.5 shrink-0">
+              {[3, 5, 7].map((days) => (
+                <button
+                  key={days}
+                  type="button"
+                  disabled={savingWeeklyGoal}
+                  onClick={() => handleSetWeeklyTarget(days)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold cursor-pointer transition-colors ${
+                    weeklyTarget === days
+                      ? "bg-emerald-600 text-white"
+                      : "bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700"
+                  }`}
+                >
+                  {days} Hari
+                </button>
+              ))}
+            </div>
+          </section>
 
           {/* Editorial Spotlight: Flagship Lab & Competitive Arena */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

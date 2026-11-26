@@ -144,4 +144,55 @@ export class CourseController {
       });
     }
   }
+
+  static async claimLearningPathCertificate(req: AuthenticatedRequest, res: Response) {
+    try {
+      const data = await CourseService.claimLearningPathCertificate(req.userId!, req.params.slug);
+      return res.json({ success: true, data });
+    } catch (err: any) {
+      const status = err.message?.includes("tidak ditemukan") ? 404 : 400;
+      return res.status(status).json({
+        success: false,
+        error: { code: status === 404 ? "NOT_FOUND" : "BAD_REQUEST", message: err.message },
+      });
+    }
+  }
+
+  static async updateLesson(req: AuthenticatedRequest, res: Response) {
+    try {
+      const data = await CourseService.updateLesson(req.userId!, req.params.id, req.params.lessonId, req.body);
+      return res.json({ success: true, data });
+    } catch (err: any) {
+      const status = err.message?.includes("Akses ditolak") ? 403 : 400;
+      return res.status(status).json({
+        success: false,
+        error: { code: status === 403 ? "FORBIDDEN" : "BAD_REQUEST", message: err.message },
+      });
+    }
+  }
+
+  static async deleteLesson(req: AuthenticatedRequest, res: Response) {
+    try {
+      const data = await CourseService.deleteLesson(req.userId!, req.params.id, req.params.lessonId);
+      return res.json({ success: true, data });
+    } catch (err: any) {
+      const status = err.message?.includes("Akses ditolak") ? 403 : 400;
+      return res.status(status).json({
+        success: false,
+        error: { code: status === 403 ? "FORBIDDEN" : "BAD_REQUEST", message: err.message },
+      });
+    }
+  }
+
+  static async getLmsAnalytics(_req: AuthenticatedRequest, res: Response) {
+    try {
+      const data = await CourseService.getLmsAnalytics();
+      return res.json({ success: true, data });
+    } catch (err: any) {
+      return res.status(500).json({
+        success: false,
+        error: { code: "SERVER_ERROR", message: err.message },
+      });
+    }
+  }
 }

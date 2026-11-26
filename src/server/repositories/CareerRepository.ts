@@ -7,6 +7,8 @@ import {
   users,
   cvDocuments,
   certificates,
+  talentInvitations,
+  notifications,
 } from "../../db/schema.js";
 import { ensureSeeded } from "../db/seedData.js";
 import { eq, and, desc, inArray } from "drizzle-orm";
@@ -264,15 +266,49 @@ export class CareerRepository {
   }
 
   static async searchVerifiedTalents(skillFilter?: string) {
-    const allUsers = await db.select().from(users).where(eq(users.accountRole, "student")).orderBy(desc(users.xp));
-    const allCerts = await db.select().from(certificates).where(eq(certificates.status, "valid"));
-    const allCvs = await db.select().from(cvDocuments);
+    const candidateRows = await db
+      .select()
+      .from(users)
+      .where(eq(users.accountRole, "student"))
+      .orderBy(desc(users.xp))
+      .limit(80);
 
-    return allUsers
+    const candidateIds = candidateRows.map((u) => u.id);
+    const [certRows, cvRows] =
+      candidateIds.length > 0
+        ? await Promise.all([
+            db
+              .select()
+              .from(certificates)
+              .where(and(eq(certificates.status, "valid"), inArray(certificates.userId, candidateIds))),
+            db.select().from(cvDocuments).where(inArray(cvDocuments.userId, candidateIds)),
+          ])
+        : [[], []];
+
+    const certsByUser = new Map<number, typeof certRows>();
+    for (const c of certRows) {
+      const arr = certsByUser.get(c.userId) || [];
+      arr.push(c);
+      certsByUser.set(c.userId, arr);
+    }
+
+    const cvByUser = new Map<number, (typeof cvRows)[number]>();
+    for (const cv of cvRows) {
+      if (!cvByUser.has(cv.userId)) cvByUser.set(cv.userId, cv);
+    }
+
+    return candidateRows
       .map((u) => {
         const skills = safeParse<any[]>(u.skills, []).map((s: any) => (typeof s === "string" ? s : s.name));
-        const certs = allCerts.filter((c) => c.userId === u.id);
-        const cv = allCvs.find((c) => c.userId === u.id);
+        const certs = certsByUser.get(u.id) || [];
+        const cv = cvByUser.get(u.id);
+        const fallbackSlug =
+          u.portfolioSlug ||
+          `${(u.name || "talenta")
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, "-")
+            .replace(/^-|-$/g, "")}-${u.id}`;
+
         return {
           id: u.id,
           name: u.name,
@@ -281,8 +317,16 @@ export class CareerRepository {
           level: u.level,
           xp: u.xp,
           skills,
+          portfolioSlug: fallbackSlug,
+          certificateCount: certs.length,
           certificatesCount: certs.length,
+          certificates: certs.slice(0, 3).map((c) => ({
+            id: c.certificateId,
+            courseId: c.courseId,
+            verificationCode: c.verificationCode || c.certificateId.slice(0, 10).toUpperCase(),
+          })),
           atsScore: cv?.atsScore || 0,
+          jobReadyVerified: certs.length >= 1 && (u.level || 1) >= 2,
           bio: u.bio || "Kandidat terverifikasi Skillora.",
         };
       })
@@ -296,5 +340,50 @@ export class CareerRepository {
         );
       })
       .slice(0, 30);
+  }
+
+  static async inviteTalent(
+    recruiterRow: { id: number; name: string },
+    candidateId: number,
+    data: { jobTitle: string; message: string; companyName?: string }
+  ) {
+    const [candidate] = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, candidateId))
+      .limit(1);
+    if (!candidate) throw new Error("Kandidat tidak ditemukan.");
+
+    const company = await db.query.companies.findFirst({
+      where: eq(companies.ownerUid, String(recruiterRow.id)),
+    });
+    const resolvedCompany = data.companyName?.trim() || company?.name || "Perusahaan Mitra SkillOra";
+
+    const [created] = await db
+      .insert(talentInvitations)
+      .values({
+        recruiterUserId: recruiterRow.id,
+        candidateUserId: candidate.id,
+        companyName: resolvedCompany,
+        jobTitle: data.jobTitle.trim(),
+        message: data.message.trim(),
+        status: "sent",
+      })
+      .returning();
+
+    await db.insert(notifications).values({
+      userId: candidate.id,
+      text: `💼 Undangan Wawancara dari ${resolvedCompany} untuk posisi '${data.jobTitle.trim()}'!`,
+      type: "system",
+      read: false,
+    });
+
+    return {
+      invitationId: created.id,
+      candidateName: candidate.name,
+      companyName: resolvedCompany,
+      jobTitle: created.jobTitle,
+      status: created.status,
+    };
   }
 }

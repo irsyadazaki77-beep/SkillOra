@@ -484,6 +484,7 @@ export class UserRepository {
       campusName: updatedUserRow.campusName || null,
       majorName: updatedUserRow.majorName || null,
       leagueTier: updatedUserRow.leagueTier || "silver",
+      weeklyTargetDays: updatedUserRow.weeklyTargetDays ?? 5,
     };
   }
 

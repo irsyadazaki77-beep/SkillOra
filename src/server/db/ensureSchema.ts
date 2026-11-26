@@ -106,6 +106,9 @@ async function runEnsureSchema(): Promise<void> {
     `ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "campus_name" text;`,
     `ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "major_name" text;`,
     `ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "league_tier" text DEFAULT 'silver' NOT NULL;`,
+    `ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "weekly_target_days" integer DEFAULT 5 NOT NULL;`,
+    `ALTER TABLE "certificates" ADD COLUMN IF NOT EXISTS "certificate_type" text DEFAULT 'course' NOT NULL;`,
+    `ALTER TABLE "certificates" ADD COLUMN IF NOT EXISTS "path_slug" text;`,
     `ALTER TABLE "courses" ADD COLUMN IF NOT EXISTS "status" text DEFAULT 'published' NOT NULL;`,
     `ALTER TABLE "courses" ADD COLUMN IF NOT EXISTS "is_pro_only" boolean DEFAULT false NOT NULL;`,
     `ALTER TABLE "courses" ADD COLUMN IF NOT EXISTS "author_user_id" integer;`,
@@ -310,6 +313,16 @@ async function runEnsureSchema(): Promise<void> {
       "feedback" text NOT NULL,
       "created_at" timestamp DEFAULT now(),
       CONSTRAINT "peer_reviews_sub_reviewer_uniq" UNIQUE ("submission_id", "reviewer_user_id")
+    );`,
+    `CREATE TABLE IF NOT EXISTS "talent_invitations" (
+      "id" serial PRIMARY KEY,
+      "recruiter_user_id" integer NOT NULL,
+      "candidate_user_id" integer NOT NULL,
+      "company_name" text NOT NULL,
+      "job_title" text NOT NULL,
+      "message" text NOT NULL,
+      "status" text DEFAULT 'sent' NOT NULL,
+      "created_at" timestamp DEFAULT now()
     );`,
   ];
 

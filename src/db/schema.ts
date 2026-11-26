@@ -83,6 +83,7 @@ export const users = pgTable('users', {
   campusName: text('campus_name'),
   majorName: text('major_name'),
   leagueTier: text('league_tier').default('silver').notNull(),
+  weeklyTargetDays: integer('weekly_target_days').default(5).notNull(),
   createdAt: timestamp('created_at').defaultNow(),
   updatedAt: timestamp('updated_at').defaultNow(),
 }, (t) => [
@@ -374,6 +375,8 @@ export const certificates = pgTable('certificates', {
   certificateId: text('certificate_id').notNull().unique(),
   userId: integer('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
   courseId: text('course_id').notNull(),
+  certificateType: text('certificate_type').default('course').notNull(), // 'course' | 'specialization'
+  pathSlug: text('path_slug'),
   recipientName: text('recipient_name').notNull(),
   issuedAt: timestamp('issued_at').defaultNow().notNull(),
   score: integer('score'),
@@ -385,6 +388,20 @@ export const certificates = pgTable('certificates', {
 }, (t) => [
   index('certificates_certificate_id_idx').on(t.certificateId),
   index('certificates_user_id_idx').on(t.userId),
+]);
+
+export const talentInvitations = pgTable('talent_invitations', {
+  id: serial('id').primaryKey(),
+  recruiterUserId: integer('recruiter_user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  candidateUserId: integer('candidate_user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  companyName: text('company_name').notNull(),
+  jobTitle: text('job_title').notNull(),
+  message: text('message').notNull(),
+  status: text('status').default('sent').notNull(), // 'sent' | 'accepted' | 'declined'
+  createdAt: timestamp('created_at').defaultNow(),
+}, (t) => [
+  index('talent_invitations_recruiter_idx').on(t.recruiterUserId),
+  index('talent_invitations_candidate_idx').on(t.candidateUserId),
 ]);
 
 export const notifications = pgTable('notifications', {

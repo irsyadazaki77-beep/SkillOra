@@ -111,4 +111,13 @@ router.get("/recruiter/talent", requireAccountRole("recruiter", "admin"), async 
   }
 });
 
+router.post("/recruiter/invite-talent", requireAccountRole("recruiter", "admin"), async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const result = await JobService.inviteTalent(req.userId!, req.body || {});
+    return res.json({ success: true, data: result });
+  } catch (err: any) {
+    return res.status(400).json({ success: false, error: { code: "BAD_REQUEST", message: err.message } });
+  }
+});
+
 export default router;

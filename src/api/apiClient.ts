@@ -190,14 +190,15 @@ export const userApi = {
     mentorHeadline?: string;
   }) => apiClient.post<{ profile: Profile }>("/user/register-role", data),
   updateSettings: (data: {
-    name: string;
-    role: string;
-    email: string;
+    name?: string;
+    role?: string;
+    email?: string;
     bio?: string;
     mentorTone?: string;
     notifyEmail?: boolean;
     notifyDaily?: boolean;
     notifySound?: boolean;
+    weeklyTargetDays?: number;
   }) => apiClient.post<{ profile: Profile }>("/user/update-settings", data),
 };
 
@@ -248,6 +249,22 @@ export const courseApi = {
   getLearningPaths: () => apiClient.get<any[]>("/learning-paths"),
   enrollLearningPath: (slug: string) =>
     apiClient.post<{ slug: string; enrolledCourses: number; title: string }>(`/learning-paths/${slug}/enroll`),
+  claimLearningPathCertificate: (slug: string) =>
+    apiClient.post<{ alreadyIssued: boolean; certificateId: string; verificationCode?: string; title: string }>(
+      `/learning-paths/${slug}/claim-certificate`
+    ),
+  getLmsAnalytics: () =>
+    apiClient.get<
+      Array<{
+        courseId: string;
+        title: string;
+        lessonsCount: number;
+        enrollmentsCount: number;
+        completionsCount: number;
+        quizAttemptsCount: number;
+        avgQuizScore: number;
+      }>
+    >("/lms/analytics"),
   addLesson: (
     courseId: string,
     lessonData: {
@@ -261,6 +278,13 @@ export const courseApi = {
       flashcards?: any[];
     }
   ) => apiClient.post<any>(`/courses/${courseId}/lessons`, lessonData),
+  updateLesson: (
+    courseId: string,
+    lessonId: string,
+    lessonData: { title?: string; xp?: number; estimatedMinutes?: number; contentMarkdown?: string; videoUrl?: string }
+  ) => apiClient.put<any>(`/courses/${courseId}/lessons/${lessonId}`, lessonData),
+  deleteLesson: (courseId: string, lessonId: string) =>
+    apiClient.delete<any>(`/courses/${courseId}/lessons/${lessonId}`),
 };
 
 export const aiApi = {
@@ -321,6 +345,11 @@ export const recruiterApi = {
   updateApplicationStatus: (applicationId: number, data: { status: string; hrNotes?: string; interviewAt?: string | null }) =>
     apiClient.put<any>(`/recruiter/applications/${applicationId}`, data),
   searchTalent: (q?: string) => apiClient.get<any[]>(`/recruiter/talent${q ? `?q=${encodeURIComponent(q)}` : ""}`),
+  inviteTalent: (data: { candidateId: number; jobTitle: string; message: string; companyName?: string }) =>
+    apiClient.post<{ invitationId: number; candidateName: string; companyName: string; jobTitle: string; status: string }>(
+      "/recruiter/invite-talent",
+      data
+    ),
 };
 
 export const mentorApi = {

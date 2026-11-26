@@ -107,6 +107,32 @@ export class CourseService {
     return result;
   }
 
+  static async claimLearningPathCertificate(userId: string, slug: string) {
+    const profile = await UserRepository.getFullProfile(userId);
+    const res = await CourseRepository.claimLearningPathCertificate(profile.id, profile.name, slug);
+    if (!res.alreadyIssued) {
+      await NotificationRepository.addNotification(
+        profile.id,
+        `🏆 Selamat! Sertifikat Spesialisasi '${res.title}' berhasil diterbitkan gratis ke akun Anda.`
+      );
+    }
+    return res;
+  }
+
+  static async updateLesson(userId: string, courseId: string, lessonId: string, body: any) {
+    await CourseService.assertCourseOwnership(userId, courseId);
+    return CourseRepository.updateLesson(courseId, lessonId, body || {});
+  }
+
+  static async deleteLesson(userId: string, courseId: string, lessonId: string) {
+    await CourseService.assertCourseOwnership(userId, courseId);
+    return CourseRepository.deleteLesson(courseId, lessonId);
+  }
+
+  static async getLmsAnalytics() {
+    return CourseRepository.getLmsAnalytics();
+  }
+
   static async enrollCourse(userId: string, courseId: string) {
     const profile = await UserRepository.getFullProfile(userId);
     const result = await CourseRepository.enrollCourse(profile.id, courseId);

@@ -20,7 +20,7 @@ import { LabChallenge, LabSubmissionRecord, Profile } from "../types";
 import { labApi } from "../api/apiClient";
 import { resolveCourseImage } from "../utils/resolveAsset";
 import { CopilotContextInfo } from "./MentorChatSidebar";
-import { runJsInWorker, runSqlSandboxPreview, SqlPreviewResult } from "../utils/sandboxRunner";
+import { buildFrontendPreviewHtml, runJsInWorker, runSqlSandboxPreview, SqlPreviewResult } from "../utils/sandboxRunner";
 
 interface InteractiveLabViewProps {
   profile: Profile;
@@ -62,6 +62,7 @@ export function InteractiveLabView({
   const [testResults, setTestResults] = useState<ClientTestResult[] | null>(null);
   const [sandboxLogs, setSandboxLogs] = useState<string[]>([]);
   const [sqlPreview, setSqlPreview] = useState<SqlPreviewResult | null>(null);
+  const [showLivePreview, setShowLivePreview] = useState(false);
   const [runningSandbox, setRunningSandbox] = useState(false);
   const [evaluating, setEvaluating] = useState(false);
   const [latestEvaluation, setLatestEvaluation] = useState<LabSubmissionRecord | null>(null);
@@ -467,6 +468,16 @@ export function InteractiveLabView({
                 </span>
 
                 <div className="flex items-center gap-2">
+                  {activeLab.track.toLowerCase().includes("frontend") && (
+                    <button
+                      type="button"
+                      onClick={() => setShowLivePreview((p) => !p)}
+                      className="px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-xs font-semibold text-zinc-800 dark:text-zinc-200 cursor-pointer"
+                    >
+                      {showLivePreview ? "Tutup Preview" : "Live Preview"}
+                    </button>
+                  )}
+
                   {canRunSandbox && (
                     <button
                       onClick={handleRunTests}
@@ -497,6 +508,20 @@ export function InteractiveLabView({
                 className="w-full min-h-[300px] sm:min-h-[340px] p-4 bg-zinc-950 text-zinc-100 font-mono text-xs sm:text-[13px] leading-relaxed focus:outline-none resize-y"
               />
             </div>
+
+            {showLivePreview && activeLab.track.toLowerCase().includes("frontend") && (
+              <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-hidden">
+                <div className="px-4 py-2 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950/60 text-xs font-semibold text-zinc-600 dark:text-zinc-300">
+                  Live Frontend Preview (Sandboxed Iframe)
+                </div>
+                <iframe
+                  title="Preview Hasil Frontend"
+                  sandbox="allow-scripts"
+                  srcDoc={buildFrontendPreviewHtml(code)}
+                  className="w-full h-56 bg-white border-0"
+                />
+              </div>
+            )}
 
             {/* Client Sandbox Test Runner Output */}
             {testResults && (

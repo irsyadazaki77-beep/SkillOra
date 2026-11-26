@@ -1,3 +1,4 @@
+import crypto from "crypto";
 import { db } from "../../db/index.js";
 import {
   courses,
@@ -8,6 +9,7 @@ import {
   courseEnrollments,
   learningPaths,
   learningPathCourses,
+  certificates,
 } from "../../db/schema.js";
 import { ensureSeeded } from "../db/seedData.js";
 import { eq, and, asc, desc, sql } from "drizzle-orm";
@@ -328,6 +330,15 @@ export class CourseRepository {
     const allCourses = await CourseRepository.getCourses(dbUserId, false);
     const byDbId = new Map<number, any>(allCourses.map((c: any) => [c.dbId, c]));
 
+    const userSpecCerts =
+      dbUserId > 0
+        ? await db
+            .select()
+            .from(certificates)
+            .where(and(eq(certificates.userId, dbUserId), eq(certificates.certificateType, "specialization")))
+        : [];
+    const specCertBySlug = new Map(userSpecCerts.map((c) => [c.pathSlug, c.certificateId]));
+
     return pathRows
       .map((path) => {
         const links = linkRows.filter((l) => l.pathId === path.id);
@@ -364,9 +375,197 @@ export class CourseRepository {
           progressPercent,
           firstCourseId: mappedCourses[0]?.id || "",
           allEnrolled: mappedCourses.length > 0 && mappedCourses.every((c) => c.isEnrolled),
+          specializationCertId: specCertBySlug.get(path.slug) || null,
         };
       })
       .filter((p) => p.courses.length > 0);
+  }
+
+  static async claimLearningPathCertificate(
+    dbUserId: number,
+    recipientName: string,
+    pathSlug: string
+  ) {
+    const paths = await CourseRepository.getLearningPaths(dbUserId);
+    const targetPath = paths.find((p) => p.slug === pathSlug);
+    if (!targetPath) throw new Error("Jalur karier tidak ditemukan.");
+
+    if (targetPath.progressPercent < 100) {
+      throw new Error(
+        `Selesaikan seluruh modul pada jalur '${targetPath.title}' terlebih dahulu (${targetPath.progressPercent}%/100%).`
+      );
+    }
+
+    const existing = await db
+      .select()
+      .from(certificates)
+      .where(
+        and(
+          eq(certificates.userId, dbUserId),
+          eq(certificates.pathSlug, pathSlug),
+          eq(certificates.certificateType, "specialization")
+        )
+      )
+      .limit(1);
+
+    if (existing.length > 0) {
+      return {
+        alreadyIssued: true,
+        certificateId: existing[0].certificateId,
+        title: targetPath.title,
+      };
+    }
+
+    const certId = crypto.randomBytes(12).toString("hex");
+    const verificationCode = `SKILLORA-SPEC-${pathSlug.slice(0, 6).toUpperCase()}-${crypto
+      .randomBytes(3)
+      .toString("hex")
+      .toUpperCase()}`;
+
+    await db.insert(certificates).values({
+      certificateId: certId,
+      userId: dbUserId,
+      courseId: targetPath.title,
+      certificateType: "specialization",
+      pathSlug,
+      recipientName,
+      score: 96,
+      status: "valid",
+      verificationCode,
+      metadata: {
+        type: "specialization",
+        coursesCount: targetPath.courses.length,
+        totalModules: targetPath.totalModules,
+      },
+    });
+
+    return {
+      alreadyIssued: false,
+      certificateId: certId,
+      verificationCode,
+      title: targetPath.title,
+    };
+  }
+
+  static async updateLesson(
+    courseIdStr: string,
+    lessonIdStr: string,
+    data: { title?: string; xp?: number; contentMarkdown?: string; estimatedMinutes?: number; videoUrl?: string }
+  ) {
+    const existingCourse = await db.query.courses.findFirst({
+      where: eq(courses.courseId, courseIdStr),
+    });
+    if (!existingCourse) throw new Error("Kursus tidak ditemukan.");
+
+    const existingLesson = await db.query.lessons.findFirst({
+      where: and(eq(lessons.lessonId, lessonIdStr), eq(lessons.courseId, existingCourse.id)),
+    });
+    if (!existingLesson) throw new Error("Modul tidak ditemukan di kursus ini.");
+
+    const updates: Partial<typeof lessons.$inferInsert> = {};
+    if (typeof data.title === "string" && data.title.trim()) updates.title = data.title.trim();
+    if (data.xp !== undefined) updates.xpReward = Math.max(10, Number(data.xp) || 50);
+    if (data.estimatedMinutes !== undefined) updates.estimatedMinutes = Math.max(5, Number(data.estimatedMinutes) || 15);
+    if (typeof data.contentMarkdown === "string") updates.contentMarkdown = data.contentMarkdown;
+    if (data.videoUrl !== undefined) {
+      const trimmedUrl = String(data.videoUrl || "").trim();
+      if (!trimmedUrl) {
+        updates.videoUrl = null;
+      } else {
+        const parsed = new URL(trimmedUrl);
+        if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+          throw new Error("URL video tidak valid.");
+        }
+        updates.videoUrl = trimmedUrl;
+      }
+    }
+
+    await db.update(lessons).set(updates).where(eq(lessons.id, existingLesson.id));
+
+    const full = await db.query.courses.findFirst({
+      where: eq(courses.id, existingCourse.id),
+      with: { lessons: true },
+    });
+    return mapDbCourseToFrontend(full, new Set());
+  }
+
+  static async deleteLesson(courseIdStr: string, lessonIdStr: string) {
+    const existingCourse = await db.query.courses.findFirst({
+      where: eq(courses.courseId, courseIdStr),
+    });
+    if (!existingCourse) throw new Error("Kursus tidak ditemukan.");
+
+    const existingLesson = await db.query.lessons.findFirst({
+      where: and(eq(lessons.lessonId, lessonIdStr), eq(lessons.courseId, existingCourse.id)),
+    });
+    if (!existingLesson) throw new Error("Modul tidak ditemukan.");
+
+    await db.delete(lessons).where(eq(lessons.id, existingLesson.id));
+
+    const remaining = await db
+      .select()
+      .from(lessons)
+      .where(eq(lessons.courseId, existingCourse.id))
+      .orderBy(asc(lessons.orderIndex));
+
+    for (let i = 0; i < remaining.length; i++) {
+      if (remaining[i].orderIndex !== i) {
+        await db.update(lessons).set({ orderIndex: i }).where(eq(lessons.id, remaining[i].id));
+      }
+    }
+
+    const full = await db.query.courses.findFirst({
+      where: eq(courses.id, existingCourse.id),
+      with: { lessons: true },
+    });
+    return mapDbCourseToFrontend(full, new Set());
+  }
+
+  static async getLmsAnalytics() {
+    const [allCourses, enrollRows, progressRows, quizRows] = await Promise.all([
+      db.query.courses.findMany({ with: { lessons: true }, orderBy: [desc(courses.id)] }),
+      db
+        .select({
+          courseId: courseEnrollments.courseId,
+          total: sql<number>`count(*)::int`,
+        })
+        .from(courseEnrollments)
+        .groupBy(courseEnrollments.courseId),
+      db
+        .select({
+          courseId: userProgress.courseId,
+          total: sql<number>`count(*)::int`,
+        })
+        .from(userProgress)
+        .groupBy(userProgress.courseId),
+      db
+        .select({
+          courseId: quizAttempts.courseId,
+          attempts: sql<number>`count(*)::int`,
+          avgScore: sql<number>`coalesce(round(avg(${quizAttempts.score})), 0)::int`,
+        })
+        .from(quizAttempts)
+        .groupBy(quizAttempts.courseId),
+    ]);
+
+    const enrollMap = new Map(enrollRows.map((r) => [r.courseId, Number(r.total) || 0]));
+    const progMap = new Map(progressRows.map((r) => [r.courseId, Number(r.total) || 0]));
+    const quizMap = new Map(
+      quizRows.map((r) => [r.courseId, { attempts: Number(r.attempts) || 0, avgScore: Number(r.avgScore) || 0 }])
+    );
+
+    return allCourses.map((c) => {
+      const q = quizMap.get(c.id) || { attempts: 0, avgScore: 0 };
+      return {
+        courseId: c.courseId,
+        title: c.title,
+        lessonsCount: c.lessons?.length || 0,
+        enrollmentsCount: enrollMap.get(c.id) || 0,
+        completionsCount: progMap.get(c.id) || 0,
+        quizAttemptsCount: q.attempts,
+        avgQuizScore: q.avgScore,
+      };
+    });
   }
 
   static async enrollLearningPath(dbUserId: number, pathSlug: string) {

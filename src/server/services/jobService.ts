@@ -217,4 +217,27 @@ export class JobService {
   static async searchTalent(skillFilter?: string) {
     return CareerRepository.searchVerifiedTalents(skillFilter);
   }
+
+  static async inviteTalent(
+    userId: string,
+    body: { candidateId: number; jobTitle: string; message: string; companyName?: string }
+  ) {
+    const recruiter = await UserRepository.getFullProfile(userId);
+    const candidateId = Number(body?.candidateId);
+    if (!Number.isInteger(candidateId) || candidateId <= 0) {
+      throw new Error("candidateId wajib valid.");
+    }
+    if (!body?.jobTitle?.trim() || !body?.message?.trim()) {
+      throw new Error("Judul posisi dan pesan undangan wajib diisi.");
+    }
+    return CareerRepository.inviteTalent(
+      { id: recruiter.id, name: recruiter.name },
+      candidateId,
+      {
+        jobTitle: body.jobTitle,
+        message: body.message,
+        companyName: body.companyName || recruiter.company?.name,
+      }
+    );
+  }
 }
