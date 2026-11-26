@@ -370,10 +370,22 @@ export function CourseExamRunner({
                         )}
                       </span>
                     </div>
-                    <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed">
-                      <span className="font-semibold text-zinc-800 dark:text-zinc-200">Pembahasan: </span>
-                      {item.explanation}
-                    </p>
+                    <div className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed space-y-1.5">
+                      {(() => {
+                        const parts = String(item.explanation || "")
+                          .split(" | ")
+                          .map((s) => s.trim())
+                          .filter(Boolean);
+                        return parts.map((part, pIdx) => (
+                          <p key={pIdx}>
+                            {pIdx === 0 && (
+                              <span className="font-semibold text-zinc-800 dark:text-zinc-200">Pembahasan: </span>
+                            )}
+                            {part}
+                          </p>
+                        ));
+                      })()}
+                    </div>
                     {!item.isCorrect && onOpenLesson && (
                       <button
                         type="button"

@@ -12,7 +12,27 @@ import {
   certificates,
 } from "../../db/schema.js";
 import { ensureSeeded } from "../db/seedData.js";
+import { COURSE_2026_BLUEPRINTS } from "../data/curriculum2026Upgrade.js";
 import { eq, and, asc, desc, sql } from "drizzle-orm";
+
+function splitMarkdownIntoBlocks(lessonId: string, markdown?: string | null) {
+  if (!markdown || !markdown.trim()) return [];
+  const rawSections = markdown
+    .trim()
+    .split(/\n\n(?=###\s)/g)
+    .map((s) => s.trim())
+    .filter(Boolean);
+
+  if (rawSections.length <= 1) {
+    return [{ id: `cb_${lessonId}_0`, type: "text" as const, content: markdown }];
+  }
+
+  return rawSections.map((sec, idx) => ({
+    id: `cb_${lessonId}_${idx}`,
+    type: "text" as const,
+    content: sec,
+  }));
+}
 
 function mapDbCourseToFrontend(
   dbCourse: any,
@@ -21,12 +41,13 @@ function mapDbCourseToFrontend(
   enrollmentCounts: Map<number, number> = new Map()
 ) {
   const sortedLessons = [...(dbCourse.lessons || [])].sort((a, b) => a.orderIndex - b.orderIndex);
+  const bp2026 = COURSE_2026_BLUEPRINTS[dbCourse.courseId];
 
   return {
     id: dbCourse.courseId,
     dbId: dbCourse.id,
     title: dbCourse.title,
-    description: dbCourse.description,
+    description: bp2026?.description2026 || dbCourse.description,
     category: dbCourse.category || "Teknologi & Data",
     difficulty: (dbCourse.difficulty as "Pemula" | "Menengah" | "Lanjutan") || "Pemula",
     duration: dbCourse.duration || "4 Minggu",
@@ -36,7 +57,9 @@ function mapDbCourseToFrontend(
     image: dbCourse.image || "/src/assets/images/course_tech_engineering_1794974031663.jpg",
     enrolledCount: enrollmentCounts.get(dbCourse.id) || 0,
     isEnrolled: enrolledCourseIds.has(dbCourse.id),
-    skills: Array.isArray(dbCourse.skills) ? dbCourse.skills : [],
+    skills: Array.isArray(dbCourse.skills) && dbCourse.skills.length > 0
+      ? dbCourse.skills
+      : bp2026?.skills2026 || [],
     linkedLabIds: Array.isArray(dbCourse.linkedLabIds) ? dbCourse.linkedLabIds : [],
     casePrompt: dbCourse.casePrompt || null,
     status: dbCourse.status || "published",
@@ -56,9 +79,7 @@ function mapDbCourseToFrontend(
       estimatedMinutes: les.estimatedMinutes || 15,
       videoUrl: les.videoUrl || undefined,
       notes: les.contentMarkdown || undefined,
-      contentBlocks: les.contentMarkdown
-        ? [{ id: `cb_${les.lessonId}`, type: "text" as const, content: les.contentMarkdown }]
-        : [],
+      contentBlocks: splitMarkdownIntoBlocks(les.lessonId, les.contentMarkdown),
       questions: Array.isArray(les.questionsData) ? les.questionsData : [],
       inlineChecks: Array.isArray(les.inlineChecks) ? les.inlineChecks : [],
       flashcards: Array.isArray(les.flashcards) ? les.flashcards : [],

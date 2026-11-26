@@ -192,11 +192,36 @@ export function CourseAssignmentPanel({
 
           {/* Submission Editor Right Column */}
           <form onSubmit={handleEvaluate} className="lg:col-span-7 p-5 sm:p-6 space-y-4">
-            <div className="flex items-center justify-between text-xs text-zinc-500 dark:text-zinc-400">
+            <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-zinc-500 dark:text-zinc-400">
               <label htmlFor="case-answer-textarea" className="font-semibold text-zinc-900 dark:text-white">
                 Jawaban Analisis & Rekomendasi Anda
               </label>
-              <span className="font-mono tabular-nums">{wordCount} kata</span>
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const tpl = [
+                      `## 1. Diagnosis Akar Masalah & Konteks 2026 (${casePrompt.title})`,
+                      `- Fakta & Metrik Utama: ...`,
+                      `- Analisis Akar Masalah: ...`,
+                      ``,
+                      `## 2. Solusi Konkret & Pemenuhan Deliverables`,
+                      ...casePrompt.deliverables.map((d, idx) => `${idx + 1}. ${d}\n   - Rencana Eksekusi: ...`),
+                      ``,
+                      `## 3. Target KPI Terukur & Mitigasi Risiko`,
+                      `- Target KPI 30 Hari: ...`,
+                      `- Guardrail & Mitigasi Risiko: ...`,
+                    ].join("\n");
+                    setAnswerText(tpl);
+                    showToast?.("Kerangka kerja studi kasus 2026 dimuat ke editor.", "info");
+                  }}
+                  className="text-xs font-semibold text-emerald-700 dark:text-emerald-400 hover:underline cursor-pointer whitespace-nowrap"
+                >
+                  Muat Template Kerangka 2026
+                </button>
+                <span aria-hidden="true">·</span>
+                <span className="font-mono tabular-nums">{wordCount} kata</span>
+              </div>
             </div>
 
             <textarea

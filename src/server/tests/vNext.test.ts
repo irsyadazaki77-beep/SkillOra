@@ -13,6 +13,14 @@ import { UserService } from "../services/userService.js";
 import { adminAuth } from "../../lib/firebase-admin.js";
 import { db } from "../../db/index.js";
 import { SEED_QUESTIONS_BANK } from "../db/seedData.js";
+import { defaultCourses } from "../data/coursesData.js";
+import { NEW_INDUSTRY_COURSES } from "../data/trainingExpansionData.js";
+import {
+  COURSE_2026_BLUEPRINTS,
+  CURRICULUM_2026_MARKER,
+  buildEnriched2026Markdown,
+  enrichQuestionWithOptionAnalysis,
+} from "../data/curriculum2026Upgrade.js";
 import { buildFrontendPreviewHtml, runSqlSandboxPreview } from "../../utils/sandboxRunner.js";
 
 vi.mock("../../lib/firebase-admin.js", () => ({
@@ -389,5 +397,47 @@ describe("SkillOra vNext 5-Pillar Tests", () => {
         expect(q.explanation.length).toBeGreaterThan(20);
       }
     }
+  });
+
+  it("2026 Curriculum Upgrade: covers all 16 courses with Indonesian case studies, cheat sheets, templates, and distractor explanations", () => {
+    const allCourses = [...defaultCourses, ...NEW_INDUSTRY_COURSES];
+    expect(allCourses).toHaveLength(16);
+    for (const course of allCourses) {
+      const bp = COURSE_2026_BLUEPRINTS[course.id];
+      expect(bp).toBeDefined();
+      expect(bp.description2026.length).toBeGreaterThan(40);
+      expect(bp.skills2026.length).toBeGreaterThanOrEqual(4);
+      expect(bp.caseStudy2026.length).toBeGreaterThan(40);
+      expect(bp.cheatSheet2026.length).toBeGreaterThanOrEqual(2);
+      expect(bp.commonTraps2026.length).toBeGreaterThanOrEqual(2);
+      expect(bp.workTemplate2026.length).toBeGreaterThan(40);
+      expect(bp.stepByStepGuide2026.length).toBeGreaterThanOrEqual(2);
+      expect(bp.extraFlashcards2026.length).toBeGreaterThanOrEqual(1);
+
+      const sampleLesson = course.lessons[0] as any;
+      const baseMd = sampleLesson.contentMarkdown || sampleLesson.contentBlocks?.[0]?.content || "";
+      const enrichedMd = buildEnriched2026Markdown(
+        course.id,
+        sampleLesson.title,
+        baseMd,
+        0
+      );
+      expect(enrichedMd).toContain(CURRICULUM_2026_MARKER);
+      expect(enrichedMd).toContain("### Cheat Sheet, Rumus Cepat & Jebakan Soal Umum");
+      expect(enrichedMd).toContain("### Template Kerja Siap Pakai & Panduan Praktik");
+      expect(enrichedMd).toContain("```");
+    }
+
+    const enrichedQ = enrichQuestionWithOptionAnalysis(
+      {
+        q: "Manakah praktik terbaik?",
+        options: ["Opsi A salah", "Opsi B benar", "Opsi C salah", "Opsi D salah"],
+        answerIndex: 1,
+        explanation: "Penjelasan dasar.",
+      },
+      "react-tokopedia"
+    );
+    expect(enrichedQ.explanation).toContain('Mengapa Opsi B ("Opsi B benar") Tepat:');
+    expect(enrichedQ.explanation).toContain("Bedah Opsi Pengecoh:");
   });
 });

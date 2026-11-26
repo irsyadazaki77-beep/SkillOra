@@ -2285,6 +2285,11 @@ Buat rekomendasi kebijakan pelayanan publik yang mencakup:
   },
 ];
 
+import {
+  COURSE_2026_BLUEPRINTS,
+  enrichQuestionWithOptionAnalysis,
+} from "./curriculum2026Upgrade.ts";
+
 /**
  * Generates guaranteed inline knowledge checks and flashcards for any lesson
  * (combines custom lesson definitions with intelligent derivation from lesson questions & skills
@@ -2296,7 +2301,7 @@ export function buildEnrichedLessonAssets(
   lesson: any,
   lessonIdx: number
 ): { inlineChecks: ExpandedInlineCheck[]; flashcards: ExpandedFlashcard[] } {
-  const inlineChecks: ExpandedInlineCheck[] = Array.isArray(lesson.inlineChecks)
+  const rawInlineChecks: ExpandedInlineCheck[] = Array.isArray(lesson.inlineChecks)
     ? [...lesson.inlineChecks]
     : [];
   const flashcards: ExpandedFlashcard[] = Array.isArray(lesson.flashcards)
@@ -2307,9 +2312,9 @@ export function buildEnrichedLessonAssets(
   const primarySkill = courseSkills?.[lessonIdx % Math.max(1, courseSkills.length)] || "Konsep Inti";
 
   // Ensure at least 1-2 inline knowledge checks per lesson derived cleanly from real questions
-  if (inlineChecks.length === 0 && questions.length > 0) {
+  if (rawInlineChecks.length === 0 && questions.length > 0) {
     const qFirst = questions[0];
-    inlineChecks.push({
+    rawInlineChecks.push({
       id: `ic_${lesson.id}_1`,
       afterParagraph: 1,
       question: qFirst.text,
@@ -2320,7 +2325,7 @@ export function buildEnrichedLessonAssets(
     });
     if (questions.length >= 3) {
       const qMid = questions[2];
-      inlineChecks.push({
+      rawInlineChecks.push({
         id: `ic_${lesson.id}_2`,
         afterParagraph: 3,
         question: qMid.text,
@@ -2332,14 +2337,18 @@ export function buildEnrichedLessonAssets(
     }
   }
 
-  // Ensure at least 3 high-signal flashcards per lesson
+  const inlineChecks = rawInlineChecks.map((chk) =>
+    enrichQuestionWithOptionAnalysis(chk, chk.competencyTag || primarySkill)
+  );
+
+  // Ensure at least 3-4 high-signal flashcards per lesson including 2026 flashcards
+  const bp2026 = COURSE_2026_BLUEPRINTS[courseId];
   if (flashcards.length === 0) {
     const enrichment = COURSE_ENRICHMENTS[courseId];
     if (lessonIdx === 0 && enrichment?.customFlashcards?.length) {
       flashcards.push(...enrichment.customFlashcards.slice(0, 3));
     }
 
-    // Derive additional conceptual flashcards from lesson questions so every lesson has its own cards
     const needed = Math.max(0, 3 - flashcards.length);
     for (let i = 0; i < Math.min(questions.length, needed + 1); i++) {
       const q = questions[i];
@@ -2353,6 +2362,18 @@ export function buildEnrichedLessonAssets(
           back: `${correctAnswer}\n\nAlasan: ${q.explanation}`,
           hint: q.hint || `Fokus pada kompetensi ${q.competencyTag || primarySkill}.`,
           competencyTag: q.competencyTag || primarySkill,
+        });
+      }
+    }
+  }
+
+  if (bp2026?.extraFlashcards2026?.length) {
+    for (const fc of bp2026.extraFlashcards2026) {
+      const scopedId = `${fc.id}_${lesson.id}`;
+      if (!flashcards.some((existing) => existing.id === scopedId || existing.front === fc.front)) {
+        flashcards.push({
+          ...fc,
+          id: scopedId,
         });
       }
     }

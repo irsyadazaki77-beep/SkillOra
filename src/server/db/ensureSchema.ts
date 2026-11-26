@@ -17,31 +17,10 @@ export async function ensureSchema(): Promise<void> {
 
 async function runEnsureSchema(): Promise<void> {
   try {
-    const checkRes = await pool.query(`
-      SELECT
-        (SELECT count(*)::int FROM information_schema.tables
-         WHERE table_schema = 'public'
-           AND table_name IN (
-             'learning_paths', 'learning_path_courses', 'course_enrollments', 'peer_reviews',
-             'course_exams', 'flashcard_progress', 'training_assignments', 'simulation_attempts',
-             'talent_invitations', 'wallet_ledger'
-           )) AS table_cnt,
-        (SELECT count(*)::int FROM information_schema.columns
-         WHERE table_schema = 'public'
-           AND (
-             (table_name = 'users' AND column_name = 'portfolio_slug') OR
-             (table_name = 'users' AND column_name = 'weekly_target_days') OR
-             (table_name = 'courses' AND column_name = 'linked_lab_ids') OR
-             (table_name = 'lessons' AND column_name = 'flashcards') OR
-             (table_name = 'certificates' AND column_name = 'certificate_type')
-           )) AS col_cnt
-    `);
-    const row = checkRes.rows?.[0];
-    if (Number(row?.table_cnt) >= 10 && Number(row?.col_cnt) >= 5) {
-      return;
-    }
+    await pool.query(`SELECT 1 FROM "learning_paths" LIMIT 0`);
+    return;
   } catch {
-    // Proceed to fallback DDL statements if metadata query fails
+    // Proceed to fallback DDL statements only if tables are not yet created
   }
 
   const statements = [

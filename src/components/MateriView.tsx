@@ -127,9 +127,46 @@ function InlineKnowledgeCheckCard({
       </div>
 
       {answered && (
-        <div className="pt-2 border-t border-zinc-200 dark:border-zinc-800 text-xs text-zinc-700 dark:text-zinc-300 leading-relaxed">
-          <span className="font-semibold text-zinc-950 dark:text-white">Pembahasan: </span>
-          {check.explanation}
+        <div className="pt-2.5 border-t border-zinc-200 dark:border-zinc-800 space-y-2 text-xs text-zinc-700 dark:text-zinc-300 leading-relaxed">
+          {(() => {
+            const parts = String(check.explanation || "")
+              .split(" | ")
+              .map((s) => s.trim())
+              .filter(Boolean);
+            const mainExp = parts[0] || check.explanation;
+            const correctReason = parts.find((p) => p.startsWith("Mengapa Opsi"));
+            const distractorReason = parts.find((p) => p.startsWith("Bedah Opsi Pengecoh:"));
+            const correctLetter = String.fromCharCode(65 + check.answerIndex);
+
+            return (
+              <>
+                <div>
+                  <span className="font-semibold text-zinc-950 dark:text-white">Inti Pembahasan: </span>
+                  {mainExp}
+                </div>
+                <div className="p-2.5 rounded-lg bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-200/70 dark:border-emerald-900/60 text-emerald-950 dark:text-emerald-200">
+                  <span className="font-semibold">Mengapa Opsi {correctLetter} Tepat: </span>
+                  {correctReason
+                    ? correctReason.replace(/^Mengapa Opsi [^:]+:\s*/, "")
+                    : `Pilihan ${correctLetter} ("${check.options[check.answerIndex]}") paling memenuhi kaidah ${check.competencyTag || "kompetensi materi ini"}.`}
+                </div>
+                <div className="p-2.5 rounded-lg bg-amber-50/70 dark:bg-amber-950/30 border border-amber-200/70 dark:border-amber-900/60 text-amber-950 dark:text-amber-200">
+                  <span className="font-semibold">Bedah Opsi Pengecoh: </span>
+                  {distractorReason
+                    ? distractorReason.replace(/^Bedah Opsi Pengecoh:\s*/, "")
+                    : check.options
+                        .map((opt, idx) =>
+                          idx !== check.answerIndex
+                            ? `Opsi ${String.fromCharCode(65 + idx)} ("${opt}") kurang tepat karena tidak menyelesaikan inti permasalahan pada soal.`
+                            : null
+                        )
+                        .filter(Boolean)
+                        .slice(0, 2)
+                        .join(" ")}
+                </div>
+              </>
+            );
+          })()}
         </div>
       )}
     </div>
@@ -324,6 +361,10 @@ export function MateriView({
 
   // Inline Knowledge Checks state per lesson
   const [inlineAnswers, setInlineAnswers] = useState<Record<string, number>>({});
+  const [activeSectionFilter, setActiveSectionFilter] = useState<
+    "all" | "case2026" | "cheatsheet" | "template" | "checks"
+  >("all");
+  const [copiedTemplate, setCopiedTemplate] = useState(false);
 
   const modules = useMemo(() => (course ? getStructuredModules(course) : []), [course]);
   const progressInfo = useMemo(() => (course ? getCourseProgress(course) : null), [course]);
@@ -332,6 +373,8 @@ export function MateriView({
   useEffect(() => {
     if (!course || !lesson) return;
     setInlineAnswers({});
+    setActiveSectionFilter("all");
+    setCopiedTemplate(false);
 
     if (profile?.bookmarkedLessons) {
       setIsBookmarked(profile.bookmarkedLessons.includes(lesson.id));
@@ -692,38 +735,149 @@ export function MateriView({
               </div>
             )}
 
+            {/* 2026 Practical Quick Section Filter & 1-Click Template Copy Bar */}
+            {(() => {
+              const allText = contentBlocks.map((b) => b.content).join("\n\n");
+              const codeFenceMatch = allText.match(/```[a-zA-Z0-9_-]*\n([\s\S]*?)```/);
+              const extractedTemplate = codeFenceMatch ? codeFenceMatch[1].trim() : "";
+
+              return (
+                <div className="flex flex-wrap items-center justify-between gap-2 p-2.5 rounded-xl bg-zinc-50 dark:bg-zinc-950/60 border border-zinc-200 dark:border-zinc-800">
+                  <div className="flex flex-wrap items-center gap-1">
+                    {(
+                      [
+                        { id: "all", label: "Semua Bagian" },
+                        { id: "case2026", label: "Studi Kasus 2026" },
+                        { id: "cheatsheet", label: "Cheat Sheet & Jebakan" },
+                        { id: "template", label: "Template Kerja" },
+                        { id: "checks", label: `Cek Paham (${inlineChecks.length})` },
+                      ] as const
+                    ).map((tab) => (
+                      <button
+                        key={tab.id}
+                        type="button"
+                        onClick={() => setActiveSectionFilter(tab.id)}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer whitespace-nowrap shrink-0 ${
+                          activeSectionFilter === tab.id
+                            ? "bg-white dark:bg-zinc-900 text-emerald-700 dark:text-emerald-400 shadow-xs border border-zinc-200/80 dark:border-zinc-800"
+                            : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-950 dark:hover:text-white"
+                        }`}
+                      >
+                        {tab.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  {extractedTemplate && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard.writeText(extractedTemplate);
+                        setCopiedTemplate(true);
+                        showToast?.("Template kerja 2026 disalin ke clipboard.", "success");
+                        setTimeout(() => setCopiedTemplate(false), 2000);
+                      }}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 hover:border-emerald-500/60 text-xs font-semibold text-zinc-800 dark:text-zinc-200 transition-colors cursor-pointer whitespace-nowrap shrink-0"
+                    >
+                      {copiedTemplate ? (
+                        <>
+                          <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                          <span className="text-emerald-700 dark:text-emerald-400">Template Tersalin</span>
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                          <span>Salin Template Kerja</span>
+                        </>
+                      )}
+                    </button>
+                  )}
+                </div>
+              );
+            })()}
+
             {/* Reading Body with Interleaved Inline Knowledge Checks */}
             <div className="max-w-[72ch] space-y-4">
               <p className="text-sm text-zinc-600 dark:text-zinc-300 leading-relaxed">
                 Panduan terstruktur dan studi kasus praktis mengenai{" "}
-                <strong className="font-semibold text-zinc-950 dark:text-white">{lesson.title}</strong> dalam standar kurikulum {course.partner}.
+                <strong className="font-semibold text-zinc-950 dark:text-white">{lesson.title}</strong> dalam standar kurikulum {course.partner} · Edisi Industri & Seleksi 2026.
               </p>
 
-              {lesson.videoUrl && (
+              {lesson.videoUrl && activeSectionFilter === "all" && (
                 <LessonVideoPlayer videoUrl={lesson.videoUrl} title={lesson.title} />
               )}
 
-              {contentBlocks.length > 0 ? (
-                contentBlocks.map((block, bIdx) => (
-                  <React.Fragment key={block.id}>
-                    <div>
-                      {block.type === "text" && <MarkdownRenderer content={block.content} />}
-                      {block.type === "code" && (
-                        <CodeBlock code={block.content} language={block.language || "code"} />
-                      )}
-                    </div>
-
-                    {/* Interleave first inline knowledge check mid-article */}
-                    {bIdx === firstCheckAfterBlock && inlineChecks[0] && (
+              {activeSectionFilter === "checks" ? (
+                <div className="space-y-4">
+                  {inlineChecks.length === 0 ? (
+                    <p className="text-xs text-zinc-500">Belum ada kartu cek paham pada sesi ini.</p>
+                  ) : (
+                    inlineChecks.map((chk, idx) => (
                       <InlineKnowledgeCheckCard
-                        check={inlineChecks[0]}
-                        index={0}
-                        selectedOption={inlineAnswers[inlineChecks[0].id]}
-                        onSelect={(optIdx) => handleSelectInlineCheck(inlineChecks[0], optIdx)}
+                        key={chk.id}
+                        check={chk}
+                        index={idx}
+                        selectedOption={inlineAnswers[chk.id]}
+                        onSelect={(optIdx) => handleSelectInlineCheck(chk, optIdx)}
                       />
-                    )}
-                  </React.Fragment>
-                ))
+                    ))
+                  )}
+                </div>
+              ) : contentBlocks.length > 0 ? (
+                (() => {
+                  const visibleBlocks = contentBlocks.filter((block) => {
+                    if (activeSectionFilter === "all") return true;
+                    const text = block.content || "";
+                    if (activeSectionFilter === "case2026") {
+                      return /Studi Kasus|2026|Konteks/i.test(text);
+                    }
+                    if (activeSectionFilter === "cheatsheet") {
+                      return /Cheat Sheet|Rumus Cepat|Jebakan/i.test(text);
+                    }
+                    if (activeSectionFilter === "template") {
+                      return /Template Kerja|Panduan Praktik|```/i.test(text);
+                    }
+                    return true;
+                  });
+                  const blocksToRender = visibleBlocks.length > 0 ? visibleBlocks : contentBlocks;
+
+                  return (
+                    <>
+                      {blocksToRender.map((block, bIdx) => (
+                        <React.Fragment key={block.id}>
+                          <div>
+                            {block.type === "text" && <MarkdownRenderer content={block.content} />}
+                            {block.type === "code" && (
+                              <CodeBlock code={block.content} language={block.language || "code"} />
+                            )}
+                          </div>
+
+                          {/* Interleave first inline knowledge check mid-article when viewing all */}
+                          {activeSectionFilter === "all" && bIdx === firstCheckAfterBlock && inlineChecks[0] && (
+                            <InlineKnowledgeCheckCard
+                              check={inlineChecks[0]}
+                              index={0}
+                              selectedOption={inlineAnswers[inlineChecks[0].id]}
+                              onSelect={(optIdx) => handleSelectInlineCheck(inlineChecks[0], optIdx)}
+                            />
+                          )}
+                        </React.Fragment>
+                      ))}
+
+                      {/* Remaining inline knowledge checks at end of reading */}
+                      {activeSectionFilter === "all" &&
+                        inlineChecks.slice(1).map((chk, idx) => (
+                          <InlineKnowledgeCheckCard
+                            key={chk.id}
+                            check={chk}
+                            index={idx + 1}
+                            selectedOption={inlineAnswers[chk.id]}
+                            onSelect={(optIdx) => handleSelectInlineCheck(chk, optIdx)}
+                          />
+                        ))}
+                    </>
+                  );
+                })()
               ) : (
                 <>
                   <p className="text-sm text-zinc-600 dark:text-zinc-300 leading-relaxed">
@@ -739,17 +893,6 @@ export function MateriView({
                   )}
                 </>
               )}
-
-              {/* Remaining inline knowledge checks at end of reading */}
-              {inlineChecks.slice(1).map((chk, idx) => (
-                <InlineKnowledgeCheckCard
-                  key={chk.id}
-                  check={chk}
-                  index={idx + 1}
-                  selectedOption={inlineAnswers[chk.id]}
-                  onSelect={(optIdx) => handleSelectInlineCheck(chk, optIdx)}
-                />
-              ))}
 
               {lesson.transcript && (
                 <div className="p-4 rounded-xl bg-zinc-50 dark:bg-zinc-950/60 border border-zinc-200 dark:border-zinc-800 space-y-1.5 mt-4">

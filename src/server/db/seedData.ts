@@ -25,7 +25,13 @@ import {
   NEW_INTERACTIVE_LABS,
   buildEnrichedLessonAssets,
 } from "../data/trainingExpansionData.ts";
-import { count, eq } from "drizzle-orm";
+import {
+  COURSE_2026_BLUEPRINTS,
+  CURRICULUM_2026_MARKER,
+  buildEnriched2026Markdown,
+  enrichQuestionWithOptionAnalysis,
+} from "../data/curriculum2026Upgrade.ts";
+import { count, eq, like } from "drizzle-orm";
 import { ensureSchema } from "./ensureSchema.ts";
 
 let seedPromise: Promise<void> | null = null;
@@ -441,33 +447,52 @@ function mapCourseImage(courseId: string): string {
 
 export async function ensureSeeded(): Promise<void> {
   if (seedPromise) return seedPromise;
-  seedPromise = runSeed().catch((err) => {
-    seedPromise = null;
-    console.error("Seed error:", err);
-  });
+  seedPromise = (async () => {
+    for (let attempt = 1; attempt <= 2; attempt++) {
+      try {
+        await runSeed();
+        return;
+      } catch (err: any) {
+        if (attempt === 2) {
+          seedPromise = null;
+          console.warn("Seed sync notice:", err?.message || "Skipped during transient reconnect");
+          return;
+        }
+        await new Promise((r) => setTimeout(r, 250));
+      }
+    }
+  })();
   return seedPromise;
 }
 
 async function runSeed() {
   await ensureSchema();
-  // 1. Idempotent Upsert of All 16 Enriched Training Courses, Lessons, Inline Checks & Flashcards
+  // 1. Idempotent Upsert of All 16 Enriched Training Courses, Lessons, Inline Checks & Flashcards (2026 Edition)
   const allSeedCourses: any[] = [...defaultCourses, ...NEW_INDUSTRY_COURSES];
   const [{ value: existingCoursesCount }] = await db.select({ value: count() }).from(courses);
-  const [{ value: existingLessonsCount }] = await db.select({ value: count() }).from(lessons);
+  const [{ value: enriched2026LessonsCount }] = await db
+    .select({ value: count() })
+    .from(lessons)
+    .where(like(lessons.contentMarkdown, `%${CURRICULUM_2026_MARKER}%`));
 
-  if (Number(existingCoursesCount) < allSeedCourses.length || Number(existingLessonsCount) < 46) {
+  if (Number(existingCoursesCount) < allSeedCourses.length || Number(enriched2026LessonsCount) < 46) {
     for (const item of allSeedCourses) {
       const enrichment = COURSE_ENRICHMENTS[item.id];
+      const bp2026 = COURSE_2026_BLUEPRINTS[item.id];
       const resolvedImage = enrichment?.image || (item as any).image || mapCourseImage(item.id);
       const resolvedLabs = enrichment?.linkedLabIds || (item as any).linkedLabIds || [];
       const resolvedCasePrompt = enrichment?.casePrompt || (item as any).casePrompt || null;
+      const resolvedDescription = bp2026?.description2026 || (item as any).description || item.title;
+      const resolvedSkills = Array.from(
+        new Set([...(item.skills || []), ...(bp2026?.skills2026 || [])])
+      );
 
       const [upsertedCourse] = await db
         .insert(courses)
         .values({
           courseId: item.id,
           title: item.title,
-          description: (item as any).description || item.title,
+          description: resolvedDescription,
           category: (item as any).category || "Teknologi & Data",
           difficulty: item.difficulty,
           duration: item.duration,
@@ -475,7 +500,7 @@ async function runSeed() {
           partner: item.partner,
           logo: item.logo || "🎓",
           image: resolvedImage,
-          skills: item.skills || [],
+          skills: resolvedSkills,
           projectTitle: item.project?.title || "Proyek Portofolio Akhir",
           projectDescription: item.project?.description || "Selesaikan proyek industri terverifikasi.",
           projectRubric: item.project?.rubric || "Kualitas arsitektur, kebersihan kode, dan pemenuhan studi kasus.",
@@ -487,8 +512,9 @@ async function runSeed() {
         .onConflictDoUpdate({
           target: courses.courseId,
           set: {
+            description: resolvedDescription,
             image: resolvedImage,
-            skills: item.skills || [],
+            skills: resolvedSkills,
             linkedLabIds: resolvedLabs,
             casePrompt: resolvedCasePrompt,
             projectTitle: item.project?.title || "Proyek Portofolio Akhir",
@@ -508,17 +534,24 @@ async function runSeed() {
 
       let idx = 0;
       for (const les of combinedLessons) {
-        const mdContent =
+        const baseMdContent =
           typeof les.contentMarkdown === "string" && les.contentMarkdown.trim()
             ? les.contentMarkdown
             : Array.isArray((les as any).contentBlocks)
               ? (les as any).contentBlocks.map((b: any) => b.content).join("\n\n")
               : (les as any).notes || `Materi pembelajaran terstruktur untuk ${les.title}.`;
 
+        const mdContent = buildEnriched2026Markdown(item.id, les.title, baseMdContent, idx);
+
+        const rawQuestions: any[] = Array.isArray(les.questions) ? les.questions : [];
+        const enrichedQuestions = rawQuestions.map((q) =>
+          enrichQuestionWithOptionAnalysis(q, q?.competencyTag || resolvedSkills[0] || "Kompetensi Inti")
+        );
+
         const { inlineChecks, flashcards } = buildEnrichedLessonAssets(
           item.id,
-          item.skills || [],
-          les,
+          resolvedSkills,
+          { ...les, questions: enrichedQuestions },
           idx
         );
 
@@ -532,8 +565,8 @@ async function runSeed() {
             orderIndex: idx,
             xpReward: les.xp || 120,
             contentMarkdown: mdContent,
-            estimatedMinutes: (les as any).estimatedMinutes || 18,
-            questionsData: les.questions || [],
+            estimatedMinutes: (les as any).estimatedMinutes || 20,
+            questionsData: enrichedQuestions,
             inlineChecks,
             flashcards,
           })
@@ -542,8 +575,8 @@ async function runSeed() {
             set: {
               orderIndex: idx,
               contentMarkdown: mdContent,
-              estimatedMinutes: (les as any).estimatedMinutes || 18,
-              questionsData: les.questions || [],
+              estimatedMinutes: (les as any).estimatedMinutes || 20,
+              questionsData: enrichedQuestions,
               inlineChecks,
               flashcards,
             },
@@ -686,12 +719,26 @@ async function runSeed() {
       .onConflictDoNothing();
   }
 
-  // 3. Idempotent Seed of Curated Relevant Questions Bank (30 soal across 5 tracks)
-  const existingQRows = await db.select({ prompt: questionsBank.prompt }).from(questionsBank);
-  const existingPrompts = new Set(existingQRows.map((r) => r.prompt));
-  const missingQuestions = SEED_QUESTIONS_BANK.filter((q) => !existingPrompts.has(q.prompt));
+  // 3. Idempotent Seed & 2026 Option-Analysis Upgrade of Curated Questions Bank (30 soal across 5 tracks)
+  const existingQRows = await db
+    .select({ id: questionsBank.id, prompt: questionsBank.prompt, explanation: questionsBank.explanation })
+    .from(questionsBank);
+  const existingByPrompt = new Map(existingQRows.map((r) => [r.prompt, r]));
+  const enrichedSeedBank = SEED_QUESTIONS_BANK.map((q) =>
+    enrichQuestionWithOptionAnalysis(q, q.competencyTag || q.category)
+  );
+  const missingQuestions = enrichedSeedBank.filter((q) => !existingByPrompt.has(q.prompt));
   if (missingQuestions.length > 0) {
     await db.insert(questionsBank).values(missingQuestions);
+  }
+  for (const q of enrichedSeedBank) {
+    const existing = existingByPrompt.get(q.prompt);
+    if (existing && !String(existing.explanation || "").includes("Bedah Opsi Pengecoh:")) {
+      await db
+        .update(questionsBank)
+        .set({ explanation: q.explanation })
+        .where(eq(questionsBank.id, existing.id));
+    }
   }
 
   // 4. Seed Forum Posts & Replies

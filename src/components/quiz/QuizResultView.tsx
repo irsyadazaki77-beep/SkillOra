@@ -136,9 +136,21 @@ export function QuizResultView({
                 )}
 
                 {item.explanation && (
-                  <p className="text-xs text-slate-600 dark:text-slate-300 pl-6 pt-1 leading-relaxed bg-white/60 dark:bg-black/30 p-2 rounded-xl border border-current/10">
-                    💡 <strong>Pembahasan:</strong> {item.explanation}
-                  </p>
+                  <div className="text-xs text-slate-600 dark:text-slate-300 pl-6 pt-1 leading-relaxed bg-white/60 dark:bg-black/30 p-2.5 rounded-xl border border-current/10 space-y-1">
+                    {String(item.explanation)
+                      .split(" | ")
+                      .map((part, pIdx) => (
+                        <p key={pIdx}>
+                          {pIdx === 0 ? (
+                            <>
+                              <strong>Pembahasan:</strong> {part}
+                            </>
+                          ) : (
+                            part
+                          )}
+                        </p>
+                      ))}
+                  </div>
                 )}
               </div>
             ))}
