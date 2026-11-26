@@ -26,6 +26,7 @@ import {
   buildEnrichedLessonAssets,
 } from "../data/trainingExpansionData.ts";
 import { count, eq } from "drizzle-orm";
+import { ensureSchema } from "./ensureSchema.ts";
 
 let seedPromise: Promise<void> | null = null;
 
@@ -46,101 +47,107 @@ export async function ensureSeeded(): Promise<void> {
 }
 
 async function runSeed() {
+  await ensureSchema();
   // 1. Idempotent Upsert of All 16 Enriched Training Courses, Lessons, Inline Checks & Flashcards
   const allSeedCourses: any[] = [...defaultCourses, ...NEW_INDUSTRY_COURSES];
-  for (const item of allSeedCourses) {
-    const enrichment = COURSE_ENRICHMENTS[item.id];
-    const resolvedImage = enrichment?.image || (item as any).image || mapCourseImage(item.id);
-    const resolvedLabs = enrichment?.linkedLabIds || (item as any).linkedLabIds || [];
-    const resolvedCasePrompt = enrichment?.casePrompt || (item as any).casePrompt || null;
+  const [{ value: existingCoursesCount }] = await db.select({ value: count() }).from(courses);
+  const [{ value: existingLessonsCount }] = await db.select({ value: count() }).from(lessons);
 
-    const [upsertedCourse] = await db
-      .insert(courses)
-      .values({
-        courseId: item.id,
-        title: item.title,
-        description: (item as any).description || item.title,
-        category: (item as any).category || "Teknologi & Data",
-        difficulty: item.difficulty,
-        duration: item.duration,
-        xpReward: item.xpReward,
-        partner: item.partner,
-        logo: item.logo || "🎓",
-        image: resolvedImage,
-        skills: item.skills || [],
-        projectTitle: item.project?.title || "Proyek Portofolio Akhir",
-        projectDescription: item.project?.description || "Selesaikan proyek industri terverifikasi.",
-        projectRubric: item.project?.rubric || "Kualitas arsitektur, kebersihan kode, dan pemenuhan studi kasus.",
-        linkedLabIds: resolvedLabs,
-        casePrompt: resolvedCasePrompt,
-        status: "published",
-        isProOnly: false,
-      })
-      .onConflictDoUpdate({
-        target: courses.courseId,
-        set: {
+  if (Number(existingCoursesCount) < allSeedCourses.length || Number(existingLessonsCount) < 46) {
+    for (const item of allSeedCourses) {
+      const enrichment = COURSE_ENRICHMENTS[item.id];
+      const resolvedImage = enrichment?.image || (item as any).image || mapCourseImage(item.id);
+      const resolvedLabs = enrichment?.linkedLabIds || (item as any).linkedLabIds || [];
+      const resolvedCasePrompt = enrichment?.casePrompt || (item as any).casePrompt || null;
+
+      const [upsertedCourse] = await db
+        .insert(courses)
+        .values({
+          courseId: item.id,
+          title: item.title,
+          description: (item as any).description || item.title,
+          category: (item as any).category || "Teknologi & Data",
+          difficulty: item.difficulty,
+          duration: item.duration,
+          xpReward: item.xpReward,
+          partner: item.partner,
+          logo: item.logo || "🎓",
           image: resolvedImage,
           skills: item.skills || [],
-          linkedLabIds: resolvedLabs,
-          casePrompt: resolvedCasePrompt,
           projectTitle: item.project?.title || "Proyek Portofolio Akhir",
           projectDescription: item.project?.description || "Selesaikan proyek industri terverifikasi.",
           projectRubric: item.project?.rubric || "Kualitas arsitektur, kebersihan kode, dan pemenuhan studi kasus.",
-        },
-      })
-      .returning();
-
-    const targetCourseId = upsertedCourse?.id;
-    if (!targetCourseId) continue;
-
-    const combinedLessons: any[] = [
-      ...(Array.isArray(item.lessons) ? item.lessons : []),
-      ...(Array.isArray(enrichment?.extraLessons) ? enrichment.extraLessons : []),
-    ];
-
-    let idx = 0;
-    for (const les of combinedLessons) {
-      const mdContent =
-        typeof les.contentMarkdown === "string" && les.contentMarkdown.trim()
-          ? les.contentMarkdown
-          : Array.isArray((les as any).contentBlocks)
-            ? (les as any).contentBlocks.map((b: any) => b.content).join("\n\n")
-            : (les as any).notes || `Materi pembelajaran terstruktur untuk ${les.title}.`;
-
-      const { inlineChecks, flashcards } = buildEnrichedLessonAssets(
-        item.id,
-        item.skills || [],
-        les,
-        idx
-      );
-
-      await db
-        .insert(lessons)
-        .values({
-          lessonId: les.id,
-          courseId: targetCourseId,
-          title: les.title,
-          type: "quiz",
-          orderIndex: idx,
-          xpReward: les.xp || 120,
-          contentMarkdown: mdContent,
-          estimatedMinutes: (les as any).estimatedMinutes || 18,
-          questionsData: les.questions || [],
-          inlineChecks,
-          flashcards,
+          linkedLabIds: resolvedLabs,
+          casePrompt: resolvedCasePrompt,
+          status: "published",
+          isProOnly: false,
         })
         .onConflictDoUpdate({
-          target: lessons.lessonId,
+          target: courses.courseId,
           set: {
+            image: resolvedImage,
+            skills: item.skills || [],
+            linkedLabIds: resolvedLabs,
+            casePrompt: resolvedCasePrompt,
+            projectTitle: item.project?.title || "Proyek Portofolio Akhir",
+            projectDescription: item.project?.description || "Selesaikan proyek industri terverifikasi.",
+            projectRubric: item.project?.rubric || "Kualitas arsitektur, kebersihan kode, dan pemenuhan studi kasus.",
+          },
+        })
+        .returning();
+
+      const targetCourseId = upsertedCourse?.id;
+      if (!targetCourseId) continue;
+
+      const combinedLessons: any[] = [
+        ...(Array.isArray(item.lessons) ? item.lessons : []),
+        ...(Array.isArray(enrichment?.extraLessons) ? enrichment.extraLessons : []),
+      ];
+
+      let idx = 0;
+      for (const les of combinedLessons) {
+        const mdContent =
+          typeof les.contentMarkdown === "string" && les.contentMarkdown.trim()
+            ? les.contentMarkdown
+            : Array.isArray((les as any).contentBlocks)
+              ? (les as any).contentBlocks.map((b: any) => b.content).join("\n\n")
+              : (les as any).notes || `Materi pembelajaran terstruktur untuk ${les.title}.`;
+
+        const { inlineChecks, flashcards } = buildEnrichedLessonAssets(
+          item.id,
+          item.skills || [],
+          les,
+          idx
+        );
+
+        await db
+          .insert(lessons)
+          .values({
+            lessonId: les.id,
+            courseId: targetCourseId,
+            title: les.title,
+            type: "quiz",
             orderIndex: idx,
+            xpReward: les.xp || 120,
             contentMarkdown: mdContent,
             estimatedMinutes: (les as any).estimatedMinutes || 18,
             questionsData: les.questions || [],
             inlineChecks,
             flashcards,
-          },
-        });
-      idx++;
+          })
+          .onConflictDoUpdate({
+            target: lessons.lessonId,
+            set: {
+              orderIndex: idx,
+              contentMarkdown: mdContent,
+              estimatedMinutes: (les as any).estimatedMinutes || 18,
+              questionsData: les.questions || [],
+              inlineChecks,
+              flashcards,
+            },
+          });
+        idx++;
+      }
     }
   }
 

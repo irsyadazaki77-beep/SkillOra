@@ -16,6 +16,31 @@ export async function ensureSchema(): Promise<void> {
 }
 
 async function runEnsureSchema(): Promise<void> {
+  try {
+    const checkRes = await pool.query(`
+      SELECT
+        (SELECT count(*)::int FROM information_schema.tables
+         WHERE table_schema = 'public'
+           AND table_name IN (
+             'learning_paths', 'learning_path_courses', 'course_enrollments', 'peer_reviews',
+             'course_exams', 'flashcard_progress', 'training_assignments', 'simulation_attempts'
+           )) AS table_cnt,
+        (SELECT count(*)::int FROM information_schema.columns
+         WHERE table_schema = 'public'
+           AND (
+             (table_name = 'users' AND column_name = 'portfolio_slug') OR
+             (table_name = 'courses' AND column_name = 'linked_lab_ids') OR
+             (table_name = 'lessons' AND column_name = 'flashcards')
+           )) AS col_cnt
+    `);
+    const row = checkRes.rows?.[0];
+    if (Number(row?.table_cnt) >= 8 && Number(row?.col_cnt) >= 3) {
+      return;
+    }
+  } catch {
+    // Proceed to fallback DDL statements if metadata query fails
+  }
+
   const statements = [
     `CREATE TABLE IF NOT EXISTS "companies" (
       "id" serial PRIMARY KEY,
@@ -292,9 +317,9 @@ async function runEnsureSchema(): Promise<void> {
     try {
       await pool.query(sql);
     } catch (err: any) {
-      // Ignore if table in ALTER doesn't exist yet (e.g., before drizzle-kit push)
-      if (err?.code !== "42P01") {
-        throw err;
+      // Ignore if table in ALTER doesn't exist yet (42P01) or constraint already exists (42710)
+      if (err?.code !== "42P01" && err?.code !== "42710") {
+        console.warn("Schema statement warning:", err?.message || err);
       }
     }
   }

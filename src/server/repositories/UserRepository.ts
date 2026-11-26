@@ -19,70 +19,99 @@ import { NotificationRepository } from "./NotificationRepository.js";
 import { safeParse } from "../../utils/safeJson.js";
 import { ensureSchema } from "../db/ensureSchema.js";
 
+const inflightUsers = new Map<string, Promise<any>>();
+
 export class UserRepository {
   static async getOrCreateUser(uid: string, email: string = "user@skillora.app", name: string = "Siswa") {
-    await ensureSchema();
-    let userRow = await db.query.users.findFirst({
-      where: eq(users.uid, uid),
-    });
-
-    if (!userRow) {
-      const isDemoUser = uid === "user-dev-default" || email === "guest@skillora.app";
-      const initialValues = {
-        uid,
-        email: email || (isDemoUser ? "guest@skillora.app" : "user@skillora.app"),
-        name: name || (isDemoUser ? "Tamu Skillora" : "Siswa"),
-        level: isDemoUser ? 3 : 1,
-        xp: isDemoUser ? 1350 : 0,
-        gems: isDemoUser ? 150 : 100,
-        streak: isDemoUser ? 6 : 0,
-        streakFreezes: 0,
-        lastActive: new Date().toISOString(),
-        role: "Pelajar Siap Kerja",
-        accountRole: "student",
-        subscriptionTier: "free",
-        certCredits: 1,
-        avatar: "🦁",
-        username: (email || "user").split("@")[0],
-        hasCompletedOnboarding: isDemoUser,
-        mentorTone: "friendly",
-        notifyEmail: true,
-        notifyDaily: true,
-        notifySound: true,
-        weeklyXp: isDemoUser ? 480 : 0,
-        careerStage: "learning" as const,
-        skills: ["React", "HTML5", "CSS3", "JavaScript"],
-        unlockedAvatars: ["🦁"],
-        purchasedItems: [],
-        certifiedCourses: [],
-        bookmarkedLessons: [],
-        dailyQuests: [
-          { id: "dq_1", title: "Selesaikan 1 Kuis Praktik", target: 1, current: 0, xpReward: 100, gemsReward: 10, completed: false, claimed: false },
-          { id: "dq_2", title: "Gunakan Kiat Mentor AI di Kuis", target: 1, current: 0, xpReward: 50, gemsReward: 5, completed: false, claimed: false },
-          { id: "dq_3", title: "Bookmark/Simpan 1 Kursus Baru", target: 1, current: 0, xpReward: 50, gemsReward: 5, completed: false, claimed: false }
-        ],
-      };
-
-      const inserted = await db
-        .insert(users)
-        .values(initialValues)
-        .onConflictDoUpdate({
-          target: users.uid,
-          set: { lastActive: new Date().toISOString() },
-        })
-        .returning();
-      userRow = inserted[0];
-
-      await UserRepository.initializeAchievements(userRow.id, userRow.streak, userRow.gems);
-
-      await db.insert(notifications).values({
-        userId: userRow.id,
-        text: "Selamat bergabung di Skillora! Mulai perjalanan karier dan sertifikasi Anda hari ini.",
-        type: "system",
-      });
+    const existingPromise = inflightUsers.get(uid);
+    if (existingPromise) {
+      return existingPromise;
     }
 
-    return userRow;
+    const work = UserRepository.getOrCreateUserInternal(uid, email, name).finally(() => {
+      inflightUsers.delete(uid);
+    });
+    inflightUsers.set(uid, work);
+    return work;
+  }
+
+  private static async getOrCreateUserInternal(
+    uid: string,
+    email: string,
+    name: string,
+    attempt: number = 1
+  ): Promise<any> {
+    try {
+      await ensureSchema();
+      let userRow = await db.query.users.findFirst({
+        where: eq(users.uid, uid),
+      });
+
+      if (!userRow) {
+        const isDemoUser = uid === "user-dev-default" || email === "guest@skillora.app";
+        const initialValues = {
+          uid,
+          email: email || (isDemoUser ? "guest@skillora.app" : "user@skillora.app"),
+          name: name || (isDemoUser ? "Tamu Skillora" : "Siswa"),
+          level: isDemoUser ? 3 : 1,
+          xp: isDemoUser ? 1350 : 0,
+          gems: isDemoUser ? 150 : 100,
+          streak: isDemoUser ? 6 : 0,
+          streakFreezes: 0,
+          lastActive: new Date().toISOString(),
+          role: "Pelajar Siap Kerja",
+          accountRole: "student",
+          subscriptionTier: "free",
+          certCredits: 1,
+          avatar: "🦁",
+          username: (email || "user").split("@")[0],
+          hasCompletedOnboarding: isDemoUser,
+          mentorTone: "friendly",
+          notifyEmail: true,
+          notifyDaily: true,
+          notifySound: true,
+          weeklyXp: isDemoUser ? 480 : 0,
+          careerStage: "learning" as const,
+          skills: ["React", "HTML5", "CSS3", "JavaScript"],
+          unlockedAvatars: ["🦁"],
+          purchasedItems: [],
+          certifiedCourses: [],
+          bookmarkedLessons: [],
+          dailyQuests: [
+            { id: "dq_1", title: "Selesaikan 1 Kuis Praktik", target: 1, current: 0, xpReward: 100, gemsReward: 10, completed: false, claimed: false },
+            { id: "dq_2", title: "Gunakan Kiat Mentor AI di Kuis", target: 1, current: 0, xpReward: 50, gemsReward: 5, completed: false, claimed: false },
+            { id: "dq_3", title: "Bookmark/Simpan 1 Kursus Baru", target: 1, current: 0, xpReward: 50, gemsReward: 5, completed: false, claimed: false }
+          ],
+        };
+
+        const inserted = await db
+          .insert(users)
+          .values(initialValues)
+          .onConflictDoUpdate({
+            target: users.uid,
+            set: { lastActive: new Date().toISOString() },
+          })
+          .returning();
+        userRow = inserted[0];
+
+        await UserRepository.initializeAchievements(userRow.id, userRow.streak, userRow.gems);
+
+        await db.insert(notifications).values({
+          userId: userRow.id,
+          text: "Selamat bergabung di Skillora! Mulai perjalanan karier dan sertifikasi Anda hari ini.",
+          type: "system",
+        });
+      }
+
+      return userRow;
+    } catch (err: any) {
+      const msg = String(err?.cause?.message || err?.message || "");
+      if (attempt < 2 && /Connection terminated|ECONNRESET|connection error|57P01/i.test(msg)) {
+        await new Promise((r) => setTimeout(r, 150));
+        return UserRepository.getOrCreateUserInternal(uid, email, name, attempt + 1);
+      }
+      throw err;
+    }
   }
 
   static async initializeAchievements(dbUserId: number, streak: number, gems: number) {

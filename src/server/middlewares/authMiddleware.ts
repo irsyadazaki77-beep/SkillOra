@@ -55,8 +55,8 @@ export const userContextMiddleware = async (
           req.dbUserId = guestRow.id;
           req.accountRole = (guestRow.accountRole as AccountRole) || "student";
         }
-      } catch (err) {
-        console.warn("Guest creation warning:", err);
+      } catch {
+        // Fallback to in-memory guest identity if DB connection is transiently resetting
       }
       return next();
     }
