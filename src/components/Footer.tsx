@@ -1,83 +1,94 @@
-import { Shield, Twitter, Linkedin, Github, MessageSquare } from "lucide-react";
+import { Link } from "react-router-dom";
+import { Shield, Award, Sparkles, BookOpen } from "lucide-react";
 import { SkilloraLogo } from "./SkilloraLogo";
+import { ROUTES } from "../routes";
 
 export function Footer() {
   return (
-    <footer className="bg-slate-900 border-t border-slate-800 text-slate-400 pt-16 pb-36 md:pb-16 px-4 md:px-12 mt-auto relative overflow-hidden rounded-t-[2.5rem] mt-3">
-      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-600/10 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
-      <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-indigo-600/10 rounded-full blur-[80px] translate-y-1/2 -translate-x-1/2 pointer-events-none"></div>
-      
-      <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-12 gap-2 lg:gap-16 relative z-10">
-        <div className="col-span-1 md:col-span-4 space-y-5 text-center md:text-left">
-          <div className="flex items-center gap-2.5 justify-center md:justify-start">
-            <SkilloraLogo variant="full" size="lg" darkMode={true} />
-            <span className="bg-gradient-to-r from-amber-400 to-orange-500 text-slate-950 text-xs px-2.5 py-0.5 rounded-full font-black uppercase tracking-widest shadow-sm ml-1">PRO</span>
+    <footer className="bg-zinc-950 border-t border-zinc-800/80 text-zinc-400 pt-12 pb-24 lg:pb-10 px-4 sm:px-6 lg:px-8 mt-auto">
+      <div className="max-w-[1400px] mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
+        {/* Brand Mission Summary */}
+        <div className="lg:col-span-4 space-y-4 text-center lg:text-left">
+          <div className="flex items-center gap-2.5 justify-center lg:justify-start">
+            <SkilloraLogo variant="full" size="md" darkMode={true} />
+            <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-semibold uppercase tracking-wider bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+              100% Gratis
+            </span>
           </div>
-          <p className="leading-relaxed text-slate-400 font-medium text-base">
-            Platform pembelajaran dan bursa kerja tergamifikasi. Menyediakan kurikulum berbasis AI yang disesuaikan dengan kebutuhan industri masa kini.
+          <p className="leading-relaxed text-zinc-400 text-xs sm:text-sm max-w-md mx-auto lg:mx-0">
+            Platform pembelajaran industri, simulasi karier AI, dan sertifikasi portofolio terbuka bagi seluruh pembelajar tanpa biaya langganan pelajar.
           </p>
-          <div className="flex items-center gap-2 justify-center md:justify-start pt-2">
-            {[
-              { icon: Twitter, link: "#", label: "Twitter" },
-              { icon: Linkedin, link: "#", label: "LinkedIn" },
-              { icon: Github, link: "#", label: "GitHub" },
-              { icon: MessageSquare, link: "#", label: "Discord" }
-            ].map((social, i) => {
-              const Icon = social.icon;
-              return (
-                <a key={i} href={social.link} aria-label={social.label} className="w-9 h-9 rounded-full bg-slate-800 hover:bg-blue-600 hover:text-white flex items-center justify-center transition-colors border border-slate-700 hover:border-blue-500 group">
-                  <Icon className="w-4 h-4 text-slate-400 group-hover:text-white" />
-                </a>
-              );
-            })}
+          <div className="flex flex-wrap items-center justify-center lg:justify-start gap-3 pt-1 text-[11px] font-mono text-zinc-500">
+            <span className="inline-flex items-center gap-1.5">
+              <BookOpen className="w-3.5 h-3.5 text-emerald-500" />
+              Rp 0 Kelas &amp; Sertifikat
+            </span>
+            <span className="inline-flex items-center gap-1.5">
+              <Award className="w-3.5 h-3.5 text-emerald-500" />
+              Verifikasi QR Terbuka
+            </span>
           </div>
         </div>
 
-        <div className="col-span-1 md:col-span-8 grid grid-cols-2 md:grid-cols-4 gap-2">
+        {/* Navigation Map */}
+        <div className="lg:col-span-8 grid grid-cols-2 sm:grid-cols-4 gap-6 sm:gap-8 text-left">
           <div>
-            <span className="font-sans font-bold text-white block mb-4">Produk Utama</span>
-            <ul className="space-y-3 text-base font-medium text-slate-400">
-              <li><a href="#" className="hover:text-blue-400 transition-colors">Jalur Belajar AI</a></li>
-              <li><a href="#" className="hover:text-blue-400 transition-colors">Ruang Kolaborasi</a></li>
-              <li><a href="#" className="hover:text-blue-400 transition-colors">Bursa Kerja</a></li>
-              <li><a href="#" className="hover:text-blue-400 transition-colors">Evaluasi Portofolio</a></li>
+            <span className="font-display text-xs font-bold uppercase tracking-wider text-zinc-200 block mb-3">
+              Pembelajaran
+            </span>
+            <ul className="space-y-2.5 text-xs font-medium text-zinc-400">
+              <li><Link to={ROUTES.learning.catalog} className="hover:text-emerald-400 transition-colors">Katalog Kursus</Link></li>
+              <li><Link to={ROUTES.learning.lmsWorkspace} className="hover:text-emerald-400 transition-colors">Ruang LMS Terfokus</Link></li>
+              <li><Link to={ROUTES.lab.root} className="hover:text-emerald-400 transition-colors">Lab Interaktif AI</Link></li>
+              <li><Link to={ROUTES.learning.project} className="hover:text-emerald-400 transition-colors">Proyek &amp; Sertifikat</Link></li>
             </ul>
           </div>
+
           <div>
-            <span className="font-sans font-bold text-white block mb-4">Mitra Perekrut</span>
-            <ul className="space-y-3 text-base font-medium text-slate-400">
-              <li><a href="#" className="hover:text-blue-400 transition-colors">Gojek Tech</a></li>
-              <li><a href="#" className="hover:text-blue-400 transition-colors">Tokopedia Engineering</a></li>
-              <li><a href="#" className="hover:text-blue-400 transition-colors">Traveloka Design</a></li>
-              <li><a href="#" className="hover:text-blue-400 transition-colors">Telkom Digital</a></li>
+            <span className="font-display text-xs font-bold uppercase tracking-wider text-zinc-200 block mb-3">
+              Persiapan Karier
+            </span>
+            <ul className="space-y-2.5 text-xs font-medium text-zinc-400">
+              <li><Link to={ROUTES.career.jobs} className="hover:text-emerald-400 transition-colors">Bursa Kerja Mitra</Link></li>
+              <li><Link to={ROUTES.career.cvBuilder} className="hover:text-emerald-400 transition-colors">CV ATS Builder</Link></li>
+              <li><Link to={ROUTES.career.voiceInterview} className="hover:text-emerald-400 transition-colors">Mock Interview Suara</Link></li>
+              <li><Link to={ROUTES.career.simulation} className="hover:text-emerald-400 transition-colors">Simulasi TKD &amp; STAR</Link></li>
             </ul>
           </div>
+
           <div>
-            <span className="font-sans font-bold text-white block mb-4">Integrasi AI</span>
-            <ul className="space-y-3 text-base font-medium text-slate-400">
-              <li><a href="#" className="hover:text-blue-400 transition-colors">Gemini Pro 1.5</a></li>
-              <li><a href="#" className="hover:text-blue-400 transition-colors">AI Code Reviewer</a></li>
-              <li><a href="#" className="hover:text-blue-400 transition-colors">Auto-Matching CV</a></li>
+            <span className="font-display text-xs font-bold uppercase tracking-wider text-zinc-200 block mb-3">
+              Komunitas
+            </span>
+            <ul className="space-y-2.5 text-xs font-medium text-zinc-400">
+              <li><Link to={ROUTES.arena.root} className="hover:text-emerald-400 transition-colors">Arena Battle &amp; Liga</Link></li>
+              <li><Link to={ROUTES.community.forum} className="hover:text-emerald-400 transition-colors">Forum Diskusi</Link></li>
+              <li><Link to={ROUTES.community.collaboration} className="hover:text-emerald-400 transition-colors">Ruang Kolaborasi</Link></li>
+              <li><Link to={ROUTES.community.event} className="hover:text-emerald-400 transition-colors">Event &amp; Webinar</Link></li>
             </ul>
           </div>
+
           <div>
-            <span className="font-sans font-bold text-white block mb-4">Perusahaan</span>
-            <ul className="space-y-3 text-base font-medium text-slate-400">
-              <li><a href="#" className="hover:text-blue-400 transition-colors">Tentang Kami</a></li>
-              <li><a href="#" className="hover:text-blue-400 transition-colors">Karir</a></li>
-              <li><a href="#" className="hover:text-blue-400 transition-colors">Blog</a></li>
-              <li><a href="#" className="hover:text-blue-400 transition-colors">Pusat Bantuan</a></li>
+            <span className="font-display text-xs font-bold uppercase tracking-wider text-zinc-200 block mb-3">
+              Dampak &amp; Bantuan
+            </span>
+            <ul className="space-y-2.5 text-xs font-medium text-zinc-400">
+              <li><Link to={ROUTES.upgrade} className="hover:text-emerald-400 transition-colors inline-flex items-center gap-1"><Sparkles className="w-3 h-3 text-emerald-400" /> Sponsor &amp; HRD</Link></li>
+              <li><Link to={ROUTES.career.scholarship} className="hover:text-emerald-400 transition-colors">Pusat Beasiswa</Link></li>
+              <li><Link to={ROUTES.career.mentoring} className="hover:text-emerald-400 transition-colors">Mentoring 1-on-1</Link></li>
+              <li><Link to={ROUTES.faq} className="hover:text-emerald-400 transition-colors">Pusat Bantuan (FAQ)</Link></li>
             </ul>
           </div>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto border-t border-slate-800/80 pt-8 mt-4 flex flex-col md:flex-row justify-between items-center text-base text-slate-500 font-medium relative z-10">
-        <p>© 2026 Skillora EduAI Platform. Seluruh hak cipta dilindungi undang-undang.</p>
-        <div className="flex items-center gap-2 mt-4 md:mt-0">
-          <a href="#" className="hover:text-slate-300">Syarat & Ketentuan</a>
-          <a href="#" className="hover:text-slate-300">Kebijakan Privasi</a>
-          <span className="flex items-center gap-1.5"><Shield className="w-3.5 h-3.5" /> Bersertifikasi AI Studio</span>
+      <div className="max-w-[1400px] mx-auto border-t border-zinc-800/80 pt-6 mt-8 flex flex-col sm:flex-row justify-between items-center gap-3 text-xs text-zinc-500">
+        <p>© 2026 SkillOra Platform Edukasi &amp; Karier Terbuka.</p>
+        <div className="flex items-center gap-4">
+          <Link to={ROUTES.faq} className="hover:text-zinc-300 transition-colors">Ketentuan</Link>
+          <span className="flex items-center gap-1.5 text-zinc-400">
+            <Shield className="w-3.5 h-3.5 text-emerald-500" /> Didukung Mitra &amp; Beasiswa Terbuka
+          </span>
         </div>
       </div>
     </footer>

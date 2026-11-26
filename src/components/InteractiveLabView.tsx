@@ -58,6 +58,7 @@ export function InteractiveLabView({
   // Workspace state
   const [code, setCode] = useState("");
   const [leftTab, setLeftTab] = useState<"brief" | "rubric" | "history">("brief");
+  const [mobilePane, setMobilePane] = useState<"brief" | "editor">("editor");
   const [revealedHints, setRevealedHints] = useState(0);
   const [testResults, setTestResults] = useState<ClientTestResult[] | null>(null);
   const [sandboxLogs, setSandboxLogs] = useState<string[]>([]);
@@ -227,7 +228,7 @@ export function InteractiveLabView({
       activeLab.language === "sql";
 
     return (
-      <div className="space-y-4 pb-16 lg:pb-6">
+      <div className="space-y-4 pb-4">
         {/* Top Workspace Bar */}
         <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-zinc-200 dark:border-zinc-800">
           <div className="flex items-center gap-3 min-w-0">
@@ -284,10 +285,36 @@ export function InteractiveLabView({
           </div>
         </div>
 
+        {/* Mobile Pane Switcher */}
+        <div className="grid grid-cols-2 gap-1 p-1 rounded-xl bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 lg:hidden">
+          <button
+            type="button"
+            onClick={() => setMobilePane("editor")}
+            className={`py-2 px-3 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
+              mobilePane === "editor"
+                ? "bg-white dark:bg-zinc-800 text-zinc-950 dark:text-white shadow-xs"
+                : "text-zinc-500 dark:text-zinc-400"
+            }`}
+          >
+            Editor &amp; Uji Kode
+          </button>
+          <button
+            type="button"
+            onClick={() => setMobilePane("brief")}
+            className={`py-2 px-3 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
+              mobilePane === "brief"
+                ? "bg-white dark:bg-zinc-800 text-zinc-950 dark:text-white shadow-xs"
+                : "text-zinc-500 dark:text-zinc-400"
+            }`}
+          >
+            Brief &amp; Rubrik
+          </button>
+        </div>
+
         {/* 2-Zone Split Workspace */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
           {/* LEFT ZONE: Brief, Rubric, Hints, History */}
-          <div className="lg:col-span-5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-hidden">
+          <div className={`${mobilePane === "brief" ? "block" : "hidden lg:block"} lg:col-span-5 lg:sticky lg:top-4 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-hidden`}>
             {/* Segmented Tab Strip */}
             <div className="flex border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50/70 dark:bg-zinc-950/40 px-2 pt-2 gap-1">
               {[
@@ -309,7 +336,7 @@ export function InteractiveLabView({
               ))}
             </div>
 
-            <div className="p-5 space-y-5 max-h-[72vh] overflow-y-auto">
+            <div className="p-5 space-y-5 max-h-[calc(100dvh-11rem)] overflow-y-auto">
               {leftTab === "brief" && (
                 <>
                   <div className="space-y-3 text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed whitespace-pre-line">
@@ -454,7 +481,7 @@ export function InteractiveLabView({
           </div>
 
           {/* RIGHT ZONE: Code / Case Editor + Test Output + AI Rubric Scorecard */}
-          <div className="lg:col-span-7 space-y-4">
+          <div className={`${mobilePane === "editor" ? "block" : "hidden lg:block"} lg:col-span-7 space-y-4`}>
             {/* Editor Container */}
             <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-hidden">
               <div className="px-4 py-2.5 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950/60 flex items-center justify-between gap-2">

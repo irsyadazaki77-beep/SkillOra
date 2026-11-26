@@ -11,15 +11,15 @@ export interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
 
 const variantStyles: Record<CardVariant, string> = {
   default:
-    "bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-[0_1px_3px_rgba(0,0,0,0.03)]",
+    "bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 shadow-[0_1px_2px_rgba(0,0,0,0.03)]",
   interactive:
-    "bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-[0_1px_3px_rgba(0,0,0,0.03)] hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-md transition-all duration-200 cursor-pointer active:scale-[0.99]",
+    "bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 shadow-[0_1px_2px_rgba(0,0,0,0.03)] hover:border-zinc-300 dark:hover:border-zinc-700 hover:shadow-md transition-all duration-200 cursor-pointer active:scale-[0.99]",
   elevated:
-    "bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-md",
+    "bg-white dark:bg-zinc-900 border border-zinc-200/70 dark:border-zinc-800 shadow-md",
   flat:
-    "bg-slate-50/80 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-700/60 shadow-none",
+    "bg-zinc-50/80 dark:bg-zinc-900/60 border border-zinc-200/60 dark:border-zinc-800 shadow-none",
   subtle:
-    "bg-white dark:bg-slate-800/40 border border-slate-200/60 dark:border-slate-800/80 shadow-none",
+    "bg-white dark:bg-zinc-900/40 border border-zinc-200/60 dark:border-zinc-800/80 shadow-none",
 };
 
 const paddingStyles: Record<CardPadding, string> = {
@@ -61,7 +61,7 @@ export function CardHeader({
   ...props
 }: React.HTMLAttributes<HTMLDivElement>) {
   return (
-    <div className={`flex flex-col space-y-1.5 pb-3 border-b border-slate-100 dark:border-slate-800 ${className}`} {...props}>
+    <div className={`flex flex-col space-y-1.5 pb-3 border-b border-zinc-100 dark:border-zinc-800 ${className}`} {...props}>
       {children}
     </div>
   );
@@ -74,7 +74,7 @@ export function CardTitle({
 }: React.HTMLAttributes<HTMLHeadingElement>) {
   return (
     <h3
-      className={`font-display text-base sm:text-lg font-bold text-slate-900 dark:text-white tracking-tight leading-snug ${className}`}
+      className={`font-display text-base sm:text-lg font-bold text-zinc-950 dark:text-white tracking-tight leading-snug ${className}`}
       {...props}
     >
       {children}
@@ -89,7 +89,7 @@ export function CardDescription({
 }: React.HTMLAttributes<HTMLParagraphElement>) {
   return (
     <p
-      className={`text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium leading-relaxed ${className}`}
+      className={`text-xs sm:text-sm text-zinc-500 dark:text-zinc-400 font-medium leading-relaxed ${className}`}
       {...props}
     >
       {children}
@@ -116,7 +116,7 @@ export function CardFooter({
 }: React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div
-      className={`flex items-center justify-between pt-3 mt-auto border-t border-slate-100 dark:border-slate-800 ${className}`}
+      className={`flex items-center justify-between pt-3 mt-auto border-t border-zinc-100 dark:border-zinc-800 ${className}`}
       {...props}
     >
       {children}

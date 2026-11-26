@@ -54,6 +54,9 @@ function getBreadcrumb(pathname: string): { section: string; page: string } {
   if (pathname.startsWith("/arena")) {
     return { section: "Arena Kompetitif", page: "Battle Quiz, Tryout & Liga" };
   }
+  if (pathname.startsWith("/belajar/lms")) {
+    return { section: "Belajar", page: "Ruang LMS Terfokus" };
+  }
   if (pathname.startsWith("/belajar/katalog")) {
     return { section: "Belajar", page: "Katalog Kursus" };
   }
@@ -106,7 +109,7 @@ function getBreadcrumb(pathname: string): { section: string; page: string } {
     return { section: "Akun", page: "Profil & Pengaturan" };
   }
   if (pathname === "/pusat-upgrade") {
-    return { section: "Billing", page: "Skillora PRO" };
+    return { section: "Dampak Sosial", page: "Mitra HRD & Beasiswa" };
   }
   if (pathname === "/portal-mentor") {
     return { section: "Portal Mitra", page: "Mentor & Review" };

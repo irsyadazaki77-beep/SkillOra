@@ -558,7 +558,7 @@ export function MateriView({
       {/* 2-Zone Course Player Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* LEFT SYLLABUS SIDEBAR */}
-        <aside className="hidden lg:block lg:col-span-4 sticky top-20">
+        <aside className="hidden lg:block lg:col-span-4 lg:sticky lg:top-4">
           <div className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-4 space-y-4">
             <div className="space-y-1.5">
               <div className="flex items-center justify-between text-xs">
@@ -574,7 +574,7 @@ export function MateriView({
               />
             </div>
 
-            <div className="space-y-3 max-h-[calc(100vh-270px)] overflow-y-auto pr-1">
+            <div className="space-y-3 max-h-[calc(100dvh-11rem)] overflow-y-auto pr-1">
               {modules.map((mod) => (
                 <div key={mod.id} className="rounded-lg border border-zinc-200 dark:border-zinc-800 overflow-hidden">
                   <div className="px-3 py-2 bg-zinc-50 dark:bg-zinc-950/60 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between text-xs font-semibold text-zinc-700 dark:text-zinc-300">

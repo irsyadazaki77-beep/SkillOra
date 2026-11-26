@@ -52,7 +52,7 @@ export function DashboardSidebar({
   const topDailyQuests = (profile.dailyQuests || []).slice(0, 2);
 
   return (
-    <aside className="space-y-4" aria-label="Sidebar Progres & Aktivitas">
+    <aside className="space-y-4 lg:sticky lg:top-4" aria-label="Sidebar Progres & Aktivitas">
       {/* 1. WEEKLY ACTIVITY SUMMARY */}
       <Card variant="default" padding="sm" className="space-y-3">
         <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800/80 pb-2.5">

@@ -175,15 +175,15 @@ export function SertifikasiView({
                   <button
                     key={c.id}
                     onClick={() => setActiveCourseId(c.id)}
-                    className={`w-full text-left p-4 rounded-2xl border transition-all cursor-pointer flex items-center justify-between ${
+                    className={`w-full text-left p-3.5 rounded-xl border transition-all cursor-pointer flex items-center justify-between ${
                       isActive
-                        ? "bg-blue-600 text-white border-blue-600 shadow-sm"
-                        : "bg-white dark:bg-slate-800 text-slate-800 dark:text-white border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700"
+                        ? "bg-emerald-600 text-white border-emerald-600 shadow-xs"
+                        : "bg-white dark:bg-zinc-900 text-zinc-800 dark:text-white border-zinc-200 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-800/70"
                     }`}
                   >
                     <div>
                       <div className="font-bold text-xs line-clamp-1">{c.title}</div>
-                      <span className={`text-xs ${isActive ? "text-blue-100" : "text-slate-500 dark:text-slate-400"}`}>Mitra: {c.partner}</span>
+                      <span className={`text-xs ${isActive ? "text-emerald-100" : "text-zinc-500 dark:text-zinc-400"}`}>Mitra: {c.partner}</span>
                     </div>
                     {isPassed && (
                       <span className="px-2 py-0.5 rounded-full bg-emerald-500 text-white font-black text-xs shrink-0">PASS</span>
@@ -195,9 +195,9 @@ export function SertifikasiView({
           </div>
 
           {/* User Certificate History Card */}
-          <div className="p-5 bg-white dark:bg-slate-800 rounded-3xl border border-slate-200 dark:border-slate-700 space-y-4 shadow-sm">
-            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-700 pb-3">
-              <h3 className="font-bold text-xs text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
+          <div className="p-5 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 space-y-4">
+            <div className="flex items-center justify-between border-b border-zinc-100 dark:border-zinc-800 pb-3">
+              <h3 className="font-bold text-xs text-zinc-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
                 <FileCheck className="w-4 h-4 text-emerald-500" />
                 <span>Riwayat Sertifikat Saya ({profile.certificates?.length || 0})</span>
               </h3>
@@ -208,7 +208,7 @@ export function SertifikasiView({
                 playSound("click");
                 setShowAutoCv(true);
               }}
-              className="w-full py-2.5 px-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-2 shadow-xs cursor-pointer transition-all active:scale-[0.98]"
+              className="w-full py-2.5 px-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-2 cursor-pointer transition-colors"
             >
               <Sparkles className="w-4 h-4 text-amber-300" />
               <span>Buat CV Otomatis dari Sertifikat (ATS)</span>
@@ -219,31 +219,31 @@ export function SertifikasiView({
                 {profile.certificates.map((cert) => (
                   <div
                     key={cert.id}
-                    className="p-3 bg-slate-50 dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 text-xs space-y-1.5"
+                    className="p-3 bg-zinc-50 dark:bg-zinc-950/60 rounded-xl border border-zinc-200 dark:border-zinc-800 text-xs space-y-1.5"
                   >
                     <div className="flex items-center justify-between">
-                      <span className="font-bold text-slate-900 dark:text-white line-clamp-1">{cert.courseTitle}</span>
+                      <span className="font-bold text-zinc-900 dark:text-white line-clamp-1">{cert.courseTitle}</span>
                       <span className="text-xs font-black text-amber-500">Nilai: {cert.score}</span>
                     </div>
-                    <div className="text-xs text-slate-500 dark:text-slate-400 flex items-center justify-between">
+                    <div className="text-xs text-zinc-500 dark:text-zinc-400 flex items-center justify-between">
                       <span>{cert.issueDate}</span>
-                      <span className="font-mono font-bold text-emerald-600">{cert.verificationCode}</span>
+                      <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">{cert.verificationCode}</span>
                     </div>
                     <button
                       onClick={() => {
                         const matchedCourse = courses.find(c => c.id === cert.courseId) || activeCourse;
                         setActiveCertificate(matchedCourse);
                       }}
-                      className="w-full py-2 mt-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-extrabold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-2xs"
+                      className="w-full py-2 mt-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
                     >
                       <Download className="w-3.5 h-3.5" />
-                      <span>📥 Buka & Unduh PDF Sertifikat</span>
+                      <span>Buka &amp; Unduh PDF Sertifikat</span>
                     </button>
                   </div>
                 ))}
               </div>
             ) : (
-              <p className="text-xs text-slate-400 italic">Belum ada sertifikat yang terbit. Selesaikan materi dan kirim proyek untuk mendapatkan sertifikat resmi pertamamu!</p>
+              <p className="text-xs text-zinc-500 italic">Belum ada sertifikat yang terbit. Selesaikan materi dan kirim proyek untuk mendapatkan sertifikat resmi pertamamu!</p>
             )}
           </div>
         </div>
@@ -251,9 +251,9 @@ export function SertifikasiView({
         {/* Right Column: Project Submission, Requirements Checklist & Public Verification */}
         <div className="lg:col-span-2 space-y-6">
           {/* Requirements Checklist Banner */}
-          <div className="p-5 bg-white dark:bg-slate-800 rounded-3xl border border-slate-200 dark:border-slate-700 space-y-3 shadow-sm">
-            <h3 className="font-bold text-xs text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
-              <ShieldCheck className="w-4 h-4 text-blue-600" />
+          <div className="p-5 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 space-y-3">
+            <h3 className="font-bold text-xs text-zinc-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
+              <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
               <span>Syarat Penerbitan Sertifikat "{activeCourse.title}"</span>
             </h3>
 

@@ -165,7 +165,7 @@ export function BelajarView({
   const isNewUser = activeCourses.length === 0 && completedCoursesCount === 0;
 
   return (
-    <div className="animate-in fade-in duration-200 w-full pb-16 lg:pb-8 relative z-10 space-y-5 sm:space-y-6">
+    <div className="animate-in fade-in duration-200 w-full relative z-10 space-y-5 sm:space-y-6">
       {/* 1. GREETING & CONTEXT HEADER */}
       <BelajarHeader
         profile={profile}
@@ -215,7 +215,7 @@ export function BelajarView({
       {/* 3. MAIN DASHBOARD CONTENT (2-COLUMN BALANCED DESKTOP GRID) */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 sm:gap-6 items-start">
         {/* Left / Main Column (65% width) */}
-        <main className="lg:col-span-2 space-y-5 sm:space-y-6 min-w-0">
+        <div className="lg:col-span-2 space-y-5 sm:space-y-6 min-w-0">
           {/* Main Focus: Continue Learning OR New User Onboarding */}
           {isNewUser ? (
             <NewUserOnboardingCard
@@ -240,38 +240,46 @@ export function BelajarView({
           )}
 
           {/* Weekly Free Consistency Goal & Streak Saver */}
-          <section className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="space-y-1">
-              <div className="flex items-center gap-2 text-xs font-mono uppercase tracking-wider text-emerald-600 dark:text-emerald-400 font-semibold">
-                <Flame className="w-3.5 h-3.5 text-amber-500" />
-                <span>Target Konsistensi Mingguan · 100% Gratis</span>
+          <section className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-4 sm:p-5 space-y-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2 text-xs font-mono uppercase tracking-wider text-emerald-600 dark:text-emerald-400 font-semibold">
+                  <Flame className="w-3.5 h-3.5 text-amber-500" />
+                  <span>Target Konsistensi Mingguan · 100% Gratis</span>
+                </div>
+                <h3 className="font-display text-base font-bold text-zinc-950 dark:text-white">
+                  {activeWeekProgress}/{weeklyTarget} Hari Aktif Minggu Ini
+                </h3>
+                <p className="text-xs text-zinc-500 dark:text-zinc-400 flex items-center gap-1.5">
+                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                  <span>
+                    Pertahankan streak kelipatan 7 hari untuk hadiah <strong>+1 Streak Saver Gratis</strong> (tersedia: {profile.streakFreezes || 0}).
+                  </span>
+                </p>
               </div>
-              <h3 className="font-display text-base font-bold text-zinc-950 dark:text-white">
-                {activeWeekProgress}/{weeklyTarget} Hari Aktif Minggu Ini
-              </h3>
-              <p className="text-xs text-zinc-500 dark:text-zinc-400 flex items-center gap-1.5">
-                <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                <span>
-                  Pertahankan streak kelipatan 7 hari untuk hadiah <strong>+1 Streak Saver Gratis</strong> (tersedia: {profile.streakFreezes || 0}).
-                </span>
-              </p>
+              <div className="flex items-center gap-1.5 shrink-0">
+                {[3, 5, 7].map((days) => (
+                  <button
+                    key={days}
+                    type="button"
+                    disabled={savingWeeklyGoal}
+                    onClick={() => handleSetWeeklyTarget(days)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold cursor-pointer transition-colors ${
+                      weeklyTarget === days
+                        ? "bg-emerald-600 text-white"
+                        : "bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700"
+                    }`}
+                  >
+                    {days} Hari
+                  </button>
+                ))}
+              </div>
             </div>
-            <div className="flex items-center gap-1.5 shrink-0">
-              {[3, 5, 7].map((days) => (
-                <button
-                  key={days}
-                  type="button"
-                  disabled={savingWeeklyGoal}
-                  onClick={() => handleSetWeeklyTarget(days)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold cursor-pointer transition-colors ${
-                    weeklyTarget === days
-                      ? "bg-emerald-600 text-white"
-                      : "bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700"
-                  }`}
-                >
-                  {days} Hari
-                </button>
-              ))}
+            <div className="w-full h-1.5 rounded-full bg-zinc-100 dark:bg-zinc-800 overflow-hidden">
+              <div
+                className="h-full bg-emerald-600 dark:bg-emerald-500 rounded-full transition-all duration-300"
+                style={{ width: `${Math.min(100, Math.round((activeWeekProgress / Math.max(1, weeklyTarget)) * 100))}%` }}
+              />
             </div>
           </section>
 
@@ -346,7 +354,7 @@ export function BelajarView({
             onNavigateToCourse={(courseId) => navigate(`/belajar/kursus/${courseId}`)}
             onNavigateToKatalog={() => navigate("/belajar/katalog")}
           />
-        </main>
+        </div>
 
         {/* Right / Sidebar Column (35% width) */}
         <DashboardSidebar

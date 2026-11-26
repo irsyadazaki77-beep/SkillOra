@@ -400,42 +400,49 @@ export default function App() {
 
         {/* EXPANDED FULL-WIDTH MAIN CONTENT AREA */}
         <main id="main-content" className="flex-1 overflow-y-auto bg-[#fafafa] dark:bg-[#09090b] flex flex-col relative w-full scroll-smooth z-10 transition-colors duration-200" tabIndex={-1}>
-          <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-5 sm:py-8 pb-28 lg:pb-10 flex-1">
-            {/* Elegant Sub-Tab Back Header for Mobile */}
-            {location.pathname !== "/belajar" && location.pathname !== "/jelajahi" && location.pathname !== "/karier" && location.pathname !== "/komunitas" && (
+          <div className="max-w-[1400px] mx-auto w-full px-4 sm:px-6 lg:px-8 py-4 sm:py-6 pb-24 lg:pb-8 flex-1">
+            {/* Elegant Sub-Tab Back Header for Mobile (excluded on primary nav tabs) */}
+            {!["/", "/belajar", "/lab", "/arena", "/jelajahi", "/karier", "/komunitas", "/belajar/katalog"].includes(location.pathname) && (
               <motion.div 
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="lg:hidden flex items-center justify-between mb-6"
+                className="lg:hidden flex items-center justify-between mb-5 pb-3 border-b border-zinc-200/70 dark:border-zinc-800/80"
               >
                 <button
+                  type="button"
                   onClick={() => navigate(-1)}
-                  className="flex items-center gap-1.5 text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors"
+                  className="flex items-center gap-1.5 text-sm font-medium text-zinc-600 dark:text-zinc-300 hover:text-zinc-950 dark:hover:text-white transition-colors cursor-pointer"
                 >
                   <span>←</span> Kembali
                 </button>
-                <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+                <span className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
                   {location.pathname.startsWith("/belajar/kursus")
                     ? "Detail Kursus"
-                    : location.pathname.startsWith("/belajar/proyek")
-                      ? "Proyek & Sertifikat"
-                      : location.pathname.startsWith("/belajar/latihan")
-                        ? "Latihan & Kuis"
-                        : location.pathname.startsWith("/belajar/katalog")
-                          ? "Katalog Kursus"
-                          : location.pathname === "/karier/cv-ats"
-                            ? "CV ATS Builder"
-                            : location.pathname === "/karier/mock-interview"
-                              ? "Mock Interview"
-                              : location.pathname === "/karier/asesmen-adaptif"
-                                ? "Asesmen Adaptif"
-                                : location.pathname.startsWith("/karier")
-                                  ? "Bursa Kerja"
-                                  : location.pathname === "/profil/toko"
-                                    ? "Toko Gems"
-                                    : location.pathname === "/profil/analitik"
-                                      ? "Analitik"
-                                      : location.pathname.split("/").pop()?.replace("-", " ")}
+                    : location.pathname.startsWith("/belajar/lms")
+                      ? "Ruang LMS"
+                      : location.pathname.startsWith("/belajar/proyek")
+                        ? "Proyek & Sertifikat"
+                        : location.pathname.startsWith("/belajar/latihan")
+                          ? "Latihan & Kuis"
+                          : location.pathname.startsWith("/lab/")
+                            ? "Workspace Lab"
+                            : location.pathname === "/karier/cv-ats"
+                              ? "CV ATS Builder"
+                              : location.pathname === "/karier/mock-interview"
+                                ? "Mock Interview"
+                                : location.pathname === "/karier/asesmen-adaptif"
+                                  ? "Asesmen Adaptif"
+                                  : location.pathname === "/portal-mentor"
+                                    ? "Portal Mentor"
+                                    : location.pathname === "/portal-hrd"
+                                      ? "Portal HRD"
+                                      : location.pathname === "/kelola-lms"
+                                        ? "Kelola LMS"
+                                        : location.pathname === "/profil/toko"
+                                          ? "Toko Gems"
+                                          : location.pathname === "/profil/analitik"
+                                            ? "Analitik"
+                                            : location.pathname.split("/").pop()?.replace("-", " ")}
                 </span>
               </motion.div>
             )}

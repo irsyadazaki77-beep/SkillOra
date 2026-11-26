@@ -425,8 +425,8 @@ export function LmsWorkspaceView({
 
       {/* 2-Column Distraction-Free Course Player */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
-        {/* Left Curriculum Sidebar */}
-        <aside className="lg:col-span-4 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-4 space-y-3">
+        {/* Left Curriculum Sidebar (reordered below reader on mobile so content comes first) */}
+        <aside className="order-2 lg:order-1 lg:col-span-4 lg:sticky lg:top-4 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-4 space-y-3">
           <div className="flex items-center justify-between border-b border-zinc-100 dark:border-zinc-800 pb-2.5">
             <h2 className="font-display font-bold text-sm text-zinc-950 dark:text-white">
               Daftar Modul ({lessons.length})
@@ -434,7 +434,7 @@ export function LmsWorkspaceView({
             <span className="text-[11px] font-mono text-zinc-500">{activeCourse.difficulty}</span>
           </div>
 
-          <div className="space-y-1.5 max-h-[540px] overflow-y-auto pr-1">
+          <div className="space-y-1.5 max-h-[420px] lg:max-h-[calc(100dvh-13rem)] overflow-y-auto pr-1">
             {lessons.map((les, idx) => {
               const isCurrent = les.id === activeLesson?.id;
               return (
@@ -498,8 +498,8 @@ export function LmsWorkspaceView({
           </div>
         </aside>
 
-        {/* Right Main Reader & Action Bar */}
-        <section className="lg:col-span-8 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-5 sm:p-7 space-y-6">
+        {/* Right Main Reader & Action Bar (first on mobile) */}
+        <section className="order-1 lg:order-2 lg:col-span-8 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-5 sm:p-6 space-y-6">
           {activeLesson ? (
             <>
               <div className="flex flex-wrap items-start justify-between gap-3 border-b border-zinc-100 dark:border-zinc-800 pb-4">
