@@ -77,34 +77,32 @@ export function BeasiswaView() {
   };
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6 py-2">
+    <div className="w-full space-y-6 py-2">
       {/* Hero Header */}
-      <div className="bg-slate-900 rounded-3xl p-6 sm:p-8 text-white border border-slate-800 shadow-sm">
-        <div className="max-w-3xl space-y-3">
-          <div className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-indigo-300">
-            <Sparkles className="w-4 h-4 text-amber-400" />
-            <span>Direktori Beasiswa & Pendanaan Pendidikan</span>
-          </div>
-          <h1 className="font-display text-2xl sm:text-3xl font-bold tracking-tight">
-            Pusat Beasiswa Mahasiswa & Fresh Graduate
-          </h1>
-          <p className="text-slate-300 text-sm leading-relaxed">
-            Telusuri daftar program beasiswa nasional dan mitra korporat terverifikasi lengkap dengan cakupan pendanaan, syarat pendaftaran, dan tautan portal resmi.
-          </p>
-        </div>
-      </div>
+      <header className="space-y-1.5 border-b border-zinc-200 dark:border-zinc-800 pb-4">
+        <p className="text-xs font-mono uppercase tracking-wider text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1.5">
+          <Sparkles className="w-3.5 h-3.5" />
+          Direktori Beasiswa &amp; Pendanaan Pendidikan
+        </p>
+        <h1 className="font-display text-2xl sm:text-3xl font-bold tracking-tight text-zinc-950 dark:text-white">
+          Pusat Beasiswa Mahasiswa &amp; Fresh Graduate
+        </h1>
+        <p className="text-zinc-500 dark:text-zinc-400 text-sm max-w-3xl leading-relaxed">
+          Telusuri daftar program beasiswa nasional dan mitra korporat terverifikasi lengkap dengan cakupan pendanaan, syarat pendaftaran, dan tautan portal resmi.
+        </p>
+      </header>
 
       {/* Search & Filter Bar */}
-      <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200 dark:border-slate-800 flex flex-col md:flex-row gap-3">
+      <div className="bg-white dark:bg-zinc-900 rounded-xl p-4 border border-zinc-200 dark:border-zinc-800 flex flex-col md:flex-row gap-3">
         <div className="relative flex-1">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+          <Search className="w-4 h-4 text-zinc-400 absolute left-3.5 top-3" />
           <input
             aria-label="Cari beasiswa"
             type="text"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder="Cari program beasiswa atau institusi penyelenggara..."
-            className="w-full pl-10 pr-4 py-2.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none text-slate-900 dark:text-white"
+            className="w-full pl-10 pr-4 py-2.5 text-xs bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl focus:outline-none focus:border-emerald-500 text-zinc-950 dark:text-white"
           />
         </div>
         <div className="flex items-center gap-2 overflow-x-auto pb-1 md:pb-0">
@@ -115,8 +113,8 @@ export function BeasiswaView() {
               onClick={() => setSelectedDegree(deg)}
               className={`px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
                 selectedDegree === deg
-                  ? "bg-indigo-600 text-white"
-                  : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300"
+                  ? "bg-emerald-600 text-white"
+                  : "bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300"
               }`}
             >
               {deg === "Semua" ? "Semua Jenjang" : `Jenjang ${deg}`}

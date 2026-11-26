@@ -359,6 +359,7 @@ export function BelajarView({
         {/* Right / Sidebar Column (35% width) */}
         <DashboardSidebar
           profile={profile}
+          courses={safeCourses}
           claimingQuestId={claimingQuestId}
           handleClaimQuest={handleClaimQuest}
           handleGetFlashChallenge={handleGetFlashChallenge}

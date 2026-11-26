@@ -239,27 +239,31 @@ export function ForumView({ profile, posts, handleCreatePost, handleUpvote, onPo
   };
 
   return (
-    <div className="w-full space-y-6 font-sans py-2 pb-12">
+    <div className="w-full space-y-6 font-sans py-2">
       {/* Header */}
-      <div className="bg-slate-900 rounded-3xl p-6 md:p-8 flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden text-white shadow-md">
-        <div className="relative z-10 flex flex-col items-center md:items-start text-center md:text-left">
-          <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center mb-4 border border-white/20">
-            <MessageSquare className="w-6 h-6 text-blue-400" />
-          </div>
-          <h2 className="text-2xl md:text-3xl font-display font-bold tracking-tight flex items-center gap-2">
-            Forum Komunitas & Diskusi
-          </h2>
-          <p className="text-slate-400 text-sm md:text-base mt-2 max-w-xl font-medium">
+      <header className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-zinc-200 dark:border-zinc-800 pb-4">
+        <div className="space-y-1 max-w-2xl">
+          <p className="text-xs font-mono uppercase tracking-wider text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1.5">
+            <MessageSquare className="w-3.5 h-3.5" />
+            Komunitas Belajar &amp; Diskusi
+          </p>
+          <h1 className="text-2xl md:text-3xl font-display font-bold tracking-tight text-zinc-950 dark:text-white">
+            Forum Komunitas &amp; Diskusi
+          </h1>
+          <p className="text-zinc-500 dark:text-zinc-400 text-sm font-medium">
             Diskusikan materi, tanya jawab bug, atau berbagi info loker terbaru dengan balasan bertingkat dan sistem moderasi transparan.
           </p>
         </div>
 
-        <div className="flex flex-col sm:flex-row items-center gap-3 relative z-10">
+        <div className="flex flex-wrap items-center gap-2 shrink-0">
           {(profile.role === "Admin" || profile.role === "Mentor") && (
             <button
+              type="button"
               onClick={() => setShowModerationPanel(!showModerationPanel)}
-              className={`px-4 py-3 rounded-2xl font-bold text-xs flex items-center gap-2 transition-all cursor-pointer ${
-                showModerationPanel ? "bg-amber-500 text-slate-950" : "bg-slate-800 text-amber-400 border border-amber-500/30"
+              className={`px-3.5 py-2 rounded-xl font-bold text-xs flex items-center gap-2 transition-colors cursor-pointer ${
+                showModerationPanel
+                  ? "bg-amber-500 text-zinc-950"
+                  : "bg-zinc-100 dark:bg-zinc-900 text-amber-600 dark:text-amber-400 border border-amber-500/30"
               }`}
             >
               <Shield className="w-4 h-4" />
@@ -267,14 +271,15 @@ export function ForumView({ profile, posts, handleCreatePost, handleUpvote, onPo
             </button>
           )}
 
-          <button 
+          <button
+            type="button"
             onClick={() => setIsComposing(!isComposing)}
-            className="bg-blue-600 hover:bg-blue-500 text-white px-6 py-3 rounded-2xl font-bold text-sm transition-all shadow-md flex items-center gap-2 whitespace-nowrap cursor-pointer active:scale-95"
+            className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl font-bold text-xs transition-colors flex items-center gap-2 whitespace-nowrap cursor-pointer"
           >
             {isComposing ? <X className="w-4 h-4" /> : "+ Mulai Diskusi"}
           </button>
         </div>
-      </div>
+      </header>
 
       {/* Moderator Panel Info */}
       {showModerationPanel && (

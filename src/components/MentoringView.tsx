@@ -93,30 +93,30 @@ export function MentoringView({ onProfileUpdate, showToast }: MentoringViewProps
   return (
     <div className="w-full space-y-6 py-2">
       {/* Header */}
-      <div className="bg-slate-900 rounded-3xl p-6 sm:p-8 text-white border border-slate-800 shadow-sm relative overflow-hidden">
-        <div className="relative z-10 max-w-3xl space-y-3">
-          <div className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-blue-300">
-            <Sparkles className="w-4 h-4 text-amber-400" />
-            <span>Mentoring 1-on-1 Terverifikasi Industri & Dosen</span>
-          </div>
-          <h1 className="font-display text-2xl sm:text-3xl font-bold tracking-tight">
-            Bimbingan Karir & Review Kode Langsung
+      <header className="flex flex-col md:flex-row md:items-end justify-between gap-3 border-b border-zinc-200 dark:border-zinc-800 pb-4">
+        <div className="space-y-1 max-w-3xl">
+          <p className="text-xs font-mono uppercase tracking-wider text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1.5">
+            <Sparkles className="w-3.5 h-3.5" />
+            Mentoring 1-on-1 Terverifikasi Industri · 100% Gratis
+          </p>
+          <h1 className="font-display text-2xl sm:text-3xl font-bold tracking-tight text-zinc-950 dark:text-white">
+            Bimbingan Karir &amp; Review Kode Langsung
           </h1>
-          <p className="text-slate-300 text-sm leading-relaxed">
-            Pilih jadwal terbuka dari praktisi industri dan mentor aktif Skillora, ajukan catatan konsultasi atau tautan portofolio, dan pantau tautan pertemuan langsung di akun Anda.
+          <p className="text-zinc-500 dark:text-zinc-400 text-sm leading-relaxed">
+            Pilih jadwal terbuka dari praktisi industri dan mentor aktif SkillOra, ajukan catatan konsultasi atau tautan portofolio, dan pantau tautan pertemuan langsung di akun Anda.
           </p>
         </div>
-      </div>
+      </header>
 
       {/* Tabs */}
-      <div className="flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-2">
+      <div className="flex items-center gap-2 border-b border-zinc-200 dark:border-zinc-800 pb-2">
         <button
           type="button"
           onClick={() => setActiveTab("explore")}
           className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
             activeTab === "explore"
-              ? "bg-blue-600 text-white shadow-xs"
-              : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+              ? "bg-emerald-600 text-white"
+              : "text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800"
           }`}
         >
           Jadwal Mentor Tersedia ({slots.length})
@@ -126,8 +126,8 @@ export function MentoringView({ onProfileUpdate, showToast }: MentoringViewProps
           onClick={() => setActiveTab("scheduled")}
           className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer tabular-nums ${
             activeTab === "scheduled"
-              ? "bg-blue-600 text-white shadow-xs"
-              : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+              ? "bg-emerald-600 text-white"
+              : "text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800"
           }`}
         >
           Booking Saya ({bookings.length})
@@ -288,11 +288,11 @@ export function MentoringView({ onProfileUpdate, showToast }: MentoringViewProps
                         </div>
                         <div className="flex items-center justify-between">
                           <span className="flex items-center gap-1.5">
-                            <Gem className="w-3.5 h-3.5 text-cyan-500" />
-                            Biaya Sesi
+                            <Gem className="w-3.5 h-3.5 text-emerald-500" />
+                            Biaya Pelajar
                           </span>
-                          <span className="tabular-nums font-bold text-cyan-600 dark:text-cyan-400">
-                            {slot.priceGems > 0 ? `${slot.priceGems} Gems` : "Gratis"}
+                          <span className="tabular-nums font-bold text-emerald-600 dark:text-emerald-400">
+                            Gratis (Rp 0)
                           </span>
                         </div>
                       </div>
@@ -306,8 +306,8 @@ export function MentoringView({ onProfileUpdate, showToast }: MentoringViewProps
                         slot.isBookedByMe
                           ? "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 cursor-default"
                           : isFull
-                          ? "bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-not-allowed"
-                          : "bg-blue-600 hover:bg-blue-700 text-white"
+                          ? "bg-zinc-100 dark:bg-zinc-800 text-zinc-400 cursor-not-allowed"
+                          : "bg-emerald-600 hover:bg-emerald-700 text-white"
                       }`}
                     >
                       {slot.isBookedByMe ? (
@@ -365,11 +365,11 @@ export function MentoringView({ onProfileUpdate, showToast }: MentoringViewProps
               </div>
 
               <form onSubmit={handleConfirmBooking} className="space-y-4">
-                <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800 text-xs space-y-1">
-                  <p className="font-bold text-slate-900 dark:text-white">{selectedSlot.topic}</p>
-                  <p className="text-slate-500">
-                    Durasi: {selectedSlot.durationMinutes} menit · Biaya:{" "}
-                    <strong>{selectedSlot.priceGems > 0 ? `${selectedSlot.priceGems} Gems` : "Gratis"}</strong>
+                <div className="p-3.5 rounded-xl bg-zinc-50 dark:bg-zinc-800 text-xs space-y-1">
+                  <p className="font-bold text-zinc-950 dark:text-white">{selectedSlot.topic}</p>
+                  <p className="text-zinc-500 dark:text-zinc-400">
+                    Durasi: {selectedSlot.durationMinutes} menit · Biaya Pelajar:{" "}
+                    <strong className="text-emerald-600 dark:text-emerald-400">Gratis (Rp 0)</strong>
                   </p>
                 </div>
 
@@ -397,7 +397,7 @@ export function MentoringView({ onProfileUpdate, showToast }: MentoringViewProps
                   <button
                     type="submit"
                     disabled={isSubmitting}
-                    className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold cursor-pointer disabled:opacity-50"
+                    className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold cursor-pointer disabled:opacity-50"
                   >
                     {isSubmitting ? "Memproses..." : "Konfirmasi Booking"}
                   </button>

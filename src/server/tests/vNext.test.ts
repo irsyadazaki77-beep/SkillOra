@@ -1,4 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import fs from "fs";
+import path from "path";
 import request from "supertest";
 import express from "express";
 import courseRoutes from "../routes/courseRoutes.js";
@@ -352,5 +354,18 @@ describe("SkillOra vNext 5-Pillar Tests", () => {
         streakFreezes: 1,
       })
     );
+  });
+
+  it("Schema Integrity: ensureSchema.ts guarantees CREATE TABLE IF NOT EXISTS for every pgTable in schema.ts", () => {
+    const schemaSrc = fs.readFileSync(path.resolve(process.cwd(), "src/db/schema.ts"), "utf8");
+    const ensureSrc = fs.readFileSync(path.resolve(process.cwd(), "src/server/db/ensureSchema.ts"), "utf8");
+
+    const schemaTables = [...schemaSrc.matchAll(/pgTable\(\s*['"]([a-z0-9_]+)['"]/g)].map((m) => m[1]);
+    expect(schemaTables.length).toBeGreaterThanOrEqual(48);
+
+    const missingTables = schemaTables.filter(
+      (tbl) => !new RegExp(`CREATE TABLE IF NOT EXISTS\\s+"${tbl}"`).test(ensureSrc)
+    );
+    expect(missingTables).toEqual([]);
   });
 });

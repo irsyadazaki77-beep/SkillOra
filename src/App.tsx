@@ -769,7 +769,7 @@ export default function App() {
                     ) : <Navigate to="/" />
                   } />
                   <Route path="/profil/analitik" element={
-                    <AnalitikView profile={profile!} setProfile={(p) => setProfile(p)} showToast={showToast} />
+                    <AnalitikView profile={profile!} courses={courses} setProfile={(p) => setProfile(p)} showToast={showToast} />
                   } />
                   <Route path="/profil/toko" element={
                     profile ? (
