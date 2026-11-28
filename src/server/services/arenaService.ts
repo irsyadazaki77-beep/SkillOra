@@ -139,12 +139,14 @@ export class ArenaService {
   static async listTryouts(uid: string) {
     await ensureSeeded();
     const userRow = await UserRepository.getOrCreateUser(uid);
-    const allQuestions = await db.select().from(questionsBank);
-    const attempts = await db
-      .select()
-      .from(tryoutAttempts)
-      .where(eq(tryoutAttempts.userId, userRow.id))
-      .orderBy(desc(tryoutAttempts.createdAt));
+    const [allQuestions, attempts] = await Promise.all([
+      db.select().from(questionsBank),
+      db
+        .select()
+        .from(tryoutAttempts)
+        .where(eq(tryoutAttempts.userId, userRow.id))
+        .orderBy(desc(tryoutAttempts.createdAt)),
+    ]);
 
     return TRYOUT_CATALOG.map((pkg) => {
       const matching =
@@ -255,18 +257,22 @@ export class ArenaService {
       accuracy: Math.round((stat.correct / stat.total) * 100),
     }));
 
-    // Compute real percentile against all stored attempts for this tryout
-    const prevAttempts = await db
-      .select({ score: tryoutAttempts.score })
+    // Compute real percentile against all stored attempts via SQL aggregate
+    const [statsRow] = await db
+      .select({
+        total: sql<number>`count(*)::int`,
+        lowerOrEq: sql<number>`count(*) filter (where ${tryoutAttempts.score} <= ${score})::int`,
+      })
       .from(tryoutAttempts)
       .where(eq(tryoutAttempts.tryoutId, pkg.id));
 
+    const totalPrev = Number(statsRow?.total || 0);
+    const lowerOrEq = Number(statsRow?.lowerOrEq || 0);
     let percentile = 50;
-    if (prevAttempts.length === 0) {
+    if (totalPrev === 0) {
       percentile = Math.min(99, Math.max(15, score));
     } else {
-      const lowerOrEq = prevAttempts.filter((a) => a.score <= score).length;
-      percentile = Math.min(99, Math.max(5, Math.round((lowerOrEq / prevAttempts.length) * 100)));
+      percentile = Math.min(99, Math.max(5, Math.round((lowerOrEq / totalPrev) * 100)));
     }
 
     const [inserted] = await db

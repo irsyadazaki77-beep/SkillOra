@@ -32,19 +32,21 @@ export class CareerExpansionService {
   static async getTalentMatch(uid: string) {
     await ensureSeeded();
     const userRow = await UserRepository.getOrCreateUser(uid);
-    const activeJobs = await db.select().from(jobs).where(eq(jobs.status, "active"));
-    const userApps = await db
-      .select()
-      .from(jobApplications)
-      .where(eq(jobApplications.userId, userRow.id));
-    const passedLabs = await db
-      .select()
-      .from(labSubmissions)
-      .where(and(eq(labSubmissions.userId, userRow.id), eq(labSubmissions.passed, true)));
-    const userCerts = await db
-      .select()
-      .from(certificates)
-      .where(eq(certificates.userId, userRow.id));
+    const [activeJobs, userApps, passedLabs, userCerts] = await Promise.all([
+      db.select().from(jobs).where(eq(jobs.status, "active")),
+      db
+        .select({ jobId: jobApplications.jobId, status: jobApplications.status })
+        .from(jobApplications)
+        .where(eq(jobApplications.userId, userRow.id)),
+      db
+        .select({ id: labSubmissions.id })
+        .from(labSubmissions)
+        .where(and(eq(labSubmissions.userId, userRow.id), eq(labSubmissions.passed, true))),
+      db
+        .select({ id: certificates.id })
+        .from(certificates)
+        .where(eq(certificates.userId, userRow.id)),
+    ]);
 
     const userSkillsRaw = safeParse<string[]>(userRow.skills, []);
     const userSkillsLower = userSkillsRaw.map((s) => String(s).toLowerCase());
@@ -209,8 +211,21 @@ export class CareerExpansionService {
         .select()
         .from(adaptiveAssessments)
         .where(and(eq(adaptiveAssessments.userId, userRow.id), eq(adaptiveAssessments.status, "completed"))),
-      db.select().from(courses),
-      db.select().from(labChallenges),
+      db
+        .select({
+          courseId: courses.courseId,
+          title: courses.title,
+          partner: courses.partner,
+          projectTitle: courses.projectTitle,
+        })
+        .from(courses),
+      db
+        .select({
+          challengeId: labChallenges.challengeId,
+          title: labChallenges.title,
+          track: labChallenges.track,
+        })
+        .from(labChallenges),
     ]);
 
     const courseMap = new Map(allCourses.map((c) => [c.courseId, c]));
@@ -294,8 +309,10 @@ export class CareerExpansionService {
   // --- Campus & Cohort Hub ---
   static async listCampusCohorts(uid: string) {
     await ensureSeeded();
-    const userRow = await UserRepository.getOrCreateUser(uid);
-    const rows = await db.select().from(campusCohorts).orderBy(desc(campusCohorts.avgReadiness));
+    const [userRow, rows] = await Promise.all([
+      UserRepository.getOrCreateUser(uid),
+      db.select().from(campusCohorts).orderBy(desc(campusCohorts.avgReadiness)),
+    ]);
 
     return rows.map((c) => ({
       id: c.cohortId,

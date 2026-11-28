@@ -9,7 +9,7 @@ const router = Router();
 router.get("/user/profile", requireAuth, UserController.getProfile);
 
 // Onboarding & Role Registration
-router.post("/user/onboarding", requireAuth, UserController.handleOnboarding);
+router.post("/user/onboarding", requireRegistered, UserController.handleOnboarding);
 router.post("/user/register-role", requireRegistered, UserController.registerRole);
 
 // Claims and daily

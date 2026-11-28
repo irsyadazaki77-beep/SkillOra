@@ -23,6 +23,12 @@ export function useAppEngine(isLoggedIn: boolean, pathname: string = "/belajar")
     isLoggedIn && (pathname === "/komunitas" || pathname.startsWith("/forum"));
   const shouldLoadCollab =
     isLoggedIn && (pathname.startsWith("/komunitas/kolaborasi") || pathname.startsWith("/kolaborasi"));
+  const shouldLoadReviews =
+    isLoggedIn &&
+    (pathname === "/" ||
+      pathname.startsWith("/belajar") ||
+      pathname.startsWith("/sertifikasi") ||
+      pathname.startsWith("/profil"));
 
   const profileQuery = useProfileQuery(isLoggedIn);
   const coursesQuery = useCoursesQuery(isLoggedIn);
@@ -30,7 +36,7 @@ export function useAppEngine(isLoggedIn: boolean, pathname: string = "/belajar")
   const jobsQuery = useJobsQuery(shouldLoadJobs);
   const forumQuery = useForumQuery(shouldLoadForum);
   const collabQuery = useCollaborationQuery(shouldLoadCollab);
-  const reviewsQuery = useProjectReviewsQuery(isLoggedIn);
+  const reviewsQuery = useProjectReviewsQuery(shouldLoadReviews);
 
   // Overall initial loading state
   const loading = isLoggedIn && profileQuery.isLoading && !profileQuery.profile;
@@ -93,15 +99,7 @@ export function useAppEngine(isLoggedIn: boolean, pathname: string = "/belajar")
   };
 
   const loadData = async () => {
-    await Promise.all([
-      profileQuery.refetch(),
-      coursesQuery.refetch(),
-      notificationsQuery.refetch(),
-      jobsQuery.refetch(),
-      forumQuery.refetch(),
-      collabQuery.refetch(),
-      reviewsQuery.refetch(),
-    ]);
+    await queryClient.invalidateQueries({ refetchType: "active" });
   };
 
   return {

@@ -20,12 +20,18 @@ export class LabService {
   static async listChallenges(uid: string) {
     await ensureSeeded();
     const userRow = await UserRepository.getOrCreateUser(uid);
-    const challenges = await db.select().from(labChallenges);
-    const submissions = await db
-      .select()
-      .from(labSubmissions)
-      .where(eq(labSubmissions.userId, userRow.id))
-      .orderBy(desc(labSubmissions.createdAt));
+    const [challenges, submissions] = await Promise.all([
+      db.select().from(labChallenges),
+      db
+        .select({
+          challengeId: labSubmissions.challengeId,
+          score: labSubmissions.score,
+          passed: labSubmissions.passed,
+        })
+        .from(labSubmissions)
+        .where(eq(labSubmissions.userId, userRow.id))
+        .orderBy(desc(labSubmissions.createdAt)),
+    ]);
 
     const statsByChallenge = new Map<string, { bestScore: number; passed: boolean; count: number }>();
     for (const sub of submissions) {

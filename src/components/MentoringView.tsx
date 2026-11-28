@@ -17,6 +17,7 @@ import {
 import { mentoringApi } from "../api/apiClient";
 import { MentoringBooking, MentoringSlot, Profile } from "../types";
 import { playSound } from "../utils/sound";
+import { toSafeExternalUrl } from "../utils/urlUtils";
 
 interface MentoringViewProps {
   onProfileUpdate?: (profile: Profile) => void;
@@ -194,9 +195,9 @@ export function MentoringView({ onProfileUpdate, showToast }: MentoringViewProps
                     </p>
                   )}
 
-                  {b.meetingLink && (
+                  {toSafeExternalUrl(b.meetingLink) && (
                     <a
-                      href={b.meetingLink}
+                      href={toSafeExternalUrl(b.meetingLink)}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold transition-colors"

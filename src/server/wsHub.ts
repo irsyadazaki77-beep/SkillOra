@@ -1,4 +1,5 @@
 import type { Server as HttpServer, IncomingMessage } from "http";
+import * as crypto from "crypto";
 import { WebSocketServer, WebSocket, type RawData } from "ws";
 import { GoogleGenAI, LiveServerMessage, Modality } from "@google/genai";
 import { adminAuth } from "../lib/firebase-admin.js";
@@ -57,13 +58,35 @@ interface ArenaRoom {
   createdAt: number;
 }
 
+const MAX_ARENA_ROOMS = 200;
+const STALE_ROOM_TTL_MS = 15 * 60 * 1000;
+
 function generateRoomCode(): string {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
   let code = "";
   for (let i = 0; i < 6; i++) {
-    code += chars[Math.floor(Math.random() * chars.length)];
+    code += chars[crypto.randomInt(0, chars.length)];
   }
   return code;
+}
+
+function isAllowedWsOrigin(req: IncomingMessage): boolean {
+  if (process.env.NODE_ENV !== "production") return true;
+  const origin = req.headers.origin;
+  if (!origin) return true;
+  const allowedOrigins = (process.env.CORS_ORIGINS || process.env.APP_URL || "")
+    .split(",")
+    .map((o) => o.trim().replace(/\/+$/, ""))
+    .filter(Boolean);
+  const normalized = origin.trim().replace(/\/+$/, "");
+  if (allowedOrigins.includes(normalized)) return true;
+  try {
+    const parsed = new URL(normalized);
+    const reqHost = String(req.headers["x-forwarded-host"] || req.headers.host || "");
+    return Boolean(reqHost && parsed.host.toLowerCase() === reqHost.toLowerCase());
+  } catch {
+    return false;
+  }
 }
 
 async function resolveWsIdentity(token: string | null): Promise<AuthenticatedWsIdentity | null> {
@@ -107,9 +130,9 @@ async function resolveWsIdentity(token: string | null): Promise<AuthenticatedWsI
 }
 
 export function attachWsHub(httpServer: HttpServer) {
-  const collabWss = new WebSocketServer({ noServer: true });
-  const interviewWss = new WebSocketServer({ noServer: true });
-  const arenaWss = new WebSocketServer({ noServer: true });
+  const collabWss = new WebSocketServer({ noServer: true, maxPayload: 256 * 1024 });
+  const interviewWss = new WebSocketServer({ noServer: true, maxPayload: 1024 * 1024 });
+  const arenaWss = new WebSocketServer({ noServer: true, maxPayload: 256 * 1024 });
 
   // Room map: roomId -> Set<WebSocket>
   const roomSubscribers = new Map<string, Set<WebSocket>>();
@@ -118,6 +141,18 @@ export function attachWsHub(httpServer: HttpServer) {
   const arenaRooms = new Map<string, ArenaRoom>();
   const arenaClients = new Set<WebSocket>();
   const socketToRoom = new Map<WebSocket, { roomCode: string; uid: string }>();
+
+  function pruneStaleArenaRooms() {
+    const now = Date.now();
+    for (const [code, room] of arenaRooms.entries()) {
+      const isEmpty = room.players.size === 0;
+      const isStale = now - room.createdAt > STALE_ROOM_TTL_MS && room.status !== "active";
+      if (isEmpty || isStale) {
+        clearRoomTimers(room);
+        arenaRooms.delete(code);
+      }
+    }
+  }
 
   function broadcastToRoom(roomId: string, payload: any) {
     const subs = roomSubscribers.get(roomId);
@@ -408,8 +443,13 @@ export function attachWsHub(httpServer: HttpServer) {
 
         if (msg.type === "room:create") {
           removeSocketFromArenaRoom(ws);
+          pruneStaleArenaRooms();
+          if (arenaRooms.size >= MAX_ARENA_ROOMS) {
+            ws.send(JSON.stringify({ type: "error", message: "Kapasitas ruang Arena sedang penuh. Coba lagi sebentar." }));
+            return;
+          }
           await ensureSeeded();
-          const topic = typeof msg.topic === "string" && msg.topic.trim() ? msg.topic.trim() : "Semua";
+          const topic = typeof msg.topic === "string" && msg.topic.trim() ? msg.topic.trim().slice(0, 80) : "Semua";
           const allQ = await db.select().from(questionsBank);
           const filtered =
             topic === "Semua"
@@ -548,8 +588,10 @@ export function attachWsHub(httpServer: HttpServer) {
         ws.close(1008, "Room not found");
         return;
       }
-    } catch {
-      ws.close(1011, "Room check failed");
+      await ForumService.assertRoomAccess(user.uid, existingRoom);
+    } catch (err: any) {
+      ws.send(JSON.stringify({ type: "error", message: err?.message || "Akses ruang kolaborasi ditolak." }));
+      ws.close(1008, "Forbidden");
       return;
     }
 
@@ -750,6 +792,12 @@ ATURAN WAWANCARA:
       const pathname = url.pathname;
 
       if (pathname !== "/ws/collab" && pathname !== "/ws/interview" && pathname !== "/ws/arena") {
+        return;
+      }
+
+      if (!isAllowedWsOrigin(req)) {
+        socket.write("HTTP/1.1 403 Forbidden\r\n\r\n");
+        socket.destroy();
         return;
       }
 

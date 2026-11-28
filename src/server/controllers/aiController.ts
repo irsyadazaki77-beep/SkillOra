@@ -4,10 +4,11 @@ import { AIService } from "../services/aiService.js";
 import { AdaptiveQuizService } from "../services/adaptiveQuizService.js";
 import { CvService } from "../services/cvService.js";
 import { InterviewService } from "../services/interviewService.js";
-import { UserService } from "../services/userService.js";
+import { UserRepository } from "../repositories/UserRepository.js";
 import { ProjectRepository } from "../repositories/ProjectRepository.js";
 import { sanitizeString } from "../middlewares/validateInput.js";
 import { safeParse } from "../../utils/safeJson.js";
+import { assertSafeHttpUrl } from "../../utils/urlUtils.js";
 
 export class AIController {
   static async mentorChat(req: AuthenticatedRequest, res: Response) {
@@ -72,7 +73,7 @@ export class AIController {
         });
       }
 
-      const cleanUrl = sanitizeString(projectUrl, 500);
+      const cleanUrl = assertSafeHttpUrl(sanitizeString(projectUrl, 500), "URL Proyek");
       const cleanNotes = sanitizeString(studentCodeNotes, 1000);
 
       const result = await AIService.submitProject(req.userId!, courseId, cleanUrl, cleanNotes);
@@ -106,8 +107,8 @@ export class AIController {
 
   static async getProjectReviews(req: AuthenticatedRequest, res: Response) {
     try {
-      const profile = await UserService.getProfile(req.userId!);
-      const submissions = await ProjectRepository.getAllSubmissions(profile.id);
+      const userRow = await UserRepository.getOrCreateUser(req.userId!, req.userEmail || "user@skillora.app", req.userName || "Pengguna");
+      const submissions = await ProjectRepository.getAllSubmissions(userRow.id);
 
       const reviews: Record<string, any> = {};
       for (const sub of submissions) {

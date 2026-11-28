@@ -11,7 +11,7 @@ router.post("/jobs/interview", requireRegistered, aiLimiter, AIController.hrInte
 router.post("/simulasi/evaluate-star", requireRegistered, aiLimiter, AIController.evaluateSTAR);
 router.post("/projects/submit", requireRegistered, aiLimiter, AIController.submitProject);
 router.post("/project/assist", requireRegistered, aiLimiter, AIController.projectAssist);
-router.get("/projects/reviews", requireAuth, aiLimiter, AIController.getProjectReviews);
+router.get("/projects/reviews", requireAuth, AIController.getProjectReviews);
 
 // Adaptive AI Assessments (CAT)
 router.post("/assessments/adaptive/start", requireRegistered, aiLimiter, AIController.startAdaptive);

@@ -148,17 +148,22 @@ export class UserRepository {
     }
   }
 
-  static async checkAndUpdateStreak(dbUserId: number) {
-    const userRow = await db.query.users.findFirst({
-      where: eq(users.id, dbUserId),
-    });
+  static async checkAndUpdateStreak(
+    dbUserId: number,
+    preloadedUser?: typeof users.$inferSelect
+  ): Promise<boolean> {
+    const userRow =
+      preloadedUser ||
+      (await db.query.users.findFirst({
+        where: eq(users.id, dbUserId),
+      }));
 
-    if (!userRow) return;
+    if (!userRow) return false;
 
     const now = new Date();
     if (!userRow.lastActive) {
       await UserRepository.updateUserRow(dbUserId, { lastActive: now.toISOString() });
-      return;
+      return true;
     }
 
     const lastActiveDate = new Date(userRow.lastActive);
@@ -186,6 +191,8 @@ export class UserRepository {
       });
 
       await NotificationRepository.addNotification(dbUserId, message);
+      await UserRepository.checkAndUpdateAchievements(dbUserId);
+      return true;
     } else if (diffDays > 1) {
       let purchasedItems = safeParse<string[]>(userRow.purchasedItems, []);
       const hasFreezeItem = purchasedItems.includes("streak-freeze");
@@ -222,11 +229,19 @@ export class UserRepository {
           `Streak terputus. Anda dapat memulihkan Streak ${userRow.streak} Hari di Toko Gems.`
         );
       }
+      await UserRepository.checkAndUpdateAchievements(dbUserId);
+      return true;
     } else if (diffDays === 0) {
-      await UserRepository.updateUserRow(dbUserId, { lastActive: now.toISOString() });
+      // Debounce same-day lastActive writes (avoid redundant DB writes on every route reload)
+      if (now.getTime() - lastActiveDate.getTime() > 5 * 60 * 1000) {
+        await UserRepository.updateUserRow(dbUserId, { lastActive: now.toISOString() });
+        await UserRepository.checkAndUpdateAchievements(dbUserId);
+        return true;
+      }
+      return false;
     }
 
-    await UserRepository.checkAndUpdateAchievements(dbUserId);
+    return false;
   }
 
   static async checkAndUpdateAchievements(dbUserId: number) {
@@ -278,45 +293,71 @@ export class UserRepository {
       uid === "user-dev-default" ? "Tamu Skillora" : "Siswa"
     );
 
-    await UserRepository.checkAndUpdateStreak(userRow.id);
+    const streakMutated = await UserRepository.checkAndUpdateStreak(userRow.id, userRow);
 
-    const updatedUserRow =
-      (await db.query.users.findFirst({
-        where: eq(users.id, userRow.id),
-      })) || userRow;
+    const updatedUserRow = streakMutated
+      ? (await db.query.users.findFirst({
+          where: eq(users.id, userRow.id),
+        })) || userRow
+      : userRow;
 
-    const companyRow = updatedUserRow.companyId
-      ? await db.query.companies.findFirst({ where: eq(companies.id, updatedUserRow.companyId) })
-      : null;
+    const [
+      companyRow,
+      bookmarkedCoursesRows,
+      bookmarkedJobsRows,
+      attemptsRows,
+      userCertificatesRows,
+      userCoursesRows,
+      userSubmissions,
+      initialAchievementsList,
+    ] = await Promise.all([
+      updatedUserRow.companyId
+        ? db.query.companies.findFirst({ where: eq(companies.id, updatedUserRow.companyId) })
+        : Promise.resolve(null),
+      db
+        .select({ courseId: courses.courseId })
+        .from(bookmarks)
+        .innerJoin(courses, eq(bookmarks.courseId, courses.id))
+        .where(eq(bookmarks.userId, updatedUserRow.id)),
+      db
+        .select({ jobId: jobBookmarks.jobId })
+        .from(jobBookmarks)
+        .where(eq(jobBookmarks.userId, updatedUserRow.id)),
+      db
+        .select({
+          id: quizAttempts.id,
+          courseId: courses.courseId,
+          courseTitle: courses.title,
+          lessonId: lessons.lessonId,
+          lessonTitle: lessons.title,
+          score: quizAttempts.score,
+          passed: quizAttempts.passed,
+          createdAt: quizAttempts.createdAt,
+        })
+        .from(quizAttempts)
+        .innerJoin(courses, eq(quizAttempts.courseId, courses.id))
+        .innerJoin(lessons, eq(quizAttempts.lessonId, lessons.id))
+        .where(eq(quizAttempts.userId, updatedUserRow.id)),
+      db
+        .select()
+        .from(certificates)
+        .where(eq(certificates.userId, updatedUserRow.id))
+        .orderBy(desc(certificates.issuedAt)),
+      db
+        .select({ courseId: courses.courseId, title: courses.title, partner: courses.partner })
+        .from(courses),
+      db
+        .select()
+        .from(projectSubmissions)
+        .where(eq(projectSubmissions.userId, updatedUserRow.id))
+        .orderBy(desc(projectSubmissions.submittedAt)),
+      db.query.userAchievements.findMany({
+        where: eq(userAchievements.userId, updatedUserRow.id),
+      }),
+    ]);
 
-    const bookmarkedCoursesRows = await db
-      .select({ courseId: courses.courseId })
-      .from(bookmarks)
-      .innerJoin(courses, eq(bookmarks.courseId, courses.id))
-      .where(eq(bookmarks.userId, updatedUserRow.id));
     const bookmarkedCourses = bookmarkedCoursesRows.map((r) => r.courseId);
-
-    const bookmarkedJobsRows = await db
-      .select({ jobId: jobBookmarks.jobId })
-      .from(jobBookmarks)
-      .where(eq(jobBookmarks.userId, updatedUserRow.id));
     const bookmarkedJobs = bookmarkedJobsRows.map((r) => r.jobId);
-
-    const attemptsRows = await db
-      .select({
-        id: quizAttempts.id,
-        courseId: courses.courseId,
-        courseTitle: courses.title,
-        lessonId: lessons.lessonId,
-        lessonTitle: lessons.title,
-        score: quizAttempts.score,
-        passed: quizAttempts.passed,
-        createdAt: quizAttempts.createdAt,
-      })
-      .from(quizAttempts)
-      .innerJoin(courses, eq(quizAttempts.courseId, courses.id))
-      .innerJoin(lessons, eq(quizAttempts.lessonId, lessons.id))
-      .where(eq(quizAttempts.userId, updatedUserRow.id));
 
     const quizAttemptsList = attemptsRows.map((att) => ({
       id: `att_${att.id}`,
@@ -332,13 +373,6 @@ export class UserRepository {
       gemsEarned: att.passed ? 15 : 5,
     }));
 
-    const userCertificatesRows = await db
-      .select()
-      .from(certificates)
-      .where(eq(certificates.userId, updatedUserRow.id))
-      .orderBy(desc(certificates.issuedAt));
-
-    const userCoursesRows = await db.select().from(courses);
     const courseTitleMap = new Map(userCoursesRows.map((c) => [c.courseId, { title: c.title, partner: c.partner }]));
 
     const certRecords = userCertificatesRows.map((c) => {
@@ -355,12 +389,6 @@ export class UserRepository {
       };
     });
 
-    const userSubmissions = await db
-      .select()
-      .from(projectSubmissions)
-      .where(eq(projectSubmissions.userId, updatedUserRow.id))
-      .orderBy(desc(projectSubmissions.submittedAt));
-
     const portfolioProjects = userSubmissions.map((sub) => {
       const meta = courseTitleMap.get(sub.courseId);
       return {
@@ -375,10 +403,7 @@ export class UserRepository {
       };
     });
 
-    let achievementsList = await db.query.userAchievements.findMany({
-      where: eq(userAchievements.userId, updatedUserRow.id),
-    });
-
+    let achievementsList = initialAchievementsList;
     if (achievementsList.length === 0) {
       await UserRepository.initializeAchievements(updatedUserRow.id, updatedUserRow.streak, updatedUserRow.gems);
       achievementsList = await db.query.userAchievements.findMany({
@@ -493,8 +518,6 @@ export class UserRepository {
   }
 
   static async getLeaderboard(currentUid: string) {
-    const currentUserProfile = await UserRepository.getFullProfile(currentUid);
-
     const leaderboardCols = {
       id: users.id,
       name: users.name,
@@ -505,7 +528,8 @@ export class UserRepository {
       role: users.role,
     };
 
-    const [weeklyRows, allTimeRows] = await Promise.all([
+    const [currentUserRow, weeklyRows, allTimeRows] = await Promise.all([
+      UserRepository.getOrCreateUser(currentUid, "user@skillora.app", "Pengguna"),
       db.select(leaderboardCols).from(users).orderBy(desc(users.weeklyXp), desc(users.xp)).limit(10),
       db.select(leaderboardCols).from(users).orderBy(desc(users.xp)).limit(10),
     ]);
@@ -518,7 +542,7 @@ export class UserRepository {
       xp: u.xp,
       weeklyXp: u.weeklyXp,
       title: u.role || "Pelajar Siap Kerja",
-      isCurrentUser: u.id === currentUserProfile.id,
+      isCurrentUser: u.id === currentUserRow.id,
     });
 
     return {

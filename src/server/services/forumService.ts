@@ -10,6 +10,7 @@ import {
 import { ensureSeeded } from "../db/seedData.js";
 import { UserRepository } from "../repositories/UserRepository.js";
 import { eq, and, desc, asc } from "drizzle-orm";
+import { assertSafeHttpUrl } from "../../utils/urlUtils.js";
 
 export class ForumService {
   static async getForumPosts() {
@@ -45,15 +46,15 @@ export class ForumService {
 
   static async createPost(userId: string, title: string, content: string, tags: string[]) {
     await ensureSeeded();
-    const profile = await UserRepository.getFullProfile(userId);
+    const userRow = await UserRepository.getOrCreateUser(userId, "user@skillora.app", "Pengguna");
     const postId = `fp_${Date.now()}_${Math.random().toString(36).slice(2, 5)}`;
 
     await db.insert(forumPosts).values({
       postId,
-      authorUserId: profile.id,
-      authorName: profile.name,
-      authorAvatar: profile.selectedAvatar || "🦁",
-      authorLevel: profile.level,
+      authorUserId: userRow.id,
+      authorName: userRow.name,
+      authorAvatar: userRow.avatar || "🦁",
+      authorLevel: userRow.level,
       title,
       content,
       tags: Array.isArray(tags) && tags.length > 0 ? tags : ["Umum"],
@@ -66,16 +67,18 @@ export class ForumService {
 
   static async replyPost(userId: string, postIdStr: string, content: string) {
     await ensureSeeded();
-    const profile = await UserRepository.getFullProfile(userId);
-    const post = await db.query.forumPosts.findFirst({ where: eq(forumPosts.postId, postIdStr) });
+    const [userRow, post] = await Promise.all([
+      UserRepository.getOrCreateUser(userId, "user@skillora.app", "Pengguna"),
+      db.query.forumPosts.findFirst({ where: eq(forumPosts.postId, postIdStr) }),
+    ]);
     if (!post) throw new Error("Diskusi tidak ditemukan.");
 
     await db.insert(forumReplies).values({
       postId: post.id,
-      authorUserId: profile.id,
-      authorName: profile.name,
-      authorAvatar: profile.selectedAvatar || "🦁",
-      authorRole: profile.accountRole || "student",
+      authorUserId: userRow.id,
+      authorName: userRow.name,
+      authorAvatar: userRow.avatar || "🦁",
+      authorRole: userRow.accountRole || "student",
       content,
     });
 
@@ -84,26 +87,28 @@ export class ForumService {
 
   static async upvotePost(userId: string, postIdStr: string) {
     await ensureSeeded();
-    const profile = await UserRepository.getFullProfile(userId);
-    const post = await db.query.forumPosts.findFirst({ where: eq(forumPosts.postId, postIdStr) });
+    const [userRow, post] = await Promise.all([
+      UserRepository.getOrCreateUser(userId, "user@skillora.app", "Pengguna"),
+      db.query.forumPosts.findFirst({ where: eq(forumPosts.postId, postIdStr) }),
+    ]);
     if (!post) throw new Error("Postingan tidak ditemukan.");
 
     const existing = await db
       .select()
       .from(forumUpvotes)
-      .where(and(eq(forumUpvotes.postId, post.id), eq(forumUpvotes.userId, profile.id)))
+      .where(and(eq(forumUpvotes.postId, post.id), eq(forumUpvotes.userId, userRow.id)))
       .limit(1);
 
     if (existing.length > 0) {
       await db
         .delete(forumUpvotes)
-        .where(and(eq(forumUpvotes.postId, post.id), eq(forumUpvotes.userId, profile.id)));
+        .where(and(eq(forumUpvotes.postId, post.id), eq(forumUpvotes.userId, userRow.id)));
       await db
         .update(forumPosts)
         .set({ upvotes: Math.max(0, post.upvotes - 1) })
         .where(eq(forumPosts.id, post.id));
     } else {
-      await db.insert(forumUpvotes).values({ postId: post.id, userId: profile.id });
+      await db.insert(forumUpvotes).values({ postId: post.id, userId: userRow.id });
       await db
         .update(forumPosts)
         .set({ upvotes: post.upvotes + 1, isHot: post.upvotes + 1 >= 15 })
@@ -151,7 +156,7 @@ export class ForumService {
 
   static async createCollaborationRoom(userId: string, data: { title: string; courseId?: string }) {
     await ensureSeeded();
-    const profile = await UserRepository.getFullProfile(userId);
+    const userRow = await UserRepository.getOrCreateUser(userId, "user@skillora.app", "Pengguna");
     const roomId = `room-${Date.now()}`;
 
     const [room] = await db
@@ -162,11 +167,11 @@ export class ForumService {
         title: data.title.trim(),
         members: [
           {
-            uid: profile.uid,
-            name: profile.name,
-            role: profile.role || "Project Lead",
-            avatar: profile.selectedAvatar || "🦁",
-            currentXP: profile.xp || 0,
+            uid: userRow.uid,
+            name: userRow.name,
+            role: userRow.role || "Project Lead",
+            avatar: userRow.avatar || "🦁",
+            currentXP: userRow.xp || 0,
           },
         ],
         projectUrl: "",
@@ -178,7 +183,7 @@ export class ForumService {
       taskId: `task-${Date.now()}`,
       roomId: room.id,
       title: "Inisialisasi repositori & pembagian tugas tim",
-      assignee: profile.name,
+      assignee: userRow.name,
       status: "todo",
       priority: "Tinggi",
     });
@@ -186,17 +191,36 @@ export class ForumService {
     return ForumService.getCollaborationRooms();
   }
 
+  static async assertRoomAccess(userId: string, room: typeof collabRooms.$inferSelect) {
+    const userRow = await UserRepository.getOrCreateUser(userId, "user@skillora.app", "Pengguna");
+    const isStaff = ["admin", "mentor"].includes(userRow.accountRole) || ["Admin", "Developer"].includes(userRow.role);
+    if (isStaff) return userRow;
+
+    const members = Array.isArray(room.members) ? (room.members as any[]) : [];
+    const hasScopedMembers = members.some((m) => Boolean(m?.uid));
+    if (!hasScopedMembers) {
+      // Seeded open demo rooms have no uid bindings
+      return userRow;
+    }
+
+    const isMember = members.some((m) => m?.uid === userRow.uid);
+    if (!isMember) {
+      throw new Error("Akses ditolak: Anda bukan anggota ruang kolaborasi ini.");
+    }
+    return userRow;
+  }
+
   static async postChat(userId: string, roomIdStr: string, text: string) {
     await ensureSeeded();
-    const profile = await UserRepository.getFullProfile(userId);
     const room = await db.query.collabRooms.findFirst({ where: eq(collabRooms.roomId, roomIdStr) });
     if (!room) throw new Error("Ruangan tim tidak ditemukan");
+    const userRow = await ForumService.assertRoomAccess(userId, room);
 
     await db.insert(collabMessages).values({
       messageId: `m_${Date.now()}_${Math.random().toString(36).slice(2, 5)}`,
       roomId: room.id,
-      sender: profile.name,
-      avatar: profile.selectedAvatar || "🦁",
+      sender: userRow.name,
+      avatar: userRow.avatar || "🦁",
       text,
     });
 
@@ -218,22 +242,7 @@ export class ForumService {
   }
 
   private static async assertRoomMember(userId: string, room: typeof collabRooms.$inferSelect) {
-    const profile = await UserRepository.getFullProfile(userId);
-    const isStaff = ["admin", "mentor"].includes(profile.accountRole) || ["Admin", "Developer"].includes(profile.role);
-    if (isStaff) return profile;
-
-    const members = Array.isArray(room.members) ? (room.members as any[]) : [];
-    const hasScopedMembers = members.some((m) => Boolean(m?.uid));
-    if (!hasScopedMembers) {
-      // Seeded open demo rooms have no uid bindings
-      return profile;
-    }
-
-    const isMember = members.some((m) => m?.uid === profile.uid);
-    if (!isMember) {
-      throw new Error("Akses ditolak: Anda bukan anggota ruang kolaborasi ini.");
-    }
-    return profile;
+    return ForumService.assertRoomAccess(userId, room);
   }
 
   static async createTask(userId: string, roomIdStr: string, data: { title: string; assignee?: string; priority?: string }) {
@@ -291,13 +300,14 @@ export class ForumService {
   }
 
   static async submitProject(userId: string, roomIdStr: string, projectUrl: string) {
+    const safeUrl = assertSafeHttpUrl(projectUrl, "Tautan proyek");
     const room = await db.query.collabRooms.findFirst({ where: eq(collabRooms.roomId, roomIdStr) });
     if (!room) throw new Error("Ruangan tim tidak ditemukan");
     await ForumService.assertRoomMember(userId, room);
 
     await db
       .update(collabRooms)
-      .set({ projectUrl, status: "Menunggu Review Mentor" })
+      .set({ projectUrl: safeUrl, status: "Menunggu Review Mentor" })
       .where(eq(collabRooms.id, room.id));
 
     const rooms = await ForumService.getCollaborationRooms();

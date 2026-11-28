@@ -23,6 +23,7 @@ import {
 import { CollabRoom } from "../types";
 import { forumApi, getAuthTokenForWs } from "../api/apiClient";
 import { motion } from "motion/react";
+import { toSafeExternalUrl } from "../utils/urlUtils";
 
 interface KolaborasiViewProps {
   rooms: CollabRoom[];
@@ -664,11 +665,11 @@ export function KolaborasiView({
               </button>
             </div>
 
-            {activeRoom.projectUrl && (
+            {toSafeExternalUrl(activeRoom.projectUrl) && (
               <div className="pt-1 flex items-center gap-2 text-xs font-medium text-slate-600 dark:text-slate-300">
                 <span>Tautan Dikirim:</span>
                 <a
-                  href={activeRoom.projectUrl}
+                  href={toSafeExternalUrl(activeRoom.projectUrl)}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-blue-600 dark:text-blue-400 hover:underline font-bold flex items-center gap-1 bg-blue-50 dark:bg-blue-950/40 px-2.5 py-1 rounded border border-blue-100 dark:border-blue-800"

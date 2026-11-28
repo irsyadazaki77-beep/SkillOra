@@ -14,6 +14,7 @@ import { Link } from "react-router-dom";
 import { Course, MentorSubmissionItem, MentoringBooking, MentoringSlot, Profile } from "../types";
 import { mentorApi, mentoringApi } from "../api/apiClient";
 import { ROUTES } from "../routes";
+import { toSafeExternalUrl } from "../utils/urlUtils";
 
 interface PortalMentorViewProps {
   profile: Profile;
@@ -242,15 +243,19 @@ export function PortalMentorView({ profile, showToast }: PortalMentorViewProps) 
                           <div className="text-[11px] text-slate-500">{sub.projectTitle}</div>
                         </td>
                         <td className="px-4 py-3">
-                          <a
-                            href={sub.projectUrl}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-semibold hover:underline"
-                          >
-                            <span>Buka Repositori</span>
-                            <ExternalLink className="w-3 h-3" />
-                          </a>
+                          {toSafeExternalUrl(sub.projectUrl) ? (
+                            <a
+                              href={toSafeExternalUrl(sub.projectUrl)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-semibold hover:underline"
+                            >
+                              <span>Buka Repositori</span>
+                              <ExternalLink className="w-3 h-3" />
+                            </a>
+                          ) : (
+                            <span className="text-slate-400 text-xs">Tautan tidak valid</span>
+                          )}
                         </td>
                         <td className="px-4 py-3 font-bold tabular-nums text-slate-900 dark:text-white">
                           {sub.score ?? "-"}/100
@@ -365,14 +370,16 @@ export function PortalMentorView({ profile, showToast }: PortalMentorViewProps) 
                         </div>
                       </div>
                       <div className="flex items-center gap-2 shrink-0">
-                        <a
-                          href={b.meetingLink}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="px-3 py-1.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 font-semibold flex items-center gap-1"
-                        >
-                          <Video className="w-3.5 h-3.5 text-emerald-600" /> Ruang Meet
-                        </a>
+                        {toSafeExternalUrl(b.meetingLink) && (
+                          <a
+                            href={toSafeExternalUrl(b.meetingLink)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="px-3 py-1.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 font-semibold flex items-center gap-1"
+                          >
+                            <Video className="w-3.5 h-3.5 text-emerald-600" /> Ruang Meet
+                          </a>
+                        )}
                         {b.status !== "completed" ? (
                           <button
                             onClick={() => handleCompleteBooking(b.id)}

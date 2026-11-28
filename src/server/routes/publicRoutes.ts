@@ -23,7 +23,17 @@ router.get("/public/certificates/:id", async (req, res) => {
 
     res.json({
       success: true,
-      certificate: cert
+      certificate: {
+        certificateId: cert.certificateId,
+        courseId: cert.courseId,
+        certificateType: cert.certificateType,
+        pathSlug: cert.pathSlug,
+        recipientName: cert.recipientName,
+        issuedAt: cert.issuedAt,
+        score: cert.score,
+        status: cert.status,
+        verificationCode: cert.verificationCode,
+      },
     });
   } catch (error) {
     console.error("Error verifying certificate:", error);

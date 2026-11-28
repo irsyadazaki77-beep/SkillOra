@@ -3,15 +3,19 @@ import { CareerRepository } from "../repositories/CareerRepository.js";
 import { NotificationRepository } from "../repositories/NotificationRepository.js";
 import { db } from "../../db/index.js";
 import { jobApplications, jobs } from "../../db/schema.js";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
+import { safeParse } from "../../utils/safeJson.js";
 
 export class JobService {
   static async getJobs(userId: string) {
-    const profile = await UserRepository.getFullProfile(userId);
-    const userSkills = (profile.skills || []).map((s: any) => (typeof s === "string" ? s : s.name).toLowerCase());
+    const userRow = await UserRepository.getOrCreateUser(userId, "user@skillora.app", "Pengguna");
+    const parsedSkills = safeParse<any[]>(userRow.skills, []);
+    const userSkills = parsedSkills.map((s: any) => (typeof s === "string" ? s : s.name).toLowerCase());
 
-    const activeJobs = await CareerRepository.listActiveJobs();
-    const apps = await CareerRepository.getApplications(profile.id);
+    const [activeJobs, apps] = await Promise.all([
+      CareerRepository.listActiveJobs(),
+      CareerRepository.getApplications(userRow.id),
+    ]);
     const appMap = new Map(apps.map((a) => [a.jobId, a]));
 
     return activeJobs.map((job) => {
@@ -42,29 +46,47 @@ export class JobService {
   }
 
   static async applyJob(userId: string, jobId: string, cvDocumentId?: number | null, coverNote?: string) {
-    const profile = await UserRepository.getFullProfile(userId);
-    const allJobs = await JobService.getJobs(userId);
-    const job = allJobs.find((j) => j.id === jobId);
-    if (!job) throw new Error("Lowongan tidak ditemukan");
+    const [userRow, jobRow] = await Promise.all([
+      UserRepository.getOrCreateUser(userId, "user@skillora.app", "Pengguna"),
+      CareerRepository.getJobByJobId(jobId),
+    ]);
+    if (!jobRow || jobRow.status !== "active") throw new Error("Lowongan tidak ditemukan");
 
-    const existingApps = await CareerRepository.getApplications(profile.id);
+    const existingApps = await CareerRepository.getApplications(userRow.id);
     if (existingApps.some((app) => app.jobId === jobId)) {
       throw new Error("Anda sudah melamar pekerjaan ini.");
     }
 
-    await CareerRepository.applyJob(profile.id, jobId, "Terkirim", cvDocumentId, coverNote);
+    await CareerRepository.applyJob(userRow.id, jobId, "Terkirim", cvDocumentId, coverNote);
 
-    await UserRepository.updateUserRow(profile.id, {
-      careerStage: "applied",
-      updatedAt: new Date(),
-    });
-
-    const notifText = `💼 Lamaran dikirim otomatis ke HRD ${job.company} untuk posisi '${job.title}'!`;
-    await NotificationRepository.addNotification(profile.id, notifText, "job");
+    await Promise.all([
+      UserRepository.updateUserRow(userRow.id, {
+        careerStage: "applied",
+        updatedAt: new Date(),
+      }),
+      NotificationRepository.addNotification(
+        userRow.id,
+        `💼 Lamaran dikirim otomatis ke HRD ${jobRow.companyName} untuk posisi '${jobRow.title}'!`,
+        "job"
+      ),
+    ]);
 
     const updatedProfile = await UserRepository.getFullProfile(userId);
     return {
-      job: { ...job, status: "Terkirim" },
+      job: {
+        id: jobRow.jobId,
+        dbId: jobRow.id,
+        companyId: jobRow.companyId,
+        title: jobRow.title,
+        company: jobRow.companyName,
+        logo: jobRow.companyLogo || "🏢",
+        salary: jobRow.salary,
+        location: jobRow.location,
+        jobType: jobRow.jobType || "Full-time",
+        requiredSkills: Array.isArray(jobRow.requiredSkills) ? jobRow.requiredSkills : [],
+        description: jobRow.description,
+        status: "Terkirim",
+      },
       profile: updatedProfile,
     };
   }
@@ -72,20 +94,25 @@ export class JobService {
   // Recruiter / HRD Portal Services
   static async getRecruiterOverview(userId: string) {
     const userRow = await UserRepository.getOrCreateUser(userId, "recruiter@skillora.app", "Recruiter HRD");
-    const company = await CareerRepository.getOrCreateRecruiterCompany(userRow);
-    const allJobs = await CareerRepository.listAllJobs();
+    const [company, allJobs, applicants, countRows] = await Promise.all([
+      CareerRepository.getOrCreateRecruiterCompany(userRow),
+      CareerRepository.listAllJobs(),
+      CareerRepository.getRecruiterApplicants(userRow),
+      db
+        .select({
+          jobId: jobApplications.jobId,
+          total: sql<number>`count(*)::int`,
+        })
+        .from(jobApplications)
+        .groupBy(jobApplications.jobId),
+    ]);
+
     const companyJobs =
       userRow.accountRole === "admin" || !company
         ? allJobs
         : allJobs.filter((j) => j.companyId === company.id || j.postedByUserId === userRow.id);
 
-    const applicants = await CareerRepository.getRecruiterApplicants(userRow);
-    const allApps = await db.select().from(jobApplications);
-
-    const countByJob = new Map<string, number>();
-    for (const a of allApps) {
-      countByJob.set(a.jobId, (countByJob.get(a.jobId) || 0) + 1);
-    }
+    const countByJob = new Map<string, number>(countRows.map((r) => [r.jobId, Number(r.total) || 0]));
 
     return {
       company,
@@ -222,7 +249,6 @@ export class JobService {
     userId: string,
     body: { candidateId: number; jobTitle: string; message: string; companyName?: string }
   ) {
-    const recruiter = await UserRepository.getFullProfile(userId);
     const candidateId = Number(body?.candidateId);
     if (!Number.isInteger(candidateId) || candidateId <= 0) {
       throw new Error("candidateId wajib valid.");
@@ -230,13 +256,19 @@ export class JobService {
     if (!body?.jobTitle?.trim() || !body?.message?.trim()) {
       throw new Error("Judul posisi dan pesan undangan wajib diisi.");
     }
+    const recruiter = await UserRepository.getOrCreateUser(userId, "recruiter@skillora.app", "Recruiter HRD");
+    const resolvedCompanyName =
+      body.companyName?.trim() ||
+      (typeof CareerRepository.getOrCreateRecruiterCompany === "function"
+        ? (await CareerRepository.getOrCreateRecruiterCompany(recruiter))?.name
+        : undefined);
     return CareerRepository.inviteTalent(
       { id: recruiter.id, name: recruiter.name },
       candidateId,
       {
         jobTitle: body.jobTitle,
         message: body.message,
-        companyName: body.companyName || recruiter.company?.name,
+        companyName: resolvedCompanyName,
       }
     );
   }

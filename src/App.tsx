@@ -20,6 +20,8 @@ import { Routes, Route, Navigate, useLocation, useNavigate } from "react-router-
 
 import { Course } from "./types";
 import { apiClient } from "./api/apiClient";
+import { auth } from "./lib/firebase";
+import { onAuthStateChanged, signOut } from "firebase/auth";
 import { useAppEngine } from "./hooks/useAppEngine";
 import { useAppHandlers, triggerConfetti } from "./hooks/useAppHandlers";
 
@@ -102,6 +104,17 @@ export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(() => {
     return localStorage.getItem("skillora_logged_in") === "true";
   });
+  const [authReady, setAuthReady] = useState(() => {
+    return localStorage.getItem("skillora_guest_mode") === "true";
+  });
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, () => {
+      setAuthReady(true);
+    });
+    return () => unsubscribe();
+  }, []);
+
   const {
     profile, setProfile,
     courses, setCourses,
@@ -111,15 +124,17 @@ export default function App() {
     forumPosts, setForumPosts,
     reviews, setReviews,
     loading, setLoading,
-    loadData
-  } = useAppEngine(isLoggedIn, location.pathname);
+    loadData,
+    profileQuery,
+  } = useAppEngine(isLoggedIn && authReady, location.pathname);
+
   useEffect(() => {
-    if (isLoggedIn && !loading && !profile) {
+    if (isLoggedIn && authReady && profileQuery.isError && !profile) {
       safeStorage.clearAuthSession();
       clearAuthQueryCache();
       setIsLoggedIn(false);
     }
-  }, [isLoggedIn, loading, profile]);
+  }, [isLoggedIn, authReady, profileQuery.isError, profile]);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
 
@@ -202,6 +217,11 @@ export default function App() {
   const handleLogout = async () => {
     try {
       await apiClient.post("/auth/logout");
+    } catch (e) {
+      // fail silently
+    }
+    try {
+      await signOut(auth);
     } catch (e) {
       // fail silently
     }
@@ -301,9 +321,10 @@ export default function App() {
     const mainEl = document.getElementById("main-content");
     if (!mainEl) return;
     const handleScroll = () => {
-      setShowScrollTop(mainEl.scrollTop > 300);
+      const shouldShow = mainEl.scrollTop > 300;
+      setShowScrollTop((prev) => (prev === shouldShow ? prev : shouldShow));
     };
-    mainEl.addEventListener("scroll", handleScroll);
+    mainEl.addEventListener("scroll", handleScroll, { passive: true });
     return () => mainEl.removeEventListener("scroll", handleScroll);
   }, [location.pathname]);
 
@@ -338,6 +359,7 @@ export default function App() {
         <Suspense fallback={<LoadingScreen />}>
           <LoginView 
             onLoginSuccess={(newProfile) => {
+              setAuthReady(true);
               setProfile(newProfile);
               setIsLoggedIn(true);
             }} 
@@ -348,7 +370,7 @@ export default function App() {
     );
   }
 
-  if (loading || !profile) {
+  if (!authReady || loading || !profile) {
     return <LoadingScreen />;
   }
 
@@ -452,17 +474,15 @@ export default function App() {
             )}
 
             {/* Dynamic rendering of pages */}
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={location.pathname}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.2 }}
-                className="w-full"
-              >
-                <ErrorBoundary resetKey={location.pathname}>
-                  <Suspense fallback={<PageSkeleton />}><Routes location={location}>
+            <motion.div
+              key={location.pathname}
+              initial={{ opacity: 0.92 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.12, ease: "easeOut" }}
+              className="w-full"
+            >
+              <ErrorBoundary resetKey={location.pathname}>
+                <Suspense fallback={<PageSkeleton />}><Routes location={location}>
                   <Route path="/" element={<Navigate to="/belajar" replace />} />
                   
                   {/* Belajar Loop */}
@@ -833,7 +853,6 @@ export default function App() {
                   <Route path="*" element={<Navigate to="/belajar" replace />} />
                 </Routes></Suspense></ErrorBoundary>
               </motion.div>
-            </AnimatePresence>
           </div>
 
           {/* FOOTER */}

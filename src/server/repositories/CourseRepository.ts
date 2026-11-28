@@ -91,37 +91,37 @@ export class CourseRepository {
   static async getCourses(dbUserId: number, includeDrafts = false) {
     await ensureSeeded();
 
-    const progressList = dbUserId > 0
-      ? await db
-          .select()
-          .from(userProgress)
-          .where(eq(userProgress.userId, dbUserId))
-      : [];
+    const [progressList, userEnrollments, countRows, dbCourses] = await Promise.all([
+      dbUserId > 0
+        ? db
+            .select({ lessonId: userProgress.lessonId })
+            .from(userProgress)
+            .where(eq(userProgress.userId, dbUserId))
+        : Promise.resolve([]),
+      dbUserId > 0
+        ? db
+            .select({ courseId: courseEnrollments.courseId })
+            .from(courseEnrollments)
+            .where(eq(courseEnrollments.userId, dbUserId))
+        : Promise.resolve([]),
+      db
+        .select({
+          courseId: courseEnrollments.courseId,
+          total: sql<number>`count(*)::int`,
+        })
+        .from(courseEnrollments)
+        .groupBy(courseEnrollments.courseId),
+      db.query.courses.findMany({
+        with: { lessons: true },
+        orderBy: [desc(courses.id)],
+      }),
+    ]);
+
     const completedLessonIds = new Set(progressList.map((p) => p.lessonId));
-
-    const userEnrollments = dbUserId > 0
-      ? await db
-          .select({ courseId: courseEnrollments.courseId })
-          .from(courseEnrollments)
-          .where(eq(courseEnrollments.userId, dbUserId))
-      : [];
     const enrolledCourseIds = new Set(userEnrollments.map((e) => e.courseId));
-
-    const countRows = await db
-      .select({
-        courseId: courseEnrollments.courseId,
-        total: sql<number>`count(*)::int`,
-      })
-      .from(courseEnrollments)
-      .groupBy(courseEnrollments.courseId);
     const enrollmentCounts = new Map<number, number>(
       countRows.map((row) => [row.courseId, Number(row.total) || 0])
     );
-
-    const dbCourses = await db.query.courses.findMany({
-      with: { lessons: true },
-      orderBy: [desc(courses.id)],
-    });
 
     const filtered = includeDrafts ? dbCourses : dbCourses.filter((c) => c.status !== "draft");
     return filtered.map((c) =>
@@ -346,18 +346,18 @@ export class CourseRepository {
   static async getLearningPaths(dbUserId: number) {
     await ensureSeeded();
 
-    const pathRows = await db.select().from(learningPaths).orderBy(asc(learningPaths.id));
-    const linkRows = await db.select().from(learningPathCourses).orderBy(asc(learningPathCourses.stepOrder));
-    const allCourses = await CourseRepository.getCourses(dbUserId, false);
-    const byDbId = new Map<number, any>(allCourses.map((c: any) => [c.dbId, c]));
-
-    const userSpecCerts =
+    const [pathRows, linkRows, allCourses, userSpecCerts] = await Promise.all([
+      db.select().from(learningPaths).orderBy(asc(learningPaths.id)),
+      db.select().from(learningPathCourses).orderBy(asc(learningPathCourses.stepOrder)),
+      CourseRepository.getCourses(dbUserId, false),
       dbUserId > 0
-        ? await db
+        ? db
             .select()
             .from(certificates)
             .where(and(eq(certificates.userId, dbUserId), eq(certificates.certificateType, "specialization")))
-        : [];
+        : Promise.resolve([]),
+    ]);
+    const byDbId = new Map<number, any>(allCourses.map((c: any) => [c.dbId, c]));
     const specCertBySlug = new Map(userSpecCerts.map((c) => [c.pathSlug, c.certificateId]));
 
     return pathRows

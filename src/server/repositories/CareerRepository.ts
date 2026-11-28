@@ -13,6 +13,7 @@ import {
 import { ensureSeeded } from "../db/seedData.js";
 import { eq, and, desc, inArray } from "drizzle-orm";
 import { safeParse } from "../../utils/safeJson.js";
+import { assertOptionalSafeHttpUrl } from "../../utils/urlUtils.js";
 
 export class CareerRepository {
   static async listActiveJobs() {
@@ -92,6 +93,7 @@ export class CareerRepository {
     userRow: typeof users.$inferSelect,
     data: { name: string; industry?: string; logo?: string; location?: string; website?: string; description?: string }
   ) {
+    const safeWebsite = assertOptionalSafeHttpUrl(data.website, "Website perusahaan");
     const existing = await CareerRepository.getOrCreateRecruiterCompany(userRow);
     if (existing) {
       const [updated] = await db
@@ -101,7 +103,7 @@ export class CareerRepository {
           industry: data.industry?.trim() || existing.industry,
           logo: data.logo || existing.logo,
           location: data.location?.trim() || existing.location,
-          website: data.website?.trim() || existing.website,
+          website: safeWebsite !== undefined ? (safeWebsite || null) : existing.website,
           description: data.description?.trim() || existing.description,
         })
         .where(eq(companies.id, existing.id))
@@ -116,7 +118,7 @@ export class CareerRepository {
         industry: data.industry?.trim() || "Teknologi & Digital",
         logo: data.logo || "🏢",
         location: data.location?.trim() || "Jakarta, Indonesia",
-        website: data.website?.trim() || null,
+        website: safeWebsite || null,
         description: data.description?.trim() || "Perusahaan mitra resmi Skillora.",
         verified: true,
         ownerUid: userRow.uid,
@@ -179,10 +181,14 @@ export class CareerRepository {
         : allJobs.filter((j) => j.companyId === recruiterUser.companyId || j.postedByUserId === recruiterUser.id);
 
     const jobMap = new Map(allJobs.map((j) => [j.jobId, j]));
-    const recruiterJobIds = new Set(recruiterJobs.map((j) => j.jobId));
+    const recruiterJobIdsArr = recruiterJobs.map((j) => j.jobId);
+    if (recruiterJobIdsArr.length === 0) return [];
 
-    const allApps = await db.select().from(jobApplications).orderBy(desc(jobApplications.appliedAt));
-    const relevantApps = allApps.filter((a) => recruiterJobIds.has(a.jobId));
+    const relevantApps = await db
+      .select()
+      .from(jobApplications)
+      .where(inArray(jobApplications.jobId, recruiterJobIdsArr))
+      .orderBy(desc(jobApplications.appliedAt));
     if (relevantApps.length === 0) return [];
 
     const candidateIds = Array.from(new Set(relevantApps.map((a) => a.userId)));

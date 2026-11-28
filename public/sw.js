@@ -1,4 +1,4 @@
-const CACHE_NAME = 'skillora-pwa-v1';
+const CACHE_NAME = 'skillora-pwa-v2';
 const OFFLINE_ASSETS = ['/', '/index.html', '/manifest.webmanifest', '/favicon.svg'];
 
 self.addEventListener('install', (event) => {
@@ -27,6 +27,9 @@ self.addEventListener('fetch', (event) => {
 
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
+  if (url.pathname.startsWith('/__/auth/') || url.pathname.startsWith('/api/v1/auth') || url.pathname.startsWith('/api/auth')) {
+    return;
+  }
 
   // API requests: Network-first with offline JSON/cache fallback for GET endpoints
   if (url.pathname.startsWith('/api/')) {

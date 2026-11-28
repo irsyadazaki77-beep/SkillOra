@@ -10,6 +10,7 @@ import { NotificationRepository } from "../repositories/NotificationRepository.j
 import { safeParse } from "../../utils/safeJson.js";
 import { AI_MODELS } from "../config/aiConfig.js";
 import { eq } from "drizzle-orm";
+import { assertSafeHttpUrl } from "../../utils/urlUtils.js";
 
 let aiClient: GoogleGenAI | null = null;
 export function getGeminiClient(): GoogleGenAI {
@@ -162,11 +163,14 @@ Berikan penilaian objektif, konstruktif, dan profesional.`;
   }
 
   static async submitProject(userId: string, courseId: string, projectUrl: string, studentNotes?: string) {
-    const userRow = await UserRepository.getOrCreateUser(userId, "user@skillora.app", "Siswa");
-    const course = await CourseRepository.getCourseByCourseId(courseId);
+    const safeProjectUrl = assertSafeHttpUrl(projectUrl, "URL Proyek");
+    const [userRow, course] = await Promise.all([
+      UserRepository.getOrCreateUser(userId, "user@skillora.app", "Siswa"),
+      CourseRepository.getCourseByCourseId(courseId),
+    ]);
     if (!course) throw new Error("Kursus tidak ditemukan");
 
-    const githubAuditSummary = await AIService.inspectPublicGithubRepo(projectUrl);
+    const githubAuditSummary = await AIService.inspectPublicGithubRepo(safeProjectUrl);
 
     const ai = getGeminiClient();
     const prompt = `Evaluasi submission proyek portofolio siswa pada platform LMS Skillora.
@@ -228,7 +232,7 @@ Nilai secara objektif (0-100) berdasarkan rubrik di atas. Jika score >= 75, stat
     const submission = await ProjectRepository.submitProject(
       userRow.id,
       courseId,
-      projectUrl,
+      safeProjectUrl,
       studentNotes || "",
       status,
       score,

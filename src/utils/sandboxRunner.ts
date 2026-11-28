@@ -79,6 +79,22 @@ export function runJsInWorker(
 
   return new Promise((resolve) => {
     const workerSource = `
+      // Lock down same-origin network and messaging globals inside the sandbox worker
+      try {
+        const blocked = ['fetch', 'XMLHttpRequest', 'importScripts', 'WebSocket', 'EventSource', 'BroadcastChannel'];
+        for (const key of blocked) {
+          try {
+            Object.defineProperty(self, key, {
+              value: undefined,
+              writable: false,
+              configurable: false,
+            });
+          } catch (_) {
+            try { self[key] = undefined; } catch (_) {}
+          }
+        }
+      } catch (_) {}
+
       self.onmessage = function(e) {
         const { userCode, testCases } = e.data;
         const logs = [];
@@ -88,8 +104,10 @@ export function runJsInWorker(
           error: (...args) => logs.push('[ERR] ' + args.map(a => String(a)).join(' ')),
         };
 
+        const shadowedGlobals = ['console', 'fetch', 'XMLHttpRequest', 'importScripts', 'WebSocket', 'EventSource', 'self', 'globalThis', 'postMessage'];
+
         try {
-          new Function('console', '"use strict";\\n' + userCode);
+          new Function(...shadowedGlobals, '"use strict";\\n' + userCode);
         } catch (err) {
           self.postMessage({
             results: testCases.map(tc => ({
@@ -105,8 +123,8 @@ export function runJsInWorker(
 
         const results = testCases.map(tc => {
           try {
-            const fn = new Function('console', '"use strict";\\n' + userCode + '\\nreturn (' + tc.expression + ');');
-            const actual = fn(consoleProxy);
+            const fn = new Function(...shadowedGlobals, '"use strict";\\n' + userCode + '\\nreturn (' + tc.expression + ');');
+            const actual = fn(consoleProxy, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined);
             const expectedStr = JSON.stringify(tc.expected);
             const actualStr = JSON.stringify(actual);
             const passed = expectedStr === actualStr;
@@ -402,6 +420,8 @@ export function buildFrontendPreviewHtml(code: string): string {
 </html>`;
   }
 
+  const safeScriptCode = trimmed.replace(/<\/script/gi, "<\\/script");
+
   return `<!doctype html>
 <html>
 <head>
@@ -428,7 +448,7 @@ export function buildFrontendPreviewHtml(code: string): string {
       origLog.apply(console, args);
     };
     try {
-      ${trimmed}
+      ${safeScriptCode}
       if (!logs.length) out.textContent = 'Kode JavaScript valid dan siap dijalankan via Uji Otomatis.';
     } catch (err) {
       out.textContent = 'Error: ' + err.message;

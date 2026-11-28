@@ -16,11 +16,11 @@ export interface TranscriptTurn {
 
 export class InterviewService {
   static async getHistory(userId: string) {
-    const profile = await UserRepository.getFullProfile(userId);
+    const userRow = await UserRepository.getOrCreateUser(userId, "user@skillora.app", "Pengguna");
     const sessions = await db
       .select()
       .from(interviewSessions)
-      .where(eq(interviewSessions.userId, profile.id))
+      .where(eq(interviewSessions.userId, userRow.id))
       .orderBy(desc(interviewSessions.createdAt))
       .limit(20);
 
@@ -49,8 +49,10 @@ export class InterviewService {
     userId: string,
     params: { jobId?: string; jobTitle?: string; companyName?: string; mode?: "voice" | "text" }
   ) {
-    const profile = await UserRepository.getFullProfile(userId);
-    const job = params.jobId ? await CareerRepository.getJobByJobId(params.jobId) : null;
+    const [userRow, job] = await Promise.all([
+      UserRepository.getOrCreateUser(userId, "user@skillora.app", "Pengguna"),
+      params.jobId ? CareerRepository.getJobByJobId(params.jobId) : Promise.resolve(null),
+    ]);
 
     const jobTitle = params.jobTitle?.trim() || job?.title || "Frontend & Fullstack Developer";
     const companyName = params.companyName?.trim() || job?.companyName || "Mitra Perusahaan Skillora";
@@ -60,7 +62,7 @@ export class InterviewService {
       .insert(interviewSessions)
       .values({
         sessionId,
-        userId: profile.id,
+        userId: userRow.id,
         jobId: params.jobId || job?.jobId || null,
         jobTitle,
         companyName,
@@ -109,9 +111,9 @@ export class InterviewService {
     sessionId: string,
     body?: { transcript?: TranscriptTurn[]; durationSeconds?: number }
   ) {
-    const profile = await UserRepository.getFullProfile(userId);
+    const userRow = await UserRepository.getOrCreateUser(userId, "user@skillora.app", "Pengguna");
     const session = await db.query.interviewSessions.findFirst({
-      where: and(eq(interviewSessions.sessionId, sessionId), eq(interviewSessions.userId, profile.id)),
+      where: and(eq(interviewSessions.sessionId, sessionId), eq(interviewSessions.userId, userRow.id)),
     });
     if (!session) throw new Error("Sesi wawancara tidak ditemukan.");
 
@@ -166,7 +168,7 @@ Berikan penilaian objektif dalam Bahasa Indonesia dengan 4 skor (0-100): overall
     const evalData = JSON.parse(response.text || "{}");
     const overallScore = Math.max(0, Math.min(100, Number(evalData.overallScore) || 78));
 
-    const updatedProfile = await db.transaction(async (tx) => {
+    await db.transaction(async (tx) => {
       await tx
         .update(interviewSessions)
         .set({
@@ -184,7 +186,7 @@ Berikan penilaian objektif dalam Bahasa Indonesia dengan 4 skor (0-100): overall
         })
         .where(eq(interviewSessions.id, session.id));
 
-      const [u] = await tx.select().from(users).where(eq(users.id, profile.id)).for("update");
+      const [u] = await tx.select().from(users).where(eq(users.id, userRow.id)).for("update");
       const bonusXp = 75;
       const newXp = (u?.xp || 0) + bonusXp;
       await tx
@@ -195,10 +197,10 @@ Berikan penilaian objektif dalam Bahasa Indonesia dengan 4 skor (0-100): overall
           level: Math.floor(newXp / 500) + 1,
           updatedAt: new Date(),
         })
-        .where(eq(users.id, profile.id));
+        .where(eq(users.id, userRow.id));
 
       const ach6 = await tx.query.userAchievements.findFirst({
-        where: and(eq(userAchievements.userId, profile.id), eq(userAchievements.achievementId, "ach_6")),
+        where: and(eq(userAchievements.userId, userRow.id), eq(userAchievements.achievementId, "ach_6")),
       });
       if (ach6 && !ach6.unlocked) {
         await tx
@@ -208,18 +210,19 @@ Berikan penilaian objektif dalam Bahasa Indonesia dengan 4 skor (0-100): overall
       }
 
       await tx.insert(notifications).values({
-        userId: profile.id,
+        userId: userRow.id,
         text: `🎙️ Mock Interview '${session.jobTitle}' selesai! Skor Keseluruhan: ${overallScore}/100 (+${bonusXp} XP).`,
         type: "job",
         read: false,
       });
-
-      return UserRepository.getFullProfile(userId);
     });
 
-    const latest = await db.query.interviewSessions.findFirst({
-      where: eq(interviewSessions.id, session.id),
-    });
+    const [latest, updatedProfile] = await Promise.all([
+      db.query.interviewSessions.findFirst({
+        where: eq(interviewSessions.id, session.id),
+      }),
+      UserRepository.getFullProfile(userId),
+    ]);
 
     return {
       session: latest,

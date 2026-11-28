@@ -4,6 +4,7 @@ import { Award, CheckCircle2, ExternalLink, MessageSquarePlus, Users } from "luc
 import { peerReviewApi } from "../../api/apiClient";
 import { queryKeys } from "../../lib/queryKeys";
 import { Profile } from "../../types";
+import { toSafeExternalUrl } from "../../utils/urlUtils";
 
 interface PeerReviewPanelProps {
   profile: Profile;
@@ -136,9 +137,9 @@ export function PeerReviewPanel({ profile, onProfileUpdate, showToast }: PeerRev
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
-                    {item.projectUrl && (
+                    {toSafeExternalUrl(item.projectUrl) && (
                       <a
-                        href={item.projectUrl}
+                        href={toSafeExternalUrl(item.projectUrl)}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="px-2.5 py-1.5 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-[11px] font-semibold text-blue-600 dark:text-blue-400 inline-flex items-center gap-1"

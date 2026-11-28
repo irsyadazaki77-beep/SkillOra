@@ -15,6 +15,7 @@ import { UserRepository } from "../repositories/UserRepository.js";
 import { NotificationRepository } from "../repositories/NotificationRepository.js";
 import { eq, and, desc, inArray } from "drizzle-orm";
 import { safeParse } from "../../utils/safeJson.js";
+import { assertOptionalSafeHttpUrl } from "../../utils/urlUtils.js";
 
 export class MentorService {
   static async getSubmissionsQueue() {
@@ -89,6 +90,11 @@ export class MentorService {
         .where(eq(projectSubmissions.id, submissionId))
         .for("update");
       if (!sub) throw new Error("Submission proyek tidak ditemukan.");
+
+      const isAdmin = mentorRow.accountRole === "admin" || ["Admin", "Developer"].includes(mentorRow.role);
+      if (sub.userId === mentorRow.id && !isAdmin) {
+        throw new Error("Akses ditolak: Anda tidak dapat menilai submission proyek Anda sendiri.");
+      }
 
       const [student] = await tx.select().from(users).where(eq(users.id, sub.userId)).for("update");
       if (!student) throw new Error("Mahasiswa pemilik submission tidak ditemukan.");
@@ -381,16 +387,21 @@ export class MentorService {
     const isAdmin = mentorRow.accountRole === "admin" || ["Admin", "Developer"].includes(mentorRow.role);
     const [slot] = await db.select().from(mentoringSlots).where(eq(mentoringSlots.id, existing.slotId));
 
-    if (!isAdmin && slot?.mentorUserId && slot.mentorUserId !== mentorRow.id) {
+    if (!isAdmin && (!slot?.mentorUserId || slot.mentorUserId !== mentorRow.id)) {
       throw new Error("Akses ditolak: Anda tidak memiliki izin untuk mengubah booking mentor lain.");
     }
+
+    const safeMeetingLink =
+      data.meetingLink !== undefined
+        ? assertOptionalSafeHttpUrl(data.meetingLink, "Tautan meeting")
+        : existing.meetingLink;
 
     const [updated] = await db
       .update(mentoringBookings)
       .set({
         status: data.status || existing.status,
         mentorNotes: data.mentorNotes !== undefined ? data.mentorNotes : existing.mentorNotes,
-        meetingLink: data.meetingLink !== undefined ? data.meetingLink : existing.meetingLink,
+        meetingLink: safeMeetingLink,
       })
       .where(eq(mentoringBookings.id, bookingId))
       .returning();

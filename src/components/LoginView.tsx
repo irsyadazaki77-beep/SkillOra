@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { apiClient, userApi } from "../api/apiClient";
+import { clearAuthQueryCache } from "../lib/queryClient";
 import { motion, AnimatePresence } from "motion/react";
 import {
   Mail,
@@ -12,6 +13,7 @@ import {
   ArrowRight,
   AlertCircle,
   Check,
+  ExternalLink,
 } from "lucide-react";
 import { Profile } from "../types";
 import { SkilloraLogo } from "./SkilloraLogo";
@@ -21,6 +23,9 @@ import {
   createUserWithEmailAndPassword,
   updateProfile,
   signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
+  type User as FirebaseUser,
 } from "firebase/auth";
 
 interface LoginViewProps {
@@ -28,11 +33,47 @@ interface LoginViewProps {
   showToast: (msg: string, type?: "success" | "error" | "info") => void;
 }
 
+function getGoogleAuthErrorMessage(err: any): string {
+  const code = String(err?.code || "");
+  if (code === "auth/popup-blocked") {
+    return "Popup login Google diblokir oleh browser Anda. Mohon izinkan pop-up untuk situs ini atau buka aplikasi di tab baru, lalu coba lagi.";
+  }
+  if (code === "auth/popup-closed-by-user") {
+    return "Jendela login Google ditutup sebelum selesai. Silakan klik tombol Google kembali untuk masuk.";
+  }
+  if (code === "auth/cancelled-popup-request") {
+    return "Permintaan login sebelumnya dibatalkan. Silakan klik tombol Google sekali lagi.";
+  }
+  if (code === "auth/unauthorized-domain") {
+    const host = typeof window !== "undefined" ? window.location.hostname : "domain ini";
+    return `Domain (${host}) belum diizinkan pada pengaturan Firebase Authentication. Tambahkan domain ini di Authorized Domains atau buka lewat tautan resmi aplikasi.`;
+  }
+  if (code === "auth/operation-not-allowed") {
+    return "Metode login Google belum diaktifkan di Firebase Console.";
+  }
+  if (code === "auth/account-exists-with-different-credential") {
+    return "Email ini sudah terdaftar dengan metode masuk lain. Silakan masuk menggunakan email & kata sandi Anda.";
+  }
+  if (code === "auth/network-request-failed") {
+    return "Gagal terhubung ke server Google. Periksa koneksi internet atau nonaktifkan sementara pemblokir iklan/pelacak.";
+  }
+  if (code === "auth/internal-error") {
+    return "Browser membatasi komunikasi popup Google (umum terjadi pada mode privasi/iframe). Coba buka aplikasi di tab baru lalu login kembali.";
+  }
+  if (err?.message) {
+    return code ? `${String(err.message)} (${code})` : String(err.message);
+  }
+  return code
+    ? `Gagal masuk menggunakan Google (${code}). Silakan coba lagi atau buka di tab baru.`
+    : "Gagal masuk menggunakan Google. Silakan coba lagi atau gunakan akun demo.";
+}
+
 export function LoginView({ onLoginSuccess, showToast }: LoginViewProps) {
   const [activeTab, setActiveTab] = useState<"login" | "register">("login");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [showNewTabHint, setShowNewTabHint] = useState(false);
   const [heroImgFailed, setHeroImgFailed] = useState(false);
 
   // Login Form State
@@ -44,6 +85,88 @@ export function LoginView({ onLoginSuccess, showToast }: LoginViewProps) {
   const [regEmail, setRegEmail] = useState("");
   const [regPassword, setRegPassword] = useState("");
   const [regRole, setRegRole] = useState("Pelajar Siap Kerja");
+
+  const syncFirebaseUserSession = useCallback(
+    async (fbUser: FirebaseUser, overrideName?: string): Promise<Profile> => {
+      // Ensure stale guest demo flag never overrides the real Firebase token
+      localStorage.removeItem("skillora_guest_mode");
+      const idToken = await fbUser.getIdToken(true);
+
+      const resolvedName =
+        overrideName?.trim() ||
+        fbUser.displayName?.trim() ||
+        fbUser.email?.split("@")[0] ||
+        "Pengguna Skillora";
+
+      const data = await apiClient.post<{ profile?: Profile; error?: string }>(
+        "/auth/sync",
+        {
+          name: resolvedName,
+          email: fbUser.email || "",
+          uid: fbUser.uid,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${idToken}`,
+          },
+        }
+      );
+
+      if (!data?.profile) {
+        throw new Error(data?.error || "Gagal menyinkronkan profil akun dengan server.");
+      }
+
+      clearAuthQueryCache();
+      localStorage.removeItem("skillora_guest_mode");
+      localStorage.setItem("skillora_logged_in", "true");
+      return data.profile;
+    },
+    []
+  );
+
+  // Recover seamlessly if the user returned from a Firebase redirect login flow
+  useEffect(() => {
+    let active = true;
+    const redirectPending = sessionStorage.getItem("skillora_google_redirect_pending") === "1";
+
+    getRedirectResult(auth)
+      .then(async (result) => {
+        if (!active) return;
+        const resolvedUser = result?.user || (redirectPending ? auth.currentUser : null);
+        if (!resolvedUser) {
+          if (redirectPending) sessionStorage.removeItem("skillora_google_redirect_pending");
+          return;
+        }
+        sessionStorage.removeItem("skillora_google_redirect_pending");
+        setLoading(true);
+        try {
+          const profile = await syncFirebaseUserSession(resolvedUser);
+          if (!active) return;
+          showToast(`Selamat datang, ${profile.name}.`, "success");
+          onLoginSuccess(profile);
+        } catch (err: any) {
+          if (!active) return;
+          const msg = getGoogleAuthErrorMessage(err);
+          setErrorMessage(msg);
+          showToast(msg, "error");
+        } finally {
+          if (active) setLoading(false);
+        }
+      })
+      .catch((err) => {
+        if (!active) return;
+        sessionStorage.removeItem("skillora_google_redirect_pending");
+        if (err?.code && err.code !== "auth/no-auth-event") {
+          const msg = getGoogleAuthErrorMessage(err);
+          setErrorMessage(msg);
+          console.warn("Firebase redirect result warning:", err);
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [onLoginSuccess, showToast, syncFirebaseUserSession]);
 
   const handleSkilloraLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -60,21 +183,9 @@ export function LoginView({ onLoginSuccess, showToast }: LoginViewProps) {
     setLoading(true);
     try {
       const result = await signInWithEmailAndPassword(auth, loginEmail, loginPassword);
-      await result.user.getIdToken();
-
-      const data = await apiClient.post("/auth/sync", {
-        name: result.user.displayName || "User",
-        email: result.user.email,
-        uid: result.user.uid,
-      });
-
-      if (data.profile) {
-        showToast("Selamat datang kembali.", "success");
-        localStorage.setItem("skillora_logged_in", "true");
-        onLoginSuccess(data.profile);
-      } else {
-        setErrorMessage(data.error || "Gagal sinkronisasi data akun.");
-      }
+      const profile = await syncFirebaseUserSession(result.user);
+      showToast("Selamat datang kembali.", "success");
+      onLoginSuccess(profile);
     } catch (err: any) {
       console.error(err);
       setErrorMessage(err.message || "Email atau kata sandi tidak cocok.");
@@ -103,21 +214,9 @@ export function LoginView({ onLoginSuccess, showToast }: LoginViewProps) {
     try {
       const result = await createUserWithEmailAndPassword(auth, regEmail, regPassword);
       await updateProfile(result.user, { displayName: regName });
-      await result.user.getIdToken();
-
-      const data = await apiClient.post("/auth/sync", {
-        name: regName,
-        email: result.user.email,
-        uid: result.user.uid,
-      });
-
-      if (data.profile) {
-        showToast(`Akun berhasil dibuat. Selamat datang, ${regName}.`, "success");
-        localStorage.setItem("skillora_logged_in", "true");
-        onLoginSuccess(data.profile);
-      } else {
-        setErrorMessage(data.error || "Gagal membuat akun baru.");
-      }
+      const profile = await syncFirebaseUserSession(result.user, regName);
+      showToast(`Akun berhasil dibuat. Selamat datang, ${regName}.`, "success");
+      onLoginSuccess(profile);
     } catch (err: any) {
       console.error(err);
       setErrorMessage(err.message || "Gagal mendaftarkan akun. Silakan coba lagi.");
@@ -129,25 +228,59 @@ export function LoginView({ onLoginSuccess, showToast }: LoginViewProps) {
   const handleGoogleLogin = async () => {
     setLoading(true);
     setErrorMessage("");
+    setShowNewTabHint(false);
+    // Keep signInWithPopup as the very first async call to preserve browser user-gesture activation
     try {
       const result = await signInWithPopup(auth, googleAuthProvider);
-      await result.user.getIdToken();
+      const profile = await syncFirebaseUserSession(result.user);
+      showToast(`Selamat datang, ${profile.name}.`, "success");
+      onLoginSuccess(profile);
+    } catch (err: any) {
+      console.error("Google sign-in error:", err);
 
-      const data = await apiClient.post("/auth/sync", {
-        name: result.user.displayName,
-        email: result.user.email,
-        uid: result.user.uid,
-      });
-      if (data.profile) {
-        showToast(`Selamat datang, ${data.profile.name}.`, "success");
-        localStorage.setItem("skillora_logged_in", "true");
-        onLoginSuccess(data.profile);
-      } else {
-        setErrorMessage(data.error || "Gagal masuk dengan Google.");
+      // Recovery: if Firebase already signed the user in despite a popup-close timing warning
+      if (auth.currentUser && localStorage.getItem("skillora_guest_mode") !== "true") {
+        try {
+          const profile = await syncFirebaseUserSession(auth.currentUser);
+          showToast(`Selamat datang, ${profile.name}.`, "success");
+          onLoginSuccess(profile);
+          return;
+        } catch (syncErr: any) {
+          const syncMsg = getGoogleAuthErrorMessage(syncErr);
+          setErrorMessage(syncMsg);
+          showToast(syncMsg, "error");
+          return;
+        }
       }
-    } catch (err) {
-      console.error(err);
-      showToast("Autentikasi Google tidak tersedia saat ini. Gunakan mode demo.", "error");
+
+      const code = String(err?.code || "");
+      const isInIframe = typeof window !== "undefined" && window.self !== window.top;
+      const isPopupEnvironmentError =
+        code === "auth/popup-blocked" ||
+        code === "auth/operation-not-supported-in-this-environment" ||
+        code === "auth/internal-error";
+
+      if (isPopupEnvironmentError && !isInIframe) {
+        try {
+          sessionStorage.setItem("skillora_google_redirect_pending", "1");
+          await signInWithRedirect(auth, googleAuthProvider);
+          return;
+        } catch (redirectErr: any) {
+          sessionStorage.removeItem("skillora_google_redirect_pending");
+          const msg = getGoogleAuthErrorMessage(redirectErr);
+          setErrorMessage(msg);
+          showToast(msg, "error");
+          return;
+        }
+      }
+
+      if (isInIframe && (isPopupEnvironmentError || code === "auth/popup-closed-by-user")) {
+        setShowNewTabHint(true);
+      }
+
+      const msg = getGoogleAuthErrorMessage(err);
+      setErrorMessage(msg);
+      showToast(msg, "error");
     } finally {
       setLoading(false);
     }
@@ -160,6 +293,7 @@ export function LoginView({ onLoginSuccess, showToast }: LoginViewProps) {
       localStorage.setItem("skillora_guest_mode", "true");
       const profile = await userApi.getProfile();
       if (profile) {
+        clearAuthQueryCache();
         showToast(`Masuk sebagai ${profile.name} (Mode Demo).`, "success");
         localStorage.setItem("skillora_logged_in", "true");
         onLoginSuccess(profile);
@@ -332,10 +466,23 @@ export function LoginView({ onLoginSuccess, showToast }: LoginViewProps) {
             <motion.div
               initial={{ opacity: 0, y: -4 }}
               animate={{ opacity: 1, y: 0 }}
-              className="p-3 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/60 rounded-lg text-rose-700 dark:text-rose-300 text-xs font-medium flex items-start gap-2"
+              className="p-3 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/60 rounded-lg text-rose-700 dark:text-rose-300 text-xs font-medium space-y-2"
             >
-              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-              <span>{errorMessage}</span>
+              <div className="flex items-start gap-2">
+                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                <span>{errorMessage}</span>
+              </div>
+              {showNewTabHint && typeof window !== "undefined" && (
+                <a
+                  href={window.location.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-rose-600 hover:bg-rose-700 text-white font-semibold text-xs transition-colors"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" />
+                  <span>Buka di Tab Baru untuk Login Google</span>
+                </a>
+              )}
             </motion.div>
           )}
 

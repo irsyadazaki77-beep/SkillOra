@@ -6,6 +6,7 @@ import { CareerRepository } from "../repositories/CareerRepository.js";
 import { getGeminiClient } from "./aiService.js";
 import { AI_MODELS } from "../config/aiConfig.js";
 import { eq, and, desc } from "drizzle-orm";
+import { assertOptionalSafeHttpUrl } from "../../utils/urlUtils.js";
 
 export interface CvPayload {
   id?: number;
@@ -20,11 +21,11 @@ export interface CvPayload {
 
 export class CvService {
   static async listCvs(userId: string) {
-    const profile = await UserRepository.getFullProfile(userId);
+    const userRow = await UserRepository.getOrCreateUser(userId, "user@skillora.app", "Pengguna");
     const docs = await db
       .select()
       .from(cvDocuments)
-      .where(eq(cvDocuments.userId, profile.id))
+      .where(eq(cvDocuments.userId, userRow.id))
       .orderBy(desc(cvDocuments.updatedAt));
 
     return docs.map((d) => ({
@@ -46,11 +47,17 @@ export class CvService {
     if (!data.targetRole?.trim() || !data.summary?.trim()) {
       throw new Error("Target peran dan ringkasan profesional wajib diisi.");
     }
-    const profile = await UserRepository.getFullProfile(userId);
+    const sanitizedProjects = Array.isArray(data.projects)
+      ? data.projects.map((p) => ({
+          ...p,
+          link: p?.link ? assertOptionalSafeHttpUrl(p.link, "Tautan proyek CV") || "" : "",
+        }))
+      : [];
+    const userRow = await UserRepository.getOrCreateUser(userId, "user@skillora.app", "Pengguna");
 
     if (data.id) {
       const existing = await db.query.cvDocuments.findFirst({
-        where: and(eq(cvDocuments.id, Number(data.id)), eq(cvDocuments.userId, profile.id)),
+        where: and(eq(cvDocuments.id, Number(data.id)), eq(cvDocuments.userId, userRow.id)),
       });
       if (existing) {
         const [updated] = await db
@@ -61,7 +68,7 @@ export class CvService {
             summary: data.summary.trim(),
             experiences: data.experiences || [],
             education: data.education || [],
-            projects: data.projects || [],
+            projects: sanitizedProjects,
             skills: data.skills || [],
             updatedAt: new Date(),
           })
@@ -74,13 +81,13 @@ export class CvService {
     const [created] = await db
       .insert(cvDocuments)
       .values({
-        userId: profile.id,
+        userId: userRow.id,
         title: data.title?.trim() || `CV ATS — ${data.targetRole.trim()}`,
         targetRole: data.targetRole.trim(),
         summary: data.summary.trim(),
         experiences: data.experiences || [],
         education: data.education || [],
-        projects: data.projects || [],
+        projects: sanitizedProjects,
         skills: data.skills || [],
         atsScore: 0,
       })

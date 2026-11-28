@@ -15,6 +15,7 @@ import {
 import { PublicPortfolioData } from "../types";
 import { fetchPublicPortfolio } from "../api/apiClient";
 import { SkilloraLogo, SkilloraCompassSeal } from "./SkilloraLogo";
+import { toSafeExternalUrl } from "../utils/urlUtils";
 
 export function PublicPortfolioView() {
   const { slug } = useParams();
@@ -267,14 +268,16 @@ export function PublicPortfolioView() {
                         </span>
                       </div>
                       <p className="text-xs text-zinc-500 dark:text-zinc-400 line-clamp-2">{p.notes}</p>
-                      <a
-                        href={p.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:underline"
-                      >
-                        Lihat Repositori / Demo <ExternalLink className="w-3 h-3" />
-                      </a>
+                      {toSafeExternalUrl(p.url) && (
+                        <a
+                          href={toSafeExternalUrl(p.url)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:underline"
+                        >
+                          Lihat Repositori / Demo <ExternalLink className="w-3 h-3" />
+                        </a>
+                      )}
                     </div>
                   ))}
                 </div>

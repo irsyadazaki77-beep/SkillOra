@@ -69,27 +69,38 @@ export class ApiError extends Error {
 class ApiClient {
   private baseUrl: string = "/api/v1";
 
-  private async getHeaders(customHeaders: Record<string, string> = {}): Promise<Record<string, string>> {
-    await auth.authStateReady();
-    const user = auth.currentUser;
-    let token = "";
-    if (localStorage.getItem("skillora_guest_mode") === "true") {
-      token = "guest-demo-token";
-    } else if (user) {
-      try {
-        token = await user.getIdToken();
-      } catch (e) {
-        console.warn("Failed to get ID token", e);
-      }
-    }
-
+  private async getHeaders(
+    customHeaders: Record<string, string> = {},
+    forceRefreshToken = false
+  ): Promise<Record<string, string>> {
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
-      ...customHeaders
+      ...customHeaders,
     };
 
-    if (token) {
-      headers["Authorization"] = `Bearer ${token}`;
+    const hasExplicitAuth = Object.keys(customHeaders).some(
+      (key) => key.toLowerCase() === "authorization" && Boolean(customHeaders[key])
+    );
+
+    if (!hasExplicitAuth) {
+      await auth.authStateReady();
+      const user = auth.currentUser;
+      const isGuestMode = localStorage.getItem("skillora_guest_mode") === "true";
+      let token = "";
+
+      if (isGuestMode) {
+        token = "guest-demo-token";
+      } else if (user) {
+        try {
+          token = await user.getIdToken(forceRefreshToken);
+        } catch (e) {
+          console.warn("Failed to get ID token", e);
+        }
+      }
+
+      if (token) {
+        headers["Authorization"] = `Bearer ${token}`;
+      }
     }
 
     return headers;
@@ -97,10 +108,23 @@ class ApiClient {
 
   async request<T = any>(endpoint: string, options: RequestInit = {}): Promise<T> {
     const url = `${this.baseUrl}${endpoint.startsWith("/") ? endpoint : `/${endpoint}`}`;
-    const headers = await this.getHeaders((options.headers as Record<string, string>) || {});
+    const customHeaders = (options.headers as Record<string, string>) || {};
+    let headers = await this.getHeaders(customHeaders, false);
 
     try {
-      const response = await fetch(url, { ...options, headers });
+      let response = await fetch(url, { ...options, headers });
+
+      // If Firebase ID token expired transiently, force-refresh once and retry
+      if (
+        response.status === 401 &&
+        auth.currentUser &&
+        localStorage.getItem("skillora_guest_mode") !== "true" &&
+        !Object.keys(customHeaders).some((k) => k.toLowerCase() === "authorization")
+      ) {
+        headers = await this.getHeaders(customHeaders, true);
+        response = await fetch(url, { ...options, headers });
+      }
+
       let data: any = {};
       const contentType = response.headers.get("content-type");
       if (contentType && contentType.includes("application/json")) {

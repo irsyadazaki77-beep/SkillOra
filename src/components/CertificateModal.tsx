@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Course, Profile } from "../types";
 import { Award, ShieldCheck, QrCode, Download, X, Printer, Sparkles, Layers, CheckCircle2, BadgePercent, GraduationCap, Clock } from "lucide-react";
@@ -29,6 +29,15 @@ export function CertificateModal({
   const [isDownloading, setIsDownloading] = useState(false);
   const [downloadStep, setDownloadStep] = useState("");
   const [downloadProgress, setDownloadProgress] = useState(0);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const finishTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+      if (finishTimeoutRef.current) clearTimeout(finishTimeoutRef.current);
+    };
+  }, []);
 
   // Helper to generate a consistent certificate hash / ID
   const finalCertId = certId || "Sertifikat belum tersedia";
@@ -348,26 +357,32 @@ export function CertificateModal({
 
     let currentStepIdx = 0;
     
-    const interval = setInterval(() => {
+    if (intervalRef.current) clearInterval(intervalRef.current);
+    intervalRef.current = setInterval(() => {
       if (currentStepIdx < steps.length) {
         setDownloadStep(steps[currentStepIdx].text);
         setDownloadProgress(steps[currentStepIdx].progress);
         currentStepIdx++;
       } else {
-        clearInterval(interval);
-        
+        if (intervalRef.current) {
+          clearInterval(intervalRef.current);
+          intervalRef.current = null;
+        }
+
         // Trigger high-fidelity HTML document download that users can open locally and print beautifully to PDF
         const element = document.createElement("a");
         const fileContent = generateInteractiveHtml();
         const file = new Blob([fileContent], { type: 'text/html;charset=utf-8' });
-        element.href = URL.createObjectURL(file);
-        element.download = `Sertifikat_Skillora_${activeCertificate?.title.replace(/\s+/g, "_")}.html`;
+        const blobUrl = URL.createObjectURL(file);
+        element.href = blobUrl;
+        element.download = `Sertifikat_Skillora_${(activeCertificate?.title || "Sertifikat").replace(/\s+/g, "_")}.html`;
         document.body.appendChild(element);
         element.click();
         document.body.removeChild(element);
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
 
         showToast?.("Sertifikat interaktif berhasil diunduh ke folder Downloads!", "success");
-        setTimeout(() => {
+        finishTimeoutRef.current = setTimeout(() => {
           setIsDownloading(false);
         }, 800);
       }

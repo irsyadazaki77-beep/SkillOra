@@ -4,6 +4,7 @@ import { eq } from "drizzle-orm";
 import { UserRepository } from "../repositories/UserRepository.js";
 import { CourseRepository } from "../repositories/CourseRepository.js";
 import { NotificationRepository } from "../repositories/NotificationRepository.js";
+import { assertOptionalSafeHttpUrl } from "../../utils/urlUtils.js";
 
 function getJakartaDateStr(): string {
   return new Intl.DateTimeFormat("en-CA", {
@@ -16,34 +17,37 @@ function getJakartaDateStr(): string {
 
 export class CourseService {
   private static async assertCourseOwnership(userId: string, courseId: string) {
-    const profile = await UserRepository.getFullProfile(userId);
-    const existing = await CourseRepository.getCourseByCourseId(courseId);
+    const [userRow, existing] = await Promise.all([
+      UserRepository.getOrCreateUser(userId, "user@skillora.app", "Pengguna"),
+      CourseRepository.getCourseByCourseId(courseId),
+    ]);
     if (!existing) throw new Error("Kursus tidak ditemukan.");
 
-    const isAdmin = profile.accountRole === "admin" || ["Admin", "Developer"].includes(profile.role);
-    if (!isAdmin && existing.authorUserId && existing.authorUserId !== profile.id) {
+    const isAdmin = userRow.accountRole === "admin" || ["Admin", "Developer"].includes(userRow.role);
+    const ownerId = existing.authorUserId ?? (existing as { mentorId?: number | null }).mentorId ?? null;
+    if (!isAdmin && (!ownerId || ownerId !== userRow.id)) {
       throw new Error("Akses ditolak: Anda hanya dapat mengelola kursus yang Anda buat.");
     }
-    return { profile, existing };
+    return { profile: userRow, existing };
   }
 
   static async getCourses(userId?: string, includeDrafts = false) {
     if (!userId) {
       return CourseRepository.getCourses(0, includeDrafts);
     }
-    const profile = await UserRepository.getFullProfile(userId);
-    const canSeeDrafts = includeDrafts || ["mentor", "admin"].includes(profile.accountRole);
-    return CourseRepository.getCourses(profile.id, canSeeDrafts);
+    const userRow = await UserRepository.getOrCreateUser(userId, "user@skillora.app", "Pengguna");
+    const canSeeDrafts = includeDrafts || ["mentor", "admin"].includes(userRow.accountRole);
+    return CourseRepository.getCourses(userRow.id, canSeeDrafts);
   }
 
   static async createCourse(userId: string, body: any) {
     if (!body?.title || typeof body.title !== "string" || !body.title.trim()) {
       throw new Error("Judul kursus wajib diisi.");
     }
-    const profile = await UserRepository.getFullProfile(userId);
-    const created = await CourseRepository.createCourse(profile.id, body);
+    const userRow = await UserRepository.getOrCreateUser(userId, "user@skillora.app", "Pengguna");
+    const created = await CourseRepository.createCourse(userRow.id, body);
     await NotificationRepository.addNotification(
-      profile.id,
+      userRow.id,
       `📚 Kursus baru '${created.title}' berhasil dipublikasikan ke katalog Skillora.`
     );
     return created;
@@ -79,6 +83,7 @@ export class CourseService {
     if (!body?.title || typeof body.title !== "string") {
       throw new Error("Judul materi wajib diisi.");
     }
+    const safeVideoUrl = assertOptionalSafeHttpUrl(body.videoUrl, "Tautan video");
     return CourseRepository.addLesson(courseId, {
       title: body.title,
       xp: body.xp,
@@ -87,32 +92,32 @@ export class CourseService {
       questions: body.questions,
       inlineChecks: body.inlineChecks,
       flashcards: body.flashcards,
-      videoUrl: body.videoUrl,
+      videoUrl: safeVideoUrl,
     });
   }
 
   static async getLearningPaths(userId?: string) {
     if (!userId) return CourseRepository.getLearningPaths(0);
-    const profile = await UserRepository.getFullProfile(userId);
-    return CourseRepository.getLearningPaths(profile.id);
+    const userRow = await UserRepository.getOrCreateUser(userId, "user@skillora.app", "Pengguna");
+    return CourseRepository.getLearningPaths(userRow.id);
   }
 
   static async enrollLearningPath(userId: string, slug: string) {
-    const profile = await UserRepository.getFullProfile(userId);
-    const result = await CourseRepository.enrollLearningPath(profile.id, slug);
+    const userRow = await UserRepository.getOrCreateUser(userId, "user@skillora.app", "Pengguna");
+    const result = await CourseRepository.enrollLearningPath(userRow.id, slug);
     await NotificationRepository.addNotification(
-      profile.id,
+      userRow.id,
       `🧭 Terdaftar gratis pada jalur '${result.title}' (${result.enrolledCourses} kursus siap belajar)!`
     );
     return result;
   }
 
   static async claimLearningPathCertificate(userId: string, slug: string) {
-    const profile = await UserRepository.getFullProfile(userId);
-    const res = await CourseRepository.claimLearningPathCertificate(profile.id, profile.name, slug);
+    const userRow = await UserRepository.getOrCreateUser(userId, "user@skillora.app", "Pengguna");
+    const res = await CourseRepository.claimLearningPathCertificate(userRow.id, userRow.name, slug);
     if (!res.alreadyIssued) {
       await NotificationRepository.addNotification(
-        profile.id,
+        userRow.id,
         `🏆 Selamat! Sertifikat Spesialisasi '${res.title}' berhasil diterbitkan gratis ke akun Anda.`
       );
     }
@@ -121,7 +126,11 @@ export class CourseService {
 
   static async updateLesson(userId: string, courseId: string, lessonId: string, body: any) {
     await CourseService.assertCourseOwnership(userId, courseId);
-    return CourseRepository.updateLesson(courseId, lessonId, body || {});
+    const sanitizedBody = { ...(body || {}) };
+    if (sanitizedBody.videoUrl !== undefined) {
+      sanitizedBody.videoUrl = assertOptionalSafeHttpUrl(sanitizedBody.videoUrl, "Tautan video");
+    }
+    return CourseRepository.updateLesson(courseId, lessonId, sanitizedBody);
   }
 
   static async deleteLesson(userId: string, courseId: string, lessonId: string) {
@@ -134,11 +143,11 @@ export class CourseService {
   }
 
   static async enrollCourse(userId: string, courseId: string) {
-    const profile = await UserRepository.getFullProfile(userId);
-    const result = await CourseRepository.enrollCourse(profile.id, courseId);
+    const userRow = await UserRepository.getOrCreateUser(userId, "user@skillora.app", "Pengguna");
+    const result = await CourseRepository.enrollCourse(userRow.id, courseId);
     if (!result.alreadyEnrolled) {
       await NotificationRepository.addNotification(
-        profile.id,
+        userRow.id,
         `🎓 Berhasil mendaftar kursus gratis '${result.courseTitle}'. Selamat belajar tanpa batas di SkillOra!`
       );
     }
@@ -151,26 +160,29 @@ export class CourseService {
 
   static async completeLesson(userId: string, data: { courseId: string; lessonId: string }) {
     const { courseId, lessonId } = data;
-    const profile = await UserRepository.getFullProfile(userId);
+    const userRow = await UserRepository.getOrCreateUser(userId, "user@skillora.app", "Pengguna");
 
-    const coursesList = await CourseRepository.getCourses(profile.id, true);
+    const coursesList = await CourseRepository.getCourses(userRow.id, true);
     const course = coursesList.find(c => c.id === courseId);
     if (!course) throw new Error("Kursus tidak ditemukan");
 
     const lesson = course.lessons.find(l => l.id === lessonId);
     if (!lesson) throw new Error("Pelajaran tidak ditemukan");
 
-    const { isFirstTime } = await CourseRepository.completeLesson(profile.id, courseId, lessonId);
+    const { isFirstTime } = await CourseRepository.completeLesson(userRow.id, courseId, lessonId);
 
     const notifText = isFirstTime
       ? `📚 Materi '${lesson.title}' selesai dibaca!`
       : `🔄 Materi '${lesson.title}' diulas kembali!`;
-    await NotificationRepository.addNotification(profile.id, notifText, "system");
+    await NotificationRepository.addNotification(userRow.id, notifText, "system");
 
-    const updatedCourses = await CourseRepository.getCourses(profile.id);
+    const [updatedCourses, updatedProfile] = await Promise.all([
+      CourseRepository.getCourses(userRow.id),
+      UserRepository.getFullProfile(userId),
+    ]);
 
     return {
-      profile: await UserRepository.getFullProfile(userId),
+      profile: updatedProfile,
       leveledUp: false,
       course: updatedCourses.find(c => c.id === courseId),
       courses: updatedCourses
