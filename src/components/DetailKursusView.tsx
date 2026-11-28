@@ -372,42 +372,42 @@ export function DetailKursusView({
       </nav>
 
       {/* Editorial Hero Header */}
-      <section className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 overflow-hidden">
+      <section className="bg-white dark:bg-[#111114] rounded-xl border border-zinc-200/90 dark:border-zinc-800/90 overflow-hidden">
         <div className="grid grid-cols-1 lg:grid-cols-12">
           {/* Left Copy & Actions */}
-          <div className="lg:col-span-8 p-5 sm:p-7 flex flex-col justify-between gap-5">
+          <div className="lg:col-span-8 p-6 sm:p-7 flex flex-col justify-between gap-6">
             <div className="space-y-3">
               {/* Unboxed Metadata Line (Zero-Pill) */}
-              <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs text-zinc-500 dark:text-zinc-400">
-                <span className="font-semibold text-emerald-700 dark:text-emerald-400">
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-zinc-500 dark:text-zinc-400">
+                <span className="font-medium text-emerald-700 dark:text-emerald-400">
                   {course.partner}
                 </span>
-                <span>·</span>
+                <span className="text-zinc-300 dark:text-zinc-700">·</span>
                 <span>{course.category}</span>
-                <span>·</span>
+                <span className="text-zinc-300 dark:text-zinc-700">·</span>
                 <span>{course.difficulty}</span>
-                <span>·</span>
+                <span className="text-zinc-300 dark:text-zinc-700">·</span>
                 <span className="font-mono tabular-nums">{course.duration}</span>
-                <span>·</span>
-                <span className="font-mono tabular-nums text-zinc-700 dark:text-zinc-300 font-semibold">
+                <span className="text-zinc-300 dark:text-zinc-700">·</span>
+                <span className="font-mono tabular-nums text-zinc-700 dark:text-zinc-300 font-medium">
                   +{course.xpReward} XP
                 </span>
-                <span>·</span>
-                <span className="font-semibold text-emerald-700 dark:text-emerald-400">
-                  100% Gratis · Beasiswa Terbuka
+                <span className="text-zinc-300 dark:text-zinc-700">·</span>
+                <span className="font-medium text-emerald-700 dark:text-emerald-400">
+                  Akses terbuka
                 </span>
               </div>
 
-              <h1 className="text-2xl sm:text-3xl font-display font-bold text-zinc-950 dark:text-white tracking-tight leading-snug">
+              <h1 className="text-2xl sm:text-3xl font-display font-semibold text-zinc-950 dark:text-zinc-50 tracking-tight leading-snug">
                 {course.title}
               </h1>
 
-              <p className="text-sm text-zinc-600 dark:text-zinc-300 leading-relaxed max-w-2xl">
+              <p className="text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed max-w-2xl">
                 {courseDesc}
               </p>
 
               {/* Compact Training Spec Strip */}
-              <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 pt-1 text-xs text-zinc-600 dark:text-zinc-400 font-mono tabular-nums">
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 pt-1 text-xs text-zinc-600 dark:text-zinc-400 tabular-nums">
                 <span className="inline-flex items-center gap-1.5">
                   <BookOpen className="w-3.5 h-3.5 text-zinc-400" />
                   {totalCount} Sesi Modul
@@ -485,21 +485,21 @@ export function DetailKursusView({
                     setEnrollingCourse(false);
                   }
                 }}
-                className={`px-3.5 py-2 rounded-lg border text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer whitespace-nowrap shrink-0 ${
+                className={`h-9 px-3.5 rounded-lg border text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer whitespace-nowrap shrink-0 ${
                   localEnrolled
-                    ? "bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-900/50 text-emerald-700 dark:text-emerald-300 cursor-default"
-                    : "bg-emerald-600 hover:bg-emerald-700 border-emerald-600 text-white"
+                    ? "bg-emerald-50/80 dark:bg-emerald-950/30 border-emerald-200/80 dark:border-emerald-900/50 text-emerald-700 dark:text-emerald-300 cursor-default"
+                    : "bg-white dark:bg-[#111114] border-zinc-200 dark:border-zinc-800 text-zinc-800 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-900"
                 }`}
               >
                 {localEnrolled ? (
                   <>
                     <CheckCircle2 className="w-3.5 h-3.5" />
-                    <span>Terdaftar{localEnrolledCount > 0 ? ` (${localEnrolledCount})` : ""}</span>
+                    <span className="tabular-nums">Terdaftar{localEnrolledCount > 0 ? ` (${localEnrolledCount})` : ""}</span>
                   </>
                 ) : (
                   <>
-                    <UserPlus className="w-3.5 h-3.5" />
-                    <span>{enrollingCourse ? "Mendaftar..." : "Daftar Kursus Gratis"}</span>
+                    <UserPlus className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                    <span>{enrollingCourse ? "Mendaftar..." : "Daftar Kursus"}</span>
                   </>
                 )}
               </button>
@@ -507,10 +507,10 @@ export function DetailKursusView({
               <button
                 type="button"
                 onClick={() => onBookmarkToggle(course.id)}
-                className={`px-3.5 py-2 rounded-lg border text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer whitespace-nowrap shrink-0 ${
+                className={`h-9 px-3.5 rounded-lg border text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer whitespace-nowrap shrink-0 ${
                   isCourseBookmarked
                     ? "bg-rose-50 dark:bg-rose-950/30 border-rose-200 dark:border-rose-900/50 text-rose-700 dark:text-rose-300"
-                    : "bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800"
+                    : "bg-white dark:bg-[#111114] border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-900"
                 }`}
               >
                 <Heart className={`w-3.5 h-3.5 ${isCourseBookmarked ? "fill-rose-500 text-rose-500" : ""}`} />
@@ -520,8 +520,8 @@ export function DetailKursusView({
           </div>
 
           {/* Right Editorial Thumbnail + Readiness Progress */}
-          <div className="lg:col-span-4 border-t lg:border-t-0 lg:border-l border-zinc-200 dark:border-zinc-800 bg-zinc-50/70 dark:bg-zinc-950/40 flex flex-col">
-            <div className="relative aspect-16/9 w-full bg-zinc-200 dark:bg-zinc-800 overflow-hidden">
+          <div className="lg:col-span-4 border-t lg:border-t-0 lg:border-l border-zinc-200/90 dark:border-zinc-800/90 bg-zinc-50/50 dark:bg-zinc-950/30 flex flex-col">
+            <div className="relative aspect-16/9 w-full bg-zinc-100 dark:bg-zinc-900 overflow-hidden">
               <img
                 src={resolveCourseImage(course.image)}
                 alt={course.title}
@@ -531,31 +531,15 @@ export function DetailKursusView({
                 }}
                 className="w-full h-full object-cover"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-zinc-950/75 via-zinc-950/15 to-transparent" />
-              <div className="absolute bottom-3 left-3.5 right-3.5 flex items-end justify-between text-white">
-                <div>
-                  <p className="text-[11px] font-mono uppercase tracking-wider text-zinc-300">
-                    Jalur 4 Tahap
-                  </p>
-                  <p className="text-sm font-bold font-mono tabular-nums">
-                    {completedStagesCount}/4 Tahap Tuntas
-                  </p>
-                </div>
-                {finalPassed && (
-                  <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-300">
-                    <Award className="w-4 h-4" /> Tersertifikasi
-                  </span>
-                )}
-              </div>
             </div>
 
-            <div className="p-4 sm:p-5 space-y-3 flex-1 flex flex-col justify-between">
-              <div className="space-y-1.5">
+            <div className="p-5 space-y-4 flex-1 flex flex-col justify-between">
+              <div className="space-y-2">
                 <div className="flex items-center justify-between text-xs">
-                  <span className="font-medium text-zinc-500 dark:text-zinc-400">
-                    Progres Kurikulum
+                  <span className="font-medium text-zinc-600 dark:text-zinc-400">
+                    Progres Kurikulum · <span className="font-mono tabular-nums">{completedStagesCount}/4 tahap</span>
                   </span>
-                  <span className="font-mono font-bold tabular-nums text-emerald-700 dark:text-emerald-400">
+                  <span className="font-mono font-semibold tabular-nums text-emerald-700 dark:text-emerald-400">
                     {percentage}%
                   </span>
                 </div>
@@ -564,18 +548,23 @@ export function DetailKursusView({
                   variant={percentage === 100 ? "success" : "primary"}
                   size="sm"
                 />
+                {finalPassed && (
+                  <p className="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-700 dark:text-emerald-400 pt-0.5">
+                    <Award className="w-3.5 h-3.5" /> Tersertifikasi
+                  </p>
+                )}
               </div>
 
-              <div className="grid grid-cols-2 gap-2 pt-2 border-t border-zinc-200 dark:border-zinc-800 text-xs">
+              <div className="grid grid-cols-2 gap-3 pt-3 border-t border-zinc-200/80 dark:border-zinc-800/80 text-xs">
                 <div>
                   <span className="text-zinc-500 dark:text-zinc-400 block">Pra-Tes</span>
-                  <span className="font-mono font-semibold tabular-nums text-zinc-900 dark:text-white">
+                  <span className="font-mono font-semibold tabular-nums text-zinc-950 dark:text-zinc-100 mt-0.5 block">
                     {overview?.pretest ? `${overview.pretest.score}%` : "Belum"}
                   </span>
                 </div>
                 <div>
                   <span className="text-zinc-500 dark:text-zinc-400 block">Ujian Akhir</span>
-                  <span className="font-mono font-semibold tabular-nums text-zinc-900 dark:text-white">
+                  <span className="font-mono font-semibold tabular-nums text-zinc-950 dark:text-zinc-100 mt-0.5 block">
                     {overview?.finalExam ? `${overview.finalExam.score}%` : "Belum"}
                     {learningGain !== null && (
                       <span
@@ -596,10 +585,10 @@ export function DetailKursusView({
         </div>
       </section>
 
-      {/* 4-Stage Learning Flow Stepper */}
+      {/* 4-Stage Learning Flow Stepper (Unified Hairline Strip) */}
       <nav
         aria-label="Tahapan Pelatihan"
-        className="grid grid-cols-2 lg:grid-cols-4 gap-2.5"
+        className="grid grid-cols-2 lg:grid-cols-4 bg-white dark:bg-[#111114] rounded-xl border border-zinc-200/90 dark:border-zinc-800/90 overflow-hidden divide-y sm:divide-y-0 sm:divide-x divide-zinc-200/80 dark:divide-zinc-800/80"
       >
         {stageItems.map((stage) => {
           const isActive = activeStage === stage.id;
@@ -608,40 +597,34 @@ export function DetailKursusView({
               key={stage.id}
               type="button"
               onClick={() => setActiveStage(stage.id)}
-              className={`text-left p-3.5 rounded-xl border transition-colors cursor-pointer flex items-start gap-3 ${
+              className={`relative text-left p-4 transition-colors cursor-pointer flex items-start gap-3 ${
                 isActive
-                  ? "bg-zinc-950 dark:bg-zinc-100 border-zinc-950 dark:border-zinc-100 text-white dark:text-zinc-950"
-                  : "bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 hover:border-zinc-300 dark:hover:border-zinc-700"
+                  ? "bg-zinc-50/90 dark:bg-zinc-900/80 text-zinc-950 dark:text-zinc-50"
+                  : "text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50/60 dark:hover:bg-zinc-900/40"
               }`}
             >
+              {isActive && (
+                <span className="absolute inset-x-0 bottom-0 h-0.5 bg-emerald-600 dark:bg-emerald-500" />
+              )}
               <div
-                className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 font-mono text-xs font-bold ${
+                className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 font-mono text-xs font-semibold tabular-nums ${
                   stage.done
-                    ? isActive
-                      ? "bg-emerald-500 text-white"
-                      : "bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400"
+                    ? "bg-emerald-600 text-white"
                     : isActive
-                    ? "bg-zinc-800 dark:bg-zinc-200 text-white dark:text-zinc-950"
-                    : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300"
+                    ? "bg-zinc-950 dark:bg-zinc-100 text-white dark:text-zinc-950"
+                    : "bg-zinc-100 dark:bg-zinc-800/80 text-zinc-500 dark:text-zinc-400"
                 }`}
               >
-                {stage.done ? <Check className="w-4 h-4 stroke-[2.5]" /> : stage.step}
+                {stage.done ? <Check className="w-3.5 h-3.5 stroke-[2.5]" /> : stage.step}
               </div>
               <div className="min-w-0 flex-1">
-                <p
-                  className={`text-[11px] font-mono uppercase tracking-wider ${
-                    isActive
-                      ? "text-zinc-300 dark:text-zinc-600"
-                      : "text-zinc-500 dark:text-zinc-400"
-                  }`}
-                >
-                  Tahap {stage.step}
+                <p className="text-xs font-semibold text-zinc-950 dark:text-zinc-100 truncate">
+                  {stage.label}
                 </p>
-                <p className="text-xs sm:text-sm font-bold truncate">{stage.label}</p>
                 <p
-                  className={`text-[11px] font-mono tabular-nums mt-0.5 truncate ${
-                    isActive
-                      ? "text-emerald-300 dark:text-emerald-700"
+                  className={`text-xs font-mono tabular-nums mt-0.5 truncate ${
+                    stage.done || isActive
+                      ? "text-emerald-700 dark:text-emerald-400"
                       : "text-zinc-500 dark:text-zinc-400"
                   }`}
                 >
@@ -655,13 +638,13 @@ export function DetailKursusView({
 
       {/* STAGE 01: PRA-TES DIAGNOSTIK */}
       {activeStage === "pretest" && (
-        <section className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-6 sm:p-7 space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 border-b border-zinc-200 dark:border-zinc-800 pb-5">
+        <section className="bg-white dark:bg-[#111114] rounded-xl border border-zinc-200/90 dark:border-zinc-800/90 p-6 sm:p-7 space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 border-b border-zinc-200/80 dark:border-zinc-800/80 pb-5">
             <div className="space-y-1.5">
-              <p className="text-xs font-mono uppercase tracking-wider text-emerald-700 dark:text-emerald-400 font-semibold">
-                Tahap 01 · Diagnostik Awal
+              <p className="text-xs font-medium text-emerald-700 dark:text-emerald-400">
+                Tahap 01 · Diagnostik awal
               </p>
-              <h2 className="text-xl font-display font-bold text-zinc-950 dark:text-white">
+              <h2 className="text-xl font-display font-semibold text-zinc-950 dark:text-zinc-50">
                 Pra-Tes Pemetaan Kompetensi Awal
               </h2>
               <p className="text-sm text-zinc-600 dark:text-zinc-400 max-w-2xl">
@@ -682,41 +665,41 @@ export function DetailKursusView({
             <p className="text-xs font-mono text-zinc-500">Memuat data diagnostik...</p>
           ) : overview?.pretest ? (
             <div className="space-y-5">
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div className="p-4 rounded-xl bg-zinc-50 dark:bg-zinc-950/60 border border-zinc-200 dark:border-zinc-800">
+              <div className="grid grid-cols-1 sm:grid-cols-3 border border-zinc-200/80 dark:border-zinc-800/80 rounded-xl divide-y sm:divide-y-0 sm:divide-x divide-zinc-200/80 dark:divide-zinc-800/80 bg-zinc-50/50 dark:bg-zinc-950/40">
+                <div className="p-4">
                   <span className="text-xs text-zinc-500 dark:text-zinc-400 block">Skor Baseline</span>
-                  <span className="text-2xl font-display font-bold font-mono tabular-nums text-zinc-950 dark:text-white">
+                  <span className="text-2xl font-display font-semibold font-mono tabular-nums text-zinc-950 dark:text-zinc-50">
                     {overview.pretest.score}%
                   </span>
                 </div>
-                <div className="p-4 rounded-xl bg-zinc-50 dark:bg-zinc-950/60 border border-zinc-200 dark:border-zinc-800">
+                <div className="p-4">
                   <span className="text-xs text-zinc-500 dark:text-zinc-400 block">Jawaban Benar</span>
-                  <span className="text-2xl font-display font-bold font-mono tabular-nums text-zinc-950 dark:text-white">
+                  <span className="text-2xl font-display font-semibold font-mono tabular-nums text-zinc-950 dark:text-zinc-50">
                     {overview.pretest.correctCount}/{overview.pretest.totalQuestions}
                   </span>
                 </div>
-                <div className="p-4 rounded-xl bg-zinc-50 dark:bg-zinc-950/60 border border-zinc-200 dark:border-zinc-800">
+                <div className="p-4">
                   <span className="text-xs text-zinc-500 dark:text-zinc-400 block">Langkah Berikutnya</span>
                   <button
                     type="button"
                     onClick={() => setActiveStage("modules")}
-                    className="mt-1 inline-flex items-center gap-1 text-sm font-semibold text-emerald-700 dark:text-emerald-400 hover:underline cursor-pointer"
+                    className="mt-1 inline-flex items-center gap-1 text-sm font-medium text-emerald-700 dark:text-emerald-400 hover:underline cursor-pointer"
                   >
-                    Lanjut ke Tahap 02: Modul <ChevronRight className="w-4 h-4" />
+                    Lanjut ke Modul <ChevronRight className="w-4 h-4" />
                   </button>
                 </div>
               </div>
 
               {overview.pretest.competencyBreakdown?.length > 0 && (
                 <div className="space-y-3">
-                  <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-                    Peta Kompetensi Awal
+                  <h3 className="text-xs font-medium text-zinc-500 dark:text-zinc-400">
+                    Peta kompetensi awal
                   </h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {overview.pretest.competencyBreakdown.map((item) => (
                       <div
                         key={item.topic}
-                        className="p-3.5 rounded-lg border border-zinc-200 dark:border-zinc-800 space-y-1.5"
+                        className="p-3.5 rounded-lg border border-zinc-200/80 dark:border-zinc-800/80 space-y-1.5"
                       >
                         <div className="flex items-center justify-between text-xs">
                           <span className="font-semibold text-zinc-900 dark:text-zinc-100 truncate pr-2">
@@ -830,20 +813,20 @@ export function DetailKursusView({
                 {modules.map((mod) => (
                   <div
                     key={mod.id}
-                    className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 overflow-hidden"
+                    className="bg-white dark:bg-[#111114] rounded-xl border border-zinc-200/90 dark:border-zinc-800/90 overflow-hidden"
                   >
-                    <div className="px-4 py-3.5 bg-zinc-50 dark:bg-zinc-950/60 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between gap-3">
+                    <div className="px-4 py-3.5 bg-zinc-50/70 dark:bg-zinc-950/40 border-b border-zinc-200/80 dark:border-zinc-800/80 flex items-center justify-between gap-3">
                       <div className="min-w-0">
-                        <span className="text-[11px] font-mono uppercase tracking-wider text-emerald-700 dark:text-emerald-400 font-semibold block">
+                        <span className="text-xs font-mono text-emerald-700 dark:text-emerald-400 font-medium block">
                           Modul {String(mod.moduleNumber).padStart(2, "0")}
                         </span>
-                        <h3 className="font-display font-bold text-sm text-zinc-950 dark:text-white truncate">
+                        <h3 className="font-display font-semibold text-sm text-zinc-950 dark:text-zinc-50 truncate">
                           {mod.title.replace(/^Modul \d+:\s*/, "")}
                         </h3>
                       </div>
                       <div className="text-right shrink-0 font-mono text-xs tabular-nums">
-                        <span className="font-semibold text-zinc-900 dark:text-zinc-100">
-                          {mod.completedLessonsCount}/{mod.totalLessonsCount} Sesi
+                        <span className="font-medium text-zinc-900 dark:text-zinc-100">
+                          {mod.completedLessonsCount}/{mod.totalLessonsCount} sesi
                         </span>
                         <span className="text-zinc-500 dark:text-zinc-400 block text-[11px]">
                           ~{mod.totalMinutes} mnt
@@ -1014,104 +997,106 @@ export function DetailKursusView({
                 ))}
               </div>
 
-              {/* Right 4 Cols: Outcomes, Flashcard Quick Access & Skills */}
-              <aside className="lg:col-span-4 space-y-4">
-                {/* Flashcard Quick Launch */}
-                <div className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-4 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 flex items-center gap-1.5">
-                      <Layers className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                      Retensi Spaced Repetition
-                    </h3>
-                    <span className="text-xs font-mono font-semibold text-emerald-700 dark:text-emerald-400 tabular-nums">
-                      {overview?.masteredFlashcards || 0}/{totalFlashcardsInCourse} dikuasai
-                    </span>
-                  </div>
-                  <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed">
-                    Latih konsep kunci kursus ini dengan algoritma SM-2 agar materi melekat hingga ujian sertifikasi.
-                  </p>
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    fullWidth
-                    onClick={() => setModuleSubTab("flashcards")}
-                    leftIcon={<Layers className="w-3.5 h-3.5" />}
-                  >
-                    Buka Dek Flashcard Kursus
-                  </Button>
-                </div>
-
-                {/* Learning Outcomes */}
-                {learningOutcomes.length > 0 && (
-                  <div className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-4 space-y-3">
-                    <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 flex items-center gap-1.5">
-                      <Target className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                      Capaian Kompetensi
-                    </h3>
-                    <ul className="space-y-2">
-                      {learningOutcomes.map((outcome, idx) => (
-                        <li
-                          key={idx}
-                          className="flex items-start gap-2 text-xs text-zinc-700 dark:text-zinc-300 leading-relaxed"
-                        >
-                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
-                          <span>{outcome}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-
-                {/* Skills List (Unboxed clean text) */}
-                {course.skills && course.skills.length > 0 && (
-                  <div className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-4 space-y-2">
-                    <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-                      Keterampilan yang Diuji
-                    </h3>
-                    <p className="text-xs text-zinc-700 dark:text-zinc-300 leading-relaxed">
-                      {course.skills.join(" · ")}
+              {/* Right 4 Cols: Unified Course Reference Panel */}
+              <aside className="lg:col-span-4">
+                <div className="bg-white dark:bg-[#111114] rounded-xl border border-zinc-200/90 dark:border-zinc-800/90 divide-y divide-zinc-200/80 dark:divide-zinc-800/80">
+                  {/* Flashcard Quick Launch */}
+                  <div className="p-4 sm:p-5 space-y-3">
+                    <div className="flex items-center justify-between gap-2">
+                      <h3 className="text-xs font-semibold text-zinc-900 dark:text-zinc-100 flex items-center gap-1.5">
+                        <Layers className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                        Retensi Spaced Repetition
+                      </h3>
+                      <span className="text-xs font-mono font-medium text-emerald-700 dark:text-emerald-400 tabular-nums">
+                        {overview?.masteredFlashcards || 0}/{totalFlashcardsInCourse}
+                      </span>
+                    </div>
+                    <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed">
+                      Latih konsep kunci kursus ini dengan algoritma SM-2 agar materi melekat hingga ujian sertifikasi.
                     </p>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      fullWidth
+                      onClick={() => setModuleSubTab("flashcards")}
+                      leftIcon={<Layers className="w-3.5 h-3.5" />}
+                    >
+                      Buka Dek Flashcard
+                    </Button>
                   </div>
-                )}
 
-                {/* Saved Notes Summary */}
-                <div className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-4 space-y-3">
-                  <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 flex items-center gap-1.5">
-                    <StickyNote className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                    Catatan Materi Saya
-                  </h3>
-                  {course.lessons.filter((l) => Boolean(cloudNotesMap[l.id])).length === 0 ? (
-                    <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">
-                      Belum ada catatan tersimpan. Gunakan ikon catatan di daftar sesi atau Catatan Cloud saat membaca materi.
-                    </p>
-                  ) : (
-                    <div className="space-y-2">
-                      {course.lessons.map((lesson) => {
-                        const saved = cloudNotesMap[lesson.id];
-                        if (!saved) return null;
-                        return (
-                          <div
-                            key={lesson.id}
-                            className="p-3 rounded-lg bg-zinc-50 dark:bg-zinc-950/60 border border-zinc-200 dark:border-zinc-800 text-xs space-y-1"
+                  {/* Learning Outcomes */}
+                  {learningOutcomes.length > 0 && (
+                    <div className="p-4 sm:p-5 space-y-3">
+                      <h3 className="text-xs font-semibold text-zinc-900 dark:text-zinc-100 flex items-center gap-1.5">
+                        <Target className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                        Capaian Kompetensi
+                      </h3>
+                      <ul className="space-y-2">
+                        {learningOutcomes.map((outcome, idx) => (
+                          <li
+                            key={idx}
+                            className="flex items-start gap-2 text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed"
                           >
-                            <div className="flex items-center justify-between gap-2">
-                              <span className="font-semibold text-zinc-900 dark:text-zinc-100 truncate">
-                                {lesson.title}
-                              </span>
-                              <button
-                                type="button"
-                                onClick={(e) => handleOpenNoteModal(lesson, e)}
-                                className="text-emerald-700 dark:text-emerald-400 font-semibold hover:underline shrink-0 cursor-pointer"
-                              >
-                                Edit
-                              </button>
-                            </div>
-                            <p className="text-zinc-600 dark:text-zinc-400 line-clamp-2">{saved}</p>
-                          </div>
-                        );
-                      })}
+                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+                            <span>{outcome}</span>
+                          </li>
+                        ))}
+                      </ul>
                     </div>
                   )}
+
+                  {/* Skills List (Unboxed clean text) */}
+                  {course.skills && course.skills.length > 0 && (
+                    <div className="p-4 sm:p-5 space-y-2">
+                      <h3 className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">
+                        Keterampilan yang Diuji
+                      </h3>
+                      <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed">
+                        {course.skills.join(" · ")}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Saved Notes Summary */}
+                  <div className="p-4 sm:p-5 space-y-3">
+                    <h3 className="text-xs font-semibold text-zinc-900 dark:text-zinc-100 flex items-center gap-1.5">
+                      <StickyNote className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                      Catatan Materi Saya
+                    </h3>
+                    {course.lessons.filter((l) => Boolean(cloudNotesMap[l.id])).length === 0 ? (
+                      <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">
+                        Belum ada catatan tersimpan. Gunakan ikon catatan di daftar sesi saat membaca materi.
+                      </p>
+                    ) : (
+                      <div className="divide-y divide-zinc-200/70 dark:divide-zinc-800/70">
+                        {course.lessons.map((lesson) => {
+                          const saved = cloudNotesMap[lesson.id];
+                          if (!saved) return null;
+                          return (
+                            <div
+                              key={lesson.id}
+                              className="py-2.5 first:pt-0 last:pb-0 text-xs space-y-1"
+                            >
+                              <div className="flex items-center justify-between gap-2">
+                                <span className="font-medium text-zinc-900 dark:text-zinc-100 truncate">
+                                  {lesson.title}
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={(e) => handleOpenNoteModal(lesson, e)}
+                                  className="text-emerald-700 dark:text-emerald-400 font-medium hover:underline shrink-0 cursor-pointer"
+                                >
+                                  Edit
+                                </button>
+                              </div>
+                              <p className="text-zinc-500 dark:text-zinc-400 line-clamp-2">{saved}</p>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </aside>
             </div>
@@ -1132,13 +1117,13 @@ export function DetailKursusView({
 
       {/* STAGE 04: UJIAN SERTIFIKASI AKHIR */}
       {activeStage === "exam" && (
-        <section className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-6 sm:p-7 space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 border-b border-zinc-200 dark:border-zinc-800 pb-5">
+        <section className="bg-white dark:bg-[#111114] rounded-xl border border-zinc-200/90 dark:border-zinc-800/90 p-6 sm:p-7 space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 border-b border-zinc-200/80 dark:border-zinc-800/80 pb-5">
             <div className="space-y-1.5">
-              <p className="text-xs font-mono uppercase tracking-wider text-emerald-700 dark:text-emerald-400 font-semibold">
+              <p className="text-xs font-medium text-emerald-700 dark:text-emerald-400">
                 Tahap 04 · Evaluasi & Sertifikasi
               </p>
-              <h2 className="text-xl font-display font-bold text-zinc-950 dark:text-white">
+              <h2 className="text-xl font-display font-semibold text-zinc-950 dark:text-zinc-50">
                 Ujian Sertifikasi Akhir & Analitik Kompetensi
               </h2>
               <p className="text-sm text-zinc-600 dark:text-zinc-400 max-w-2xl">
@@ -1176,17 +1161,17 @@ export function DetailKursusView({
 
           {overview?.finalExam ? (
             <div className="space-y-5">
-              <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
-                <div className="p-4 rounded-xl bg-zinc-50 dark:bg-zinc-950/60 border border-zinc-200 dark:border-zinc-800">
+              <div className="grid grid-cols-2 sm:grid-cols-4 border border-zinc-200/80 dark:border-zinc-800/80 rounded-xl divide-y sm:divide-y-0 sm:divide-x divide-zinc-200/80 dark:divide-zinc-800/80 bg-zinc-50/50 dark:bg-zinc-950/40">
+                <div className="p-4">
                   <span className="text-xs text-zinc-500 dark:text-zinc-400 block">Skor Ujian Akhir</span>
-                  <span className="text-2xl font-display font-bold font-mono tabular-nums text-zinc-950 dark:text-white">
+                  <span className="text-2xl font-display font-semibold font-mono tabular-nums text-zinc-950 dark:text-zinc-50">
                     {overview.finalExam.score}%
                   </span>
                 </div>
-                <div className="p-4 rounded-xl bg-zinc-50 dark:bg-zinc-950/60 border border-zinc-200 dark:border-zinc-800">
+                <div className="p-4">
                   <span className="text-xs text-zinc-500 dark:text-zinc-400 block">Status Kelulusan</span>
                   <span
-                    className={`text-sm font-bold mt-1 inline-flex items-center gap-1 ${
+                    className={`text-sm font-semibold mt-1 inline-flex items-center gap-1 ${
                       overview.finalExam.passed
                         ? "text-emerald-700 dark:text-emerald-400"
                         : "text-amber-700 dark:text-amber-400"
@@ -1194,25 +1179,25 @@ export function DetailKursusView({
                   >
                     {overview.finalExam.passed ? (
                       <>
-                        <CheckCircle2 className="w-4 h-4" /> Lulus Sertifikasi
+                        <CheckCircle2 className="w-4 h-4" /> Lulus
                       </>
                     ) : (
                       "Belum Lulus (Min. 75%)"
                     )}
                   </span>
                 </div>
-                <div className="p-4 rounded-xl bg-zinc-50 dark:bg-zinc-950/60 border border-zinc-200 dark:border-zinc-800">
+                <div className="p-4">
                   <span className="text-xs text-zinc-500 dark:text-zinc-400 block">Learning Gain</span>
-                  <span className="text-2xl font-display font-bold font-mono tabular-nums text-emerald-700 dark:text-emerald-400 flex items-center gap-1">
-                    <TrendingUp className="w-5 h-5" />
+                  <span className="text-2xl font-display font-semibold font-mono tabular-nums text-emerald-700 dark:text-emerald-400 flex items-center gap-1">
+                    <TrendingUp className="w-4 h-4" />
                     {learningGain !== null
                       ? `${learningGain >= 0 ? `+${learningGain}` : learningGain}%`
                       : "—"}
                   </span>
                 </div>
-                <div className="p-4 rounded-xl bg-zinc-50 dark:bg-zinc-950/60 border border-zinc-200 dark:border-zinc-800">
+                <div className="p-4">
                   <span className="text-xs text-zinc-500 dark:text-zinc-400 block">Jawaban Benar</span>
-                  <span className="text-2xl font-display font-bold font-mono tabular-nums text-zinc-950 dark:text-white">
+                  <span className="text-2xl font-display font-semibold font-mono tabular-nums text-zinc-950 dark:text-zinc-50">
                     {overview.finalExam.correctCount}/{overview.finalExam.totalQuestions}
                   </span>
                 </div>
@@ -1220,14 +1205,14 @@ export function DetailKursusView({
 
               {overview.finalExam.competencyBreakdown?.length > 0 && (
                 <div className="space-y-3">
-                  <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-                    Rincian Penguasaan per Kompetensi
+                  <h3 className="text-xs font-medium text-zinc-500 dark:text-zinc-400">
+                    Rincian penguasaan per kompetensi
                   </h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {overview.finalExam.competencyBreakdown.map((item) => (
                       <div
                         key={item.topic}
-                        className="p-3.5 rounded-lg border border-zinc-200 dark:border-zinc-800 space-y-1.5"
+                        className="p-3.5 rounded-lg border border-zinc-200/80 dark:border-zinc-800/80 space-y-1.5"
                       >
                         <div className="flex items-center justify-between text-xs">
                           <span className="font-semibold text-zinc-900 dark:text-zinc-100 truncate pr-2">
@@ -1298,13 +1283,13 @@ export function DetailKursusView({
           aria-modal="true"
           className="fixed inset-0 z-50 bg-zinc-950/60 backdrop-blur-xs flex items-center justify-center p-4"
         >
-          <div className="bg-white dark:bg-zinc-900 rounded-xl max-w-lg w-full p-6 shadow-xl border border-zinc-200 dark:border-zinc-800 space-y-4">
-            <div className="flex items-center justify-between border-b border-zinc-200 dark:border-zinc-800 pb-3">
+          <div className="bg-white dark:bg-[#111114] rounded-xl max-w-lg w-full p-6 shadow-xl border border-zinc-200/90 dark:border-zinc-800/90 space-y-4">
+            <div className="flex items-center justify-between border-b border-zinc-200/80 dark:border-zinc-800/80 pb-3">
               <div className="min-w-0">
-                <span className="text-[11px] font-mono uppercase tracking-wider text-zinc-500">
-                  Catatan Personal
+                <span className="text-xs text-zinc-500 dark:text-zinc-400">
+                  Catatan personal
                 </span>
-                <h3 className="text-sm font-bold text-zinc-950 dark:text-white truncate">
+                <h3 className="text-sm font-semibold text-zinc-950 dark:text-zinc-50 truncate">
                   {activeNoteLesson.title}
                 </h3>
               </div>

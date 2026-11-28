@@ -92,6 +92,7 @@ const InteractiveLabView = lazyWithRetry(() => import("./components/InteractiveL
 const ArenaView = lazyWithRetry(() => import("./components/ArenaView").then(m => ({ default: m.ArenaView || (m as any).default })));
 const PublicPortfolioView = lazyWithRetry(() => import("./components/PublicPortfolioView").then(m => ({ default: m.PublicPortfolioView || (m as any).default })));
 const LmsWorkspaceView = lazyWithRetry(() => import("./components/LmsWorkspaceView").then(m => ({ default: m.LmsWorkspaceView || (m as any).default })));
+const BrandIdentityView = lazyWithRetry(() => import("./components/BrandIdentityView").then(m => ({ default: m.BrandIdentityView || (m as any).default })));
 import type { CopilotContextInfo } from "./components/MentorChatSidebar";
 
 export default function App() {
@@ -307,7 +308,9 @@ export default function App() {
   }, [location.pathname]);
 
   const isPublicRoute =
-    location.pathname.startsWith("/verify/") || location.pathname.startsWith("/portfolio/");
+    location.pathname.startsWith("/verify/") ||
+    location.pathname.startsWith("/portfolio/") ||
+    (!isLoggedIn && location.pathname === "/brand");
 
   if (isPublicRoute) {
     return (
@@ -317,6 +320,7 @@ export default function App() {
           <Routes>
             <Route path="/verify/:certificateId" element={<PublicCertificateVerifyView />} />
             <Route path="/portfolio/:slug" element={<PublicPortfolioView />} />
+            <Route path="/brand" element={<BrandIdentityView showToast={showToast} standalone={true} />} />
           </Routes>
         </Suspense>
       </>
@@ -755,7 +759,8 @@ export default function App() {
                     <MentoringView onProfileUpdate={setProfile} showToast={showToast} />
                   } />
 
-                  {/* Profil */}
+                  {/* Profil & Brand */}
+                  <Route path="/brand" element={<BrandIdentityView showToast={showToast} />} />
                   <Route path="/faq" element={<FaqView />} />
                   <Route path="/profil" element={
                     profile ? (
@@ -832,7 +837,7 @@ export default function App() {
           </div>
 
           {/* FOOTER */}
-          {["/belajar", "/jelajahi", "/profil/toko", "/belajar/proyek", "/profil/analitik", "/komunitas"].includes(location.pathname) && <Footer />}
+          {["/belajar", "/jelajahi", "/profil/toko", "/belajar/proyek", "/profil/analitik", "/komunitas", "/brand"].includes(location.pathname) && <Footer />}
         </main>
         </div>
       </div>

@@ -50,4 +50,5 @@ export const ROUTES = {
   upgrade: "/pusat-upgrade",
   lms: "/kelola-lms",
   faq: "/faq",
+  brand: "/brand",
 };

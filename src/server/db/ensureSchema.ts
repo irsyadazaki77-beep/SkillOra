@@ -1,3 +1,4 @@
+import { Pool } from "pg";
 import { pool } from "../../db/index.js";
 
 let schemaPromise: Promise<void> | null = null;
@@ -17,10 +18,15 @@ export async function ensureSchema(): Promise<void> {
 
 async function runEnsureSchema(): Promise<void> {
   try {
-    await pool.query(`SELECT 1 FROM "learning_paths" LIMIT 0`);
+    await Promise.all([
+      pool.query(`SELECT "weekly_target_days" FROM "users" LIMIT 0`),
+      pool.query(`SELECT "certificate_type", "path_slug" FROM "certificates" LIMIT 0`),
+      pool.query(`SELECT 1 FROM "talent_invitations" LIMIT 0`),
+      pool.query(`SELECT 1 FROM "learning_paths" LIMIT 0`),
+    ]);
     return;
   } catch {
-    // Proceed to fallback DDL statements only if tables are not yet created
+    // Proceed to fallback DDL statements if any table or column is missing
   }
 
   const statements = [
@@ -705,14 +711,46 @@ async function runEnsureSchema(): Promise<void> {
     );`,
   ];
 
-  for (const sql of statements) {
-    try {
-      await pool.query(sql);
-    } catch (err: any) {
-      // Ignore if table in ALTER doesn't exist yet (42P01) or constraint already exists (42710)
-      if (err?.code !== "42P01" && err?.code !== "42710") {
-        console.warn("Schema statement warning:", err?.message || err);
+  const adminUser = process.env.SQL_ADMIN_USER;
+  const adminPassword = process.env.SQL_ADMIN_PASSWORD;
+  const ddlPool =
+    adminUser && adminPassword
+      ? new Pool({
+          host: process.env.SQL_HOST,
+          user: adminUser,
+          password: adminPassword,
+          database: process.env.SQL_DB_NAME,
+          max: 2,
+          connectionTimeoutMillis: 15000,
+        })
+      : pool;
+  const shouldClosePool = ddlPool !== pool;
+
+  try {
+    for (const sql of statements) {
+      try {
+        await ddlPool.query(sql);
+      } catch (err: any) {
+        // Ignore if table in ALTER doesn't exist yet (42P01) or constraint already exists (42710)
+        if (err?.code !== "42P01" && err?.code !== "42710") {
+          console.warn("Schema statement warning:", err?.message || err);
+        }
       }
+    }
+
+    const appUser = process.env.SQL_USER;
+    if (appUser && adminUser && appUser !== adminUser) {
+      const safeUser = `"${appUser.replace(/"/g, '""')}"`;
+      await ddlPool
+        .query(`GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO ${safeUser};`)
+        .catch(() => {});
+      await ddlPool
+        .query(`GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO ${safeUser};`)
+        .catch(() => {});
+    }
+  } finally {
+    if (shouldClosePool) {
+      await ddlPool.end().catch(() => {});
     }
   }
 }

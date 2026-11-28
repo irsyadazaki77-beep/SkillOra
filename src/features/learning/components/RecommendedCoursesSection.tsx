@@ -1,9 +1,7 @@
 import React from "react";
-import { Compass, ArrowRight, BookOpen, Clock, Star } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { Course } from "../../../types";
-import { Card } from "../../../components/ui/Card";
 import { Button } from "../../../components/ui/Button";
-import { Badge } from "../../../components/ui/Badge";
 import defaultCourseImg from "../../../assets/images/course_tech_engineering_1794974031663.jpg";
 import { resolveCourseImage } from "../../../utils/resolveAsset";
 
@@ -24,23 +22,22 @@ export function RecommendedCoursesSection({
   filteredRecommendedCourses,
   getCourseProgress,
   onNavigateToCourse,
-  onNavigateToKatalog
+  onNavigateToKatalog,
 }: RecommendedCoursesSectionProps) {
-  // Take top 2-3 recommendations for a clean dashboard preview
   const displayCourses = filteredRecommendedCourses.slice(0, 3);
 
   return (
-    <section className="space-y-3.5" aria-labelledby="recommended-courses-heading">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-        <div>
-          <h2 
+    <section className="space-y-4" aria-labelledby="recommended-courses-heading">
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
+        <div className="space-y-0.5">
+          <h2
             id="recommended-courses-heading"
-            className="font-display font-bold text-base sm:text-lg text-slate-900 dark:text-white tracking-tight"
+            className="font-display font-semibold text-base sm:text-[17px] text-zinc-950 dark:text-zinc-50 tracking-tight"
           >
-            Rekomendasi Kursus Terpilih
+            Rekomendasi kursus
           </h2>
-          <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-            Tingkatkan keahlian dengan kurikulum berbasis proyek standar industri.
+          <p className="text-xs text-zinc-500 dark:text-zinc-400">
+            Kurikulum berbasis proyek untuk mempercepat kesiapan kerja.
           </p>
         </div>
 
@@ -50,95 +47,86 @@ export function RecommendedCoursesSection({
           onClick={onNavigateToKatalog}
           rightIcon={<ArrowRight className="w-3.5 h-3.5" />}
         >
-          Lihat Semua di Katalog
+          Semua katalog
         </Button>
       </div>
 
-      {/* Category filter pills */}
-      <div className="flex items-center gap-1.5 overflow-x-auto hide-scrollbar pb-1">
-        {categories.map(cat => (
+      {/* Segmented Category Filter Control */}
+      <div className="inline-flex items-center p-1 bg-zinc-100/90 dark:bg-zinc-900 rounded-lg border border-zinc-200/80 dark:border-zinc-800 overflow-x-auto max-w-full hide-scrollbar">
+        {categories.map((cat) => (
           <button
             key={cat}
+            type="button"
             onClick={() => setSelectedCategory(cat)}
-            className={`px-3 py-1 rounded-lg text-xs font-semibold capitalize transition-all cursor-pointer whitespace-nowrap ${
+            className={`px-3 py-1 rounded-md text-xs font-medium capitalize transition-colors cursor-pointer whitespace-nowrap shrink-0 ${
               selectedCategory === cat
-                ? "bg-slate-900 dark:bg-white text-white dark:text-slate-900 shadow-2xs font-bold"
-                : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700"
+                ? "bg-white dark:bg-zinc-800 text-zinc-950 dark:text-white font-semibold shadow-2xs"
+                : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200"
             }`}
           >
             {cat}
           </button>
         ))}
       </div>
-      
+
       {displayCourses.length === 0 ? (
-        <Card variant="flat" padding="md" className="text-center py-8">
-          <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-            Tidak ada kursus pada kategori ini.
+        <div className="bg-white dark:bg-[#111114] border border-zinc-200/90 dark:border-zinc-800/90 rounded-xl p-8 text-center space-y-3">
+          <p className="text-xs text-zinc-500 dark:text-zinc-400">
+            Belum ada kursus yang cocok pada kategori ini.
           </p>
-          <div className="mt-3">
-            <Button variant="secondary" size="sm" onClick={() => setSelectedCategory("semua")}>
-              Tampilkan Semua Kategori
-            </Button>
-          </div>
-        </Card>
+          <Button variant="outline" size="sm" onClick={() => setSelectedCategory("semua")}>
+            Tampilkan semua kategori
+          </Button>
+        </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
-          {displayCourses.map(course => {
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {displayCourses.map((course) => {
             const progress = getCourseProgress(course);
             return (
-              <Card
+              <button
                 key={course.id}
-                variant="interactive"
-                padding="none"
+                type="button"
                 onClick={() => onNavigateToCourse(course.id)}
-                className="group flex flex-col justify-between overflow-hidden"
+                className="group text-left bg-white dark:bg-[#111114] border border-zinc-200/90 dark:border-zinc-800/90 hover:border-zinc-300 dark:hover:border-zinc-700 rounded-xl overflow-hidden flex flex-col justify-between transition-colors cursor-pointer"
               >
-                <div className="space-y-2.5">
-                  <div className="h-32 bg-slate-100 dark:bg-slate-800 relative overflow-hidden">
+                <div>
+                  <div className="aspect-[16/10] bg-zinc-100 dark:bg-zinc-900 overflow-hidden border-b border-zinc-200/70 dark:border-zinc-800/80">
                     <img
                       src={resolveCourseImage(course.image)}
                       alt={course.title}
+                      referrerPolicy="no-referrer"
                       onError={(e) => {
                         (e.currentTarget as HTMLImageElement).src = defaultCourseImg;
                       }}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-300"
                       loading="lazy"
                     />
-                    <div className="absolute top-2 left-2 px-2 py-0.5 rounded-md bg-slate-900/80 backdrop-blur-xs text-white text-xs font-bold">
-                      {course.category}
-                    </div>
                   </div>
 
-                  <div className="px-3.5 space-y-1.5">
-                    <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 font-medium">
-                      <span className="flex items-center gap-0.5 text-amber-500 font-bold">
-                        <Star className="w-3 h-3 fill-amber-500" />
-                        4.8
+                  <div className="p-4 space-y-1.5">
+                    <p className="text-[11px] text-zinc-500 dark:text-zinc-400 truncate">
+                      <span className="font-medium text-emerald-700 dark:text-emerald-400">
+                        {course.category}
                       </span>
-                      <span>&bull;</span>
-                      <span>{course.lessons?.length || 0} Materi</span>
-                      <span>&bull;</span>
-                      <span>{course.difficulty || "Pemula"}</span>
-                    </div>
+                      {" · "}
+                      {course.lessons?.length || 0} bab
+                      {" · "}
+                      {course.difficulty || "Pemula"}
+                    </p>
 
-                    <h3 className="font-display font-bold text-sm text-slate-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors line-clamp-1">
+                    <h3 className="font-display font-semibold text-sm text-zinc-950 dark:text-white group-hover:text-emerald-700 dark:group-hover:text-emerald-400 transition-colors line-clamp-2 leading-snug">
                       {course.title}
                     </h3>
-
-                    <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 leading-relaxed">
-                      {course.description || "Pelajari konsep mendalam dan bangun portofolio proyek terstandarisasi."}
-                    </p>
                   </div>
                 </div>
 
-                <div className="p-3.5 pt-2.5 border-t border-slate-100 dark:border-slate-800/80 mt-2 flex items-center justify-between">
-                  <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 group-hover:underline">
-                    {progress > 0 ? `Lanjutkan (${progress}%)` : "Lihat Silabus"}
+                <div className="px-4 py-3 border-t border-zinc-100 dark:border-zinc-800/80 flex items-center justify-between text-xs">
+                  <span className="font-medium text-zinc-700 dark:text-zinc-300 group-hover:text-emerald-700 dark:group-hover:text-emerald-400 tabular-nums">
+                    {progress > 0 ? `Lanjutkan (${progress}%)` : "Buka silabus"}
                   </span>
-                  <ArrowRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 group-hover:translate-x-0.5 transition-all" />
+                  <ArrowRight className="w-3.5 h-3.5 text-zinc-400 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors" />
                 </div>
-              </Card>
+              </button>
             );
           })}
         </div>

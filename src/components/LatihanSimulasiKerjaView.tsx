@@ -52,34 +52,34 @@ export function LatihanSimulasiKerjaView({
   ];
 
   return (
-    <div className="w-full space-y-5">
-      {/* Modern Editorial SaaS Header */}
-      <header className="p-5 sm:p-6 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 space-y-5">
-        <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-4">
+    <div className="w-full space-y-6 pb-16 lg:pb-8">
+      {/* Editorial Header */}
+      <header className="space-y-5">
+        <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-4 pb-5 border-b border-zinc-200/90 dark:border-zinc-800/90">
           <div className="space-y-1.5 max-w-2xl">
-            <p className="text-xs font-mono uppercase tracking-wider text-emerald-700 dark:text-emerald-400 font-semibold">
-              Simulasi Seleksi Kerja Gratis · BUMN · CPNS · Perusahaan
+            <p className="text-xs font-medium text-emerald-700 dark:text-emerald-400">
+              Simulasi Seleksi Kerja · BUMN · CPNS · Perusahaan
             </p>
-            <h1 className="text-2xl sm:text-3xl font-display font-bold tracking-tight text-zinc-950 dark:text-white">
+            <h1 className="text-2xl sm:text-3xl font-display font-semibold tracking-tight text-zinc-950 dark:text-zinc-50">
               Simulasi Tes Kerja, Psikotes &amp; Wawancara AI
             </h1>
             <p className="text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed">
-              Berlatih soal TKD &amp; AKHLAK 20 nomor, tes ketelitian angka Kraepelin, simulasi pengambilan keputusan di kantor, serta latihan menjawab wawancara HRD dengan penilaian AI.
+              Berlatih soal TKD &amp; AKHLAK 20 nomor, tes ketelitian Kraepelin, studi kasus keputusan kerja, serta latihan wawancara HRD.
             </p>
           </div>
 
           {recentSimulations.length > 0 && (
-            <div className="flex items-center gap-4 px-4 py-2.5 rounded-lg bg-zinc-50 dark:bg-zinc-950/60 border border-zinc-200 dark:border-zinc-800 text-xs font-mono tabular-nums shrink-0">
+            <div className="flex items-center gap-4 px-4 py-2.5 rounded-xl bg-white dark:bg-[#111114] border border-zinc-200/90 dark:border-zinc-800/90 text-xs font-mono tabular-nums shrink-0">
               <div>
-                <span className="text-zinc-500 block text-[11px]">Total Sesi</span>
-                <span className="font-bold text-zinc-950 dark:text-white">
-                  {recentSimulations.length} Riwayat
+                <span className="text-zinc-500 block font-sans text-[11px]">Total Sesi</span>
+                <span className="font-semibold text-zinc-950 dark:text-zinc-50">
+                  {recentSimulations.length} riwayat
                 </span>
               </div>
               <div className="h-7 w-px bg-zinc-200 dark:bg-zinc-800" />
               <div>
-                <span className="text-zinc-500 block text-[11px]">Skor Terakhir</span>
-                <span className="font-bold text-emerald-700 dark:text-emerald-400">
+                <span className="text-zinc-500 block font-sans text-[11px]">Skor Terakhir</span>
+                <span className="font-semibold text-emerald-700 dark:text-emerald-400">
                   {recentSimulations[0].score}/100
                 </span>
               </div>
@@ -87,8 +87,8 @@ export function LatihanSimulasiKerjaView({
           )}
         </div>
 
-        {/* Single-Line Tab Bar */}
-        <div className="flex items-center gap-1.5 pt-4 border-t border-zinc-200 dark:border-zinc-800 overflow-x-auto hide-scrollbar">
+        {/* Underline Tab Bar */}
+        <div className="flex items-center gap-1 border-b border-zinc-200/90 dark:border-zinc-800/90 overflow-x-auto hide-scrollbar">
           {tabs.map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -97,14 +97,17 @@ export function LatihanSimulasiKerjaView({
                 key={tab.id}
                 type="button"
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold transition-colors cursor-pointer whitespace-nowrap shrink-0 ${
+                className={`relative flex items-center gap-1.5 px-3.5 py-2.5 text-xs font-medium transition-colors cursor-pointer whitespace-nowrap shrink-0 ${
                   isActive
-                    ? "bg-zinc-950 dark:bg-zinc-100 text-white dark:text-zinc-950"
-                    : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-950 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                    ? "text-zinc-950 dark:text-zinc-50"
+                    : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200"
                 }`}
               >
-                <Icon className="w-3.5 h-3.5" />
+                <Icon className={`w-3.5 h-3.5 ${isActive ? "text-emerald-600 dark:text-emerald-400" : ""}`} />
                 <span>{tab.label}</span>
+                {isActive && (
+                  <span className="absolute inset-x-0 bottom-0 h-0.5 bg-emerald-600 dark:bg-emerald-500 rounded-full" />
+                )}
               </button>
             );
           })}
@@ -146,27 +149,27 @@ export function LatihanSimulasiKerjaView({
 
       {/* Cloud-Saved Simulation History Strip */}
       {recentSimulations.length > 0 && (
-        <section className="p-5 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 space-y-3">
+        <section className="p-5 bg-white dark:bg-[#111114] rounded-xl border border-zinc-200/90 dark:border-zinc-800/90 space-y-3">
           <div className="flex items-center justify-between">
-            <h2 className="text-xs font-mono font-semibold uppercase tracking-wider text-zinc-500 flex items-center gap-1.5">
-              <History className="w-3.5 h-3.5 text-emerald-600" />
-              Riwayat Simulasi Tersimpan di Cloud ({recentSimulations.length})
+            <h2 className="text-xs font-semibold text-zinc-700 dark:text-zinc-300 flex items-center gap-1.5 tabular-nums">
+              <History className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+              Riwayat simulasi tersimpan ({recentSimulations.length})
             </h2>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
             {recentSimulations.slice(0, 6).map((item) => (
               <div
                 key={item.id}
-                className="p-3 rounded-lg bg-zinc-50 dark:bg-zinc-950/60 border border-zinc-200 dark:border-zinc-800 flex items-center justify-between gap-3 text-xs"
+                className="p-3 rounded-lg bg-zinc-50/70 dark:bg-zinc-950/50 border border-zinc-200/80 dark:border-zinc-800/80 flex items-center justify-between gap-3 text-xs"
               >
                 <div className="min-w-0">
-                  <p className="text-[11px] font-mono text-emerald-700 dark:text-emerald-400 font-semibold">
+                  <p className="text-[11px] font-medium text-emerald-700 dark:text-emerald-400">
                     {SIM_TYPE_LABELS[item.simType] || item.simType}
                   </p>
-                  <p className="font-semibold text-zinc-950 dark:text-white truncate">
+                  <p className="font-semibold text-zinc-950 dark:text-zinc-100 truncate">
                     {item.title}
                   </p>
-                  <p className="text-[11px] text-zinc-500 font-mono">
+                  <p className="text-[11px] text-zinc-500 font-mono tabular-nums">
                     {new Date(item.createdAt).toLocaleDateString("id-ID", {
                       day: "numeric",
                       month: "short",
@@ -175,7 +178,7 @@ export function LatihanSimulasiKerjaView({
                     })}
                   </p>
                 </div>
-                <span className="font-mono font-bold text-sm tabular-nums text-zinc-950 dark:text-white shrink-0">
+                <span className="font-mono font-semibold text-sm tabular-nums text-zinc-950 dark:text-zinc-100 shrink-0">
                   {item.score}/100
                 </span>
               </div>

@@ -4,6 +4,7 @@ import { Course, Profile } from "../types";
 import { Award, ShieldCheck, QrCode, Download, X, Printer, Sparkles, Layers, CheckCircle2, BadgePercent, GraduationCap, Clock } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { escapeHtml } from "../utils/htmlUtils";
+import { SkilloraLogoIcon, SkilloraCompassSeal, getSkilloraLogoSvgString } from "./SkilloraLogo";
 
 interface CertificateModalProps {
   activeCertificate: Course | null;
@@ -60,8 +61,16 @@ export function CertificateModal({
     const safeVerifyUrl = escapeHtml(verificationUrl);
     const qrSvgHtml =
       (typeof document !== "undefined" &&
-        document.querySelector("#printable-certificate svg")?.outerHTML) ||
+        document.querySelector("#printable-certificate .cert-qr-wrap svg")?.outerHTML) ||
       "";
+    const logoSvgHtml = getSkilloraLogoSvgString({ variant: "icon" }).replace(
+      'width="512" height="512"',
+      'width="64" height="64"'
+    );
+    const sealSvgHtml = getSkilloraLogoSvgString({ variant: "seal" }).replace(
+      'width="512" height="512"',
+      'width="116" height="116"'
+    );
 
     const isClassic = themeMode === "classic";
     const isObsidian = themeMode === "obsidian";
@@ -202,26 +211,18 @@ export function CertificateModal({
         
         <!-- Skillora Logo Header -->
         <div class="space-y-3">
-          <div class="w-16 h-16 rounded-lg flex items-center justify-center shadow-sm border border-amber-400/30 bg-slate-900 text-amber-400">
-            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
-            </svg>
+          <div class="w-16 h-16 flex items-center justify-center">
+            ${logoSvgHtml}
           </div>
           <div>
             <h3 class="font-bold tracking-widest text-base ${isClassic ? 'text-slate-900' : 'text-white'}">SKILLORA</h3>
-            <p class="text-base font-extrabold uppercase tracking-widest text-amber-500">Industrial Tech Academy</p>
+            <p class="text-xs font-extrabold uppercase tracking-widest text-emerald-500">Kompas Kompetensi &amp; Karier</p>
           </div>
         </div>
 
-        <!-- Gold Embossed Seal -->
-        <div class="my-10 relative">
-          <div class="w-28 h-28 rounded-full bg-gradient-to-br from-amber-100 to-amber-300 border-2 border-amber-400 flex flex-col items-center justify-center text-center p-2 shadow-sm relative">
-            <div class="absolute inset-1 border border-dashed border-amber-600/50 rounded-full"></div>
-            <span class="text-amber-800 text-base">🏅</span>
-            <span class="text-[7px] font-black uppercase text-amber-900 tracking-widest mt-1">OFFICIAL SEAL</span>
-            <span class="font-display text-base font-black text-amber-950 uppercase tracking-wide mt-1">GRADE A+</span>
-            <span class="text-[6px] text-amber-700 font-extrabold tracking-widest">VERIFIED</span>
-          </div>
+        <!-- Skillora Official Career Compass Seal -->
+        <div class="my-8 relative flex justify-center md:justify-start">
+          ${sealSvgHtml}
         </div>
 
         <!-- Secure verification QR (works offline via embedded SVG) -->
@@ -570,54 +571,33 @@ export function CertificateModal({
                 <div className="flex-none flex flex-col justify-between items-center md:items-start md:w-56 border-b md:border-b-0 md:border-r border-slate-500/20 pb-8 md:pb-0 md:pr-10">
                   
                   {/* Brand Signature Icon */}
-                  <div className="flex flex-col items-center md:items-start text-center md:text-left gap-2 w-full">
-                    <div className={`w-16 h-16 rounded-lg flex items-center justify-center shadow-sm border relative overflow-hidden group-hover:rotate-6 transition-all duration-300 ${
-                      themeMode === "classic" 
-                        ? "bg-gradient-to-tr from-amber-500 to-yellow-400 text-slate-950 border-amber-400" 
-                        : themeMode === "obsidian"
-                        ? "bg-gradient-to-tr from-slate-900 to-slate-850 text-amber-400 border-amber-500/40"
-                        : "bg-gradient-to-tr from-indigo-600 to-violet-500 text-white border-indigo-400/30"
-                    }`}>
-                      <ShieldCheck className="w-8 h-8 relative z-10" />
-                      <div className="absolute inset-0 bg-white/20 scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-300"></div>
-                    </div>
+                  <div className="flex flex-col items-center md:items-start text-center md:text-left gap-2.5 w-full">
+                    <SkilloraLogoIcon size={64} className="drop-shadow-md" />
                     <div>
                       <h3 className={`font-display font-black tracking-widest text-base ${
-                        themeMode === "classic" ? "text-slate-900" : "text-slate-100"
+                        themeMode === "classic" ? "text-[#0A1628]" : "text-slate-100"
                       }`}>SKILLORA</h3>
-                      <p className={`text-base font-extrabold uppercase tracking-widest ${
-                        themeMode === "classic" ? "text-amber-700" : "text-amber-400"
-                      }`}>Industrial Tech Academy</p>
+                      <p className={`text-[11px] font-extrabold uppercase tracking-widest ${
+                        themeMode === "classic" ? "text-emerald-700" : "text-emerald-400"
+                      }`}>Kompas Kompetensi &amp; Karier</p>
                     </div>
                   </div>
 
-                  {/* Golden Award Stamp (Interstellar Grade Badge) */}
-                  <div className="my-8 flex flex-col items-center md:items-start text-center md:text-left w-full">
-                    <div className="relative group/seal cursor-pointer select-none">
-                      {/* Outer Ring Rotating */}
-                      <div className={`absolute inset-0 rounded-full border-2 border-dashed animate-spin ${
-                        themeMode === "classic" ? "border-amber-500/60" : "border-amber-400/40"
-                      }`} style={{ animationDuration: "12s" }}></div>
-                      
-                      <div className={`w-28 h-28 rounded-full flex flex-col items-center justify-center p-2 text-center shadow-sm border relative transition-transform duration-300 hover:scale-105 ${
-                        themeMode === "classic"
-                          ? "bg-gradient-to-b from-amber-100 to-amber-200 text-amber-950 border-amber-300"
-                          : themeMode === "obsidian"
-                          ? "bg-gradient-to-b from-amber-500/20 to-amber-600/10 text-amber-200 border-amber-500/30 shadow-[0_0_20px_rgba(245,158,11,0.15)]"
-                          : "bg-gradient-to-b from-indigo-900/30 to-violet-800/20 text-indigo-200 border-indigo-500/30"
-                      }`}>
-                        <Award className="w-7 h-7 text-amber-500 mb-1" />
-                        <span className="text-[7px] font-black uppercase tracking-widest">OFFICIAL SEAL</span>
-                        <span className="font-display text-base font-black uppercase tracking-wider mt-0.5">GRADE A+</span>
-                        <span className="text-[6px] text-slate-500 font-extrabold tracking-widest">VERIFIED</span>
-                      </div>
-                    </div>
+                  {/* Official Skillora Career Compass Seal */}
+                  <div className="my-6 flex flex-col items-center md:items-start text-center md:text-left w-full">
+                    <SkilloraCompassSeal
+                      size={116}
+                      label="GRADE A+"
+                      sublabel="SKILLORA VERIFIED"
+                      darkMode={themeMode !== "classic"}
+                      className="drop-shadow-lg transition-transform duration-300 hover:scale-105"
+                    />
                   </div>
 
                   {/* QR Security Verification Section */}
                   <div className="mt-auto space-y-4 w-full">
                     <div className="flex items-center gap-2 bg-slate-500/5 p-3 rounded-lg border border-slate-500/10 hover:border-slate-500/25 transition-all">
-                      <div className={`p-1 bg-white rounded-lg shrink-0 flex items-center justify-center ${themeMode === "classic" ? "shadow-sm" : "shadow-sm shadow-black/20"}`}>
+                      <div className={`cert-qr-wrap p-1 bg-white rounded-lg shrink-0 flex items-center justify-center ${themeMode === "classic" ? "shadow-sm" : "shadow-sm shadow-black/20"}`}>
                         <QRCodeSVG value={verificationUrl} size={40} level="M" />
                       </div>
                       <div className="text-left">

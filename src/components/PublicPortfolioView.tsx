@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { PublicPortfolioData } from "../types";
 import { fetchPublicPortfolio } from "../api/apiClient";
-import { SkilloraLogo } from "./SkilloraLogo";
+import { SkilloraLogo, SkilloraCompassSeal } from "./SkilloraLogo";
 
 export function PublicPortfolioView() {
   const { slug } = useParams();
@@ -44,14 +44,17 @@ export function PublicPortfolioView() {
     <div className="min-h-screen bg-[#fafafa] dark:bg-[#09090b] text-zinc-950 dark:text-zinc-100">
       {/* Top Public Verification Bar */}
       <header className="border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2">
-            <SkilloraLogo variant="full" size="sm" />
+            <SkilloraLogo variant="full" size="sm" showTagline={true} compactTagline={true} />
           </Link>
-          <span className="inline-flex items-center gap-1.5 text-xs font-mono text-emerald-600 dark:text-emerald-400 font-semibold">
-            <ShieldCheck className="w-4 h-4" />
-            Verified Talent Dossier
-          </span>
+          <div className="flex items-center gap-2.5">
+            <span className="inline-flex items-center gap-1.5 text-xs font-mono text-emerald-600 dark:text-emerald-400 font-semibold">
+              <ShieldCheck className="w-4 h-4" />
+              Verified Talent Dossier
+            </span>
+            <SkilloraCompassSeal size={36} label="VERIFIED" sublabel="SKILLORA" className="hidden sm:block" />
+          </div>
         </div>
       </header>
 

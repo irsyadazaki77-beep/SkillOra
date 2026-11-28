@@ -149,50 +149,50 @@ export function CareerView({
 
   return (
     <div className="space-y-6 w-full pb-16 lg:pb-8">
-      {/* Modern Editorial Career Header */}
-      <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6 sm:p-8 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
-        <div className="space-y-2">
-          <p className="text-[11px] font-mono uppercase tracking-wider text-emerald-600 dark:text-emerald-400 font-semibold">
-            Karier, Talent Match & Ekosistem Kampus
+      {/* Editorial Career Header */}
+      <header className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-5 pb-5 border-b border-zinc-200/90 dark:border-zinc-800/90">
+        <div className="space-y-1.5 max-w-2xl">
+          <p className="text-xs font-medium text-emerald-700 dark:text-emerald-400">
+            Karier, Talent Match &amp; Ekosistem Kampus
           </p>
-          <h1 className="font-display text-2xl sm:text-3xl font-bold text-zinc-950 dark:text-white tracking-tight">
+          <h1 className="font-display text-2xl sm:text-3xl font-semibold text-zinc-950 dark:text-zinc-50 tracking-tight">
             Konversi Skill Terverifikasi Menjadi Tawaran Kerja
           </h1>
-          <p className="text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed max-w-xl">
-            Cocokkan skor lab & sertifikat Anda dengan lowongan mitra, kelola Portofolio Publik tanpa login, dan gabung cohort kampus Anda.
+          <p className="text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed">
+            Cocokkan skor lab &amp; sertifikat Anda dengan lowongan mitra, kelola Portofolio Publik, dan gabung cohort kampus.
           </p>
         </div>
 
-        <div className="flex flex-wrap gap-2 shrink-0">
+        <div className="flex flex-wrap items-center gap-2 shrink-0">
           <button
             type="button"
             onClick={() => navigate(ROUTES.career.cvBuilder)}
-            className="px-3.5 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-950 hover:border-emerald-500/60 text-zinc-900 dark:text-zinc-100 text-xs font-semibold flex items-center gap-1.5 cursor-pointer"
+            className="h-9 px-3.5 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#111114] hover:bg-zinc-50 dark:hover:bg-zinc-900 text-zinc-800 dark:text-zinc-200 text-xs font-medium flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0 transition-colors"
           >
             <FileText className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
             CV ATS Builder
           </button>
           <button
             type="button"
-            onClick={() => navigate(ROUTES.career.voiceInterview)}
-            className="px-3.5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold flex items-center gap-1.5 cursor-pointer"
-          >
-            <Mic className="w-3.5 h-3.5" />
-            Mock Interview Suara
-          </button>
-          <button
-            type="button"
             onClick={() => navigate(ROUTES.career.adaptive)}
-            className="px-3.5 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 hover:bg-zinc-50 dark:hover:bg-zinc-800 text-zinc-800 dark:text-zinc-200 text-xs font-semibold flex items-center gap-1.5 cursor-pointer"
+            className="h-9 px-3.5 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#111114] hover:bg-zinc-50 dark:hover:bg-zinc-900 text-zinc-800 dark:text-zinc-200 text-xs font-medium flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0 transition-colors"
           >
             <Brain className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
             Asesmen Adaptif
           </button>
+          <button
+            type="button"
+            onClick={() => navigate(ROUTES.career.voiceInterview)}
+            className="h-9 px-3.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0 transition-colors"
+          >
+            <Mic className="w-3.5 h-3.5" />
+            Mock Interview Suara
+          </button>
         </div>
-      </div>
+      </header>
 
-      {/* Segmented Career Tabs */}
-      <div className="flex items-center gap-1.5 overflow-x-auto pb-2 border-b border-zinc-200 dark:border-zinc-800 text-xs font-semibold hide-scrollbar">
+      {/* Linear-style Underline Career Tabs */}
+      <div className="flex items-center gap-1 overflow-x-auto border-b border-zinc-200/90 dark:border-zinc-800/90 hide-scrollbar">
         {[
           { id: "semua", label: "Talent Match & Bursa", icon: Briefcase },
           { id: "portofolio", label: "Portofolio Publik", icon: Globe },
@@ -201,18 +201,23 @@ export function CareerView({
           { id: "lamaran", label: `Lamaran (${Object.keys(appliedJobsMap).length})`, icon: Layers },
         ].map((tab) => {
           const Icon = tab.icon;
+          const isActive = activeTab === tab.id;
           return (
             <button
               key={tab.id}
+              type="button"
               onClick={() => setActiveTab(tab.id as CareerTab)}
-              className={`px-3.5 py-2 rounded-lg transition-colors cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
-                activeTab === tab.id
-                  ? "bg-zinc-950 dark:bg-zinc-100 text-white dark:text-zinc-950"
-                  : "bg-white dark:bg-zinc-900 text-zinc-600 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-800"
+              className={`relative px-3.5 py-2.5 text-xs font-medium transition-colors cursor-pointer whitespace-nowrap shrink-0 flex items-center gap-1.5 tabular-nums ${
+                isActive
+                  ? "text-zinc-950 dark:text-zinc-50"
+                  : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200"
               }`}
             >
-              <Icon className="w-3.5 h-3.5" />
+              <Icon className={`w-3.5 h-3.5 ${isActive ? "text-emerald-600 dark:text-emerald-400" : ""}`} />
               {tab.label}
+              {isActive && (
+                <span className="absolute inset-x-0 bottom-0 h-0.5 bg-emerald-600 dark:bg-emerald-500 rounded-full" />
+              )}
             </button>
           );
         })}

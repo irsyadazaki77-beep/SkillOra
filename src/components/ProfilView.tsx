@@ -1,5 +1,4 @@
 import { useState, FormEvent } from "react";
-import { motion } from "motion/react";
 import {
   User,
   Mail,
@@ -8,8 +7,6 @@ import {
   Gem,
   Flame,
   Award,
-  BookOpen,
-  CheckCircle2,
   AlertCircle,
   Sparkles,
   Building2,
@@ -28,12 +25,20 @@ interface ProfilViewProps {
   showToast: (msg: string, type?: "success" | "error" | "info") => void;
 }
 
+function getInitials(name: string): string {
+  const words = (name || "SK").trim().split(/\s+/).filter(Boolean);
+  if (words.length >= 2) return (words[0][0] + words[1][0]).toUpperCase();
+  return (name || "SK").slice(0, 2).toUpperCase();
+}
+
 export function ProfilView({ profile, onSettingsSaved, showToast }: ProfilViewProps) {
   const navigate = useNavigate();
   const [name, setName] = useState(profile.name || "");
   const [roleTitle, setRoleTitle] = useState(profile.role || "Mahasiswa & Talenta Karir");
   const [email, setEmail] = useState(profile.email || "user@skillora.id");
-  const [bio, setBio] = useState(profile.bio || "Saya sedang mengembangkan kompetensi industri terverifikasi di platform Skillora.");
+  const [bio, setBio] = useState(
+    profile.bio || "Saya sedang mengembangkan kompetensi industri terverifikasi di platform Skillora."
+  );
   const [saving, setSaving] = useState(false);
   const [switchingRole, setSwitchingRole] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
@@ -44,8 +49,12 @@ export function ProfilView({ profile, onSettingsSaved, showToast }: ProfilViewPr
   );
   const [companyName, setCompanyName] = useState(profile.company?.name || "");
   const [companyIndustry, setCompanyIndustry] = useState(profile.company?.industry || "Teknologi Informasi");
-  const [mentorSpecialty, setMentorSpecialty] = useState(profile.mentorSpecialty || "Fullstack Web & Persiapan Karir");
-  const [mentorHeadline, setMentorHeadline] = useState(profile.mentorHeadline || "Praktisi Industri & Mentor Skillora");
+  const [mentorSpecialty, setMentorSpecialty] = useState(
+    profile.mentorSpecialty || "Fullstack Web & Persiapan Karir"
+  );
+  const [mentorHeadline, setMentorHeadline] = useState(
+    profile.mentorHeadline || "Praktisi Industri & Mentor Skillora"
+  );
 
   const accountRole = profile.accountRole || "student";
   const certs = Array.isArray(profile.certificates) ? profile.certificates : [];
@@ -121,160 +130,144 @@ export function ProfilView({ profile, onSettingsSaved, showToast }: ProfilViewPr
     }
   };
 
-  const stats = [
-    {
-      label: "Total XP",
-      value: `${(profile.xp || 0).toLocaleString("id-ID")} XP`,
-      icon: Flame,
-      color: "text-amber-500 bg-amber-50 dark:bg-amber-950/40",
-    },
-    {
-      label: "Sertifikat Resmi",
-      value: `${certs.length} Sertifikat`,
-      icon: Award,
-      color: "text-emerald-500 bg-emerald-50 dark:bg-emerald-950/40",
-    },
-    {
-      label: "Biaya Sertifikasi",
-      value: "100% Gratis",
-      icon: BookOpen,
-      color: "text-blue-500 bg-blue-50 dark:bg-blue-950/40",
-    },
-    {
-      label: "Akses Pelajar",
-      value: profile.subscriptionTier === "pro" ? "Supporter & Gratis" : "Terbuka Penuh",
-      icon: Sparkles,
-      color: "text-indigo-500 bg-indigo-50 dark:bg-indigo-950/40",
-    },
-  ];
+  const roleLabel =
+    accountRole === "recruiter"
+      ? "Recruiter / HRD"
+      : accountRole === "mentor"
+      ? "Mentor / Dosen"
+      : accountRole === "admin"
+      ? "Administrator"
+      : "Mahasiswa";
+
+  const inputClass =
+    "w-full h-9 px-3 bg-zinc-50/70 dark:bg-zinc-950/60 border border-zinc-200 dark:border-zinc-800 rounded-lg outline-none focus:border-emerald-500 text-xs sm:text-sm text-zinc-950 dark:text-zinc-100 transition-colors";
 
   return (
-    <div className="w-full py-1 sm:py-2 font-sans space-y-6 relative z-10">
-      <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-display font-bold tracking-tight text-slate-900 dark:text-white">
+    <div className="w-full pb-16 lg:pb-8 font-sans space-y-6">
+      {/* Editorial Header */}
+      <header className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-5 border-b border-zinc-200/90 dark:border-zinc-800/90">
+        <div className="space-y-1">
+          <p className="text-xs font-medium text-emerald-700 dark:text-emerald-400">
+            Akun &amp; Kredensial
+          </p>
+          <h1 className="text-2xl sm:text-3xl font-display font-semibold tracking-tight text-zinc-950 dark:text-zinc-50">
             Profil, Peran &amp; Kredensial
           </h1>
-          <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">
-            Kelola identitas profesional, ganti portal peran (Mahasiswa / Mentor / HRD), dan pantau sertifikat terverifikasi Anda.
+          <p className="text-zinc-600 dark:text-zinc-400 text-sm">
+            Kelola identitas profesional, ganti portal peran (Mahasiswa / Mentor / HRD), dan pantau sertifikat terverifikasi.
           </p>
         </div>
+
         <button
+          type="button"
           onClick={() => navigate(ROUTES.upgrade)}
-          className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-2 self-start cursor-pointer transition-colors"
+          className="h-9 px-3.5 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#111114] hover:bg-zinc-50 dark:hover:bg-zinc-900 text-zinc-800 dark:text-zinc-200 text-xs font-medium flex items-center gap-1.5 self-start sm:self-auto cursor-pointer whitespace-nowrap shrink-0 transition-colors"
         >
-          <Sparkles className="w-4 h-4" />
+          <Sparkles className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
           <span>{profile.subscriptionTier === "pro" ? "Kelola Status Sponsor" : "Beasiswa & Mitra HRD"}</span>
         </button>
       </header>
 
-      {/* STATS GRID */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {stats.map((st, idx) => {
-          const IconComp = st.icon;
-          return (
-            <div
-              key={idx}
-              className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 flex items-center gap-3 shadow-xs"
-            >
-              <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${st.color}`}>
-                <IconComp className="w-5 h-5" />
-              </div>
-              <div className="min-w-0">
-                <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">{st.label}</p>
-                <p className="text-sm md:text-base font-bold text-slate-900 dark:text-white truncate tabular-nums">{st.value}</p>
-              </div>
-            </div>
-          );
-        })}
+      {/* Unified 4-Column Hairline KPI Strip */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 bg-white dark:bg-[#111114] border border-zinc-200/90 dark:border-zinc-800/90 rounded-xl divide-y lg:divide-y-0 lg:divide-x divide-zinc-200/80 dark:divide-zinc-800/80">
+        <div className="p-4 sm:p-5">
+          <span className="text-xs text-zinc-500 dark:text-zinc-400 block">Total XP</span>
+          <span className="font-mono text-lg sm:text-xl font-semibold text-zinc-950 dark:text-zinc-50 tabular-nums mt-1 block">
+            {(profile.xp || 0).toLocaleString("id-ID")} XP
+          </span>
+        </div>
+        <div className="p-4 sm:p-5">
+          <span className="text-xs text-zinc-500 dark:text-zinc-400 block">Sertifikat Resmi</span>
+          <span className="font-mono text-lg sm:text-xl font-semibold text-zinc-950 dark:text-zinc-50 tabular-nums mt-1 block">
+            {certs.length} sertifikat
+          </span>
+        </div>
+        <div className="p-4 sm:p-5">
+          <span className="text-xs text-zinc-500 dark:text-zinc-400 block">Konsistensi &amp; Saldo</span>
+          <span className="font-mono text-sm sm:text-base font-semibold text-zinc-950 dark:text-zinc-50 tabular-nums mt-1.5 flex items-center gap-3">
+            <span className="inline-flex items-center gap-1">
+              <Flame className="w-3.5 h-3.5 text-amber-500" />
+              {profile.streak || 0} hari
+            </span>
+            <span className="inline-flex items-center gap-1 text-emerald-700 dark:text-emerald-400">
+              <Gem className="w-3.5 h-3.5" />
+              {profile.gems || 0}
+            </span>
+          </span>
+        </div>
+        <div className="p-4 sm:p-5">
+          <span className="text-xs text-zinc-500 dark:text-zinc-400 block">Akses Pelajar</span>
+          <span className="text-sm sm:text-base font-semibold text-emerald-700 dark:text-emerald-400 mt-1.5 block">
+            {profile.subscriptionTier === "pro" ? "Supporter & Terbuka" : "Terbuka Penuh"}
+          </span>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Left Column */}
-        <div className="lg:col-span-4 space-y-6">
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 text-center shadow-xs">
-            <div className="w-20 h-20 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-4xl mx-auto border border-slate-200 dark:border-slate-700 mb-3">
-              {profile.selectedAvatar || profile.avatar || "🦁"}
-            </div>
-            <h2 className="font-display font-bold text-lg text-slate-900 dark:text-white">{profile.name}</h2>
-            <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-0.5">{profile.role}</p>
-
-            <div className="mt-3 inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-semibold text-xs border border-slate-200 dark:border-slate-700">
-              <Shield className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-              <span>
-                Portal Aktif:{" "}
-                {accountRole === "recruiter"
-                  ? "Recruiter / HRD"
-                  : accountRole === "mentor"
-                  ? "Mentor / Dosen"
-                  : accountRole === "admin"
-                  ? "Administrator"
-                  : "Mahasiswa"}
-              </span>
-            </div>
-
-            <div className="flex items-center justify-center gap-3 pt-4 mt-4 border-t border-slate-100 dark:border-slate-800">
-              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-300 border border-amber-200/70 dark:border-amber-800/40">
-                <Flame className="w-4 h-4 fill-amber-500 text-amber-500" />
-                <span className="font-bold text-xs tabular-nums">{profile.streak || 0} Hari</span>
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        {/* Left Column: Unified Identity, Skills & Certificates Panel */}
+        <aside className="lg:col-span-4 bg-white dark:bg-[#111114] border border-zinc-200/90 dark:border-zinc-800/90 rounded-xl divide-y divide-zinc-200/80 dark:divide-zinc-800/80">
+          {/* Identity */}
+          <div className="p-5 sm:p-6 space-y-4">
+            <div className="flex items-center gap-3.5">
+              <div className="w-14 h-14 rounded-xl bg-zinc-950 dark:bg-zinc-100 text-white dark:text-zinc-950 font-mono text-base font-semibold flex items-center justify-center shrink-0">
+                {getInitials(profile.name)}
               </div>
-              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300 border border-emerald-200/70 dark:border-emerald-800/40">
-                <Gem className="w-4 h-4 fill-emerald-500 text-emerald-500" />
-                <span className="font-bold text-xs tabular-nums">{profile.gems || 0} Gems</span>
+              <div className="min-w-0">
+                <h2 className="font-display font-semibold text-base text-zinc-950 dark:text-zinc-50 truncate">
+                  {profile.name}
+                </h2>
+                <p className="text-xs text-zinc-500 dark:text-zinc-400 truncate mt-0.5">{profile.role}</p>
+                <p className="text-xs font-medium text-emerald-700 dark:text-emerald-400 flex items-center gap-1 mt-1">
+                  <Shield className="w-3 h-3" />
+                  <span>{roleLabel} · Lv.{profile.level}</span>
+                </p>
               </div>
             </div>
           </div>
 
           {/* Skills */}
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 space-y-3 shadow-xs">
-            <h3 className="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-emerald-600" />
-              <span>Keahlian Terverifikasi ({skills.length})</span>
+          <div className="p-5 space-y-2.5">
+            <h3 className="text-xs font-semibold text-zinc-900 dark:text-zinc-100 tabular-nums">
+              Keahlian terverifikasi ({skills.length})
             </h3>
             {skills.length === 0 ? (
-              <p className="text-xs text-slate-500">Belum ada keahlian tercatat. Selesaikan kursus atau tambahkan di CV ATS Builder.</p>
+              <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">
+                Belum ada keahlian tercatat. Selesaikan kursus atau tambahkan di CV ATS Builder.
+              </p>
             ) : (
-              <div className="flex flex-wrap gap-1.5">
-                {skills.map((sk, idx) => {
-                  const skName = typeof sk === "string" ? sk : (sk as any).name;
-                  return (
-                    <span
-                      key={idx}
-                      className="inline-flex items-center gap-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1 text-xs font-semibold text-slate-700 dark:text-slate-200"
-                    >
-                      <CheckCircle2 className="w-3 h-3 text-emerald-500" />
-                      <span>{skName}</span>
-                    </span>
-                  );
-                })}
-              </div>
+              <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed">
+                {skills.map((sk) => (typeof sk === "string" ? sk : (sk as any).name)).join(" · ")}
+              </p>
             )}
           </div>
 
           {/* Certificates */}
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 space-y-3 shadow-xs">
-            <h3 className="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
-              <Award className="w-4 h-4 text-emerald-600" />
-              <span>Sertifikat Terbit ({certs.length})</span>
+          <div className="p-5 space-y-3">
+            <h3 className="text-xs font-semibold text-zinc-900 dark:text-zinc-100 flex items-center gap-1.5 tabular-nums">
+              <Award className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+              <span>Sertifikat terbit ({certs.length})</span>
             </h3>
             {certs.length === 0 ? (
-              <div className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl text-xs text-slate-500">
-                Belum ada sertifikat resmi. Luluskan proyek portofolio di menu Sertifikasi untuk menerbitkan sertifikat QR terverifikasi.
-              </div>
+              <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">
+                Belum ada sertifikat resmi. Luluskan proyek atau ujian akhir untuk menerbitkan sertifikat terverifikasi.
+              </p>
             ) : (
-              <div className="space-y-2">
+              <div className="divide-y divide-zinc-200/70 dark:divide-zinc-800/70">
                 {certs.map((c) => (
                   <div
                     key={c.id}
-                    className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-700 flex items-center justify-between gap-2"
+                    className="py-2.5 first:pt-0 last:pb-0 flex items-center justify-between gap-2"
                   >
                     <div className="min-w-0">
-                      <p className="font-bold text-xs text-slate-900 dark:text-white truncate">{c.courseTitle}</p>
-                      <p className="text-[11px] font-mono text-slate-500 truncate">{c.verificationCode}</p>
+                      <p className="font-medium text-xs text-zinc-900 dark:text-zinc-100 truncate">
+                        {c.courseTitle}
+                      </p>
+                      <p className="text-[11px] font-mono text-zinc-500 truncate">{c.verificationCode}</p>
                     </div>
                     <button
+                      type="button"
                       onClick={() => navigate(`/verify/${c.id}`)}
-                      className="text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-1 shrink-0 cursor-pointer"
+                      className="text-xs font-medium text-emerald-700 dark:text-emerald-400 hover:underline flex items-center gap-1 shrink-0 cursor-pointer"
                     >
                       <span>Verifikasi</span>
                       <ExternalLink className="w-3 h-3" />
@@ -284,20 +277,22 @@ export function ProfilView({ profile, onSettingsSaved, showToast }: ProfilViewPr
               </div>
             )}
           </div>
-        </div>
+        </aside>
 
         {/* Right Column */}
         <div className="lg:col-span-8 space-y-6">
           {/* Role / Portal Access Switcher */}
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xs overflow-hidden">
-            <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+          <section className="bg-white dark:bg-[#111114] border border-zinc-200/90 dark:border-zinc-800/90 rounded-xl overflow-hidden">
+            <div className="px-5 py-4 border-b border-zinc-200/80 dark:border-zinc-800/80 flex flex-wrap items-center justify-between gap-2">
               <div className="flex items-center gap-2">
-                <Shield className="w-4 h-4 text-emerald-600" />
-                <h3 className="font-display font-bold text-sm text-slate-900 dark:text-white">
-                  Portal Akun Multi-Peran (RBAC)
+                <Shield className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                <h3 className="font-display font-semibold text-sm text-zinc-950 dark:text-zinc-50">
+                  Portal Akun Multi-Peran
                 </h3>
               </div>
-              <span className="text-xs text-slate-400 font-medium">Akses Mahasiswa, Mentor, atau HRD</span>
+              <span className="text-xs text-zinc-500 dark:text-zinc-400">
+                Akses Mahasiswa, Mentor, atau HRD
+              </span>
             </div>
 
             <div className="p-5 space-y-4">
@@ -314,96 +309,112 @@ export function ProfilView({ profile, onSettingsSaved, showToast }: ProfilViewPr
                       key={opt.id}
                       type="button"
                       onClick={() => setTargetRole(opt.id)}
-                      className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer ${
+                      className={`p-3.5 rounded-xl border text-left transition-colors cursor-pointer ${
                         active
-                          ? "border-emerald-600 bg-emerald-50/50 dark:bg-emerald-950/30"
-                          : "border-slate-200 dark:border-slate-700 hover:border-slate-300"
+                          ? "border-emerald-600 bg-emerald-50/40 dark:bg-emerald-950/25"
+                          : "border-zinc-200/90 dark:border-zinc-800/90 hover:border-zinc-300 dark:hover:border-zinc-700"
                       }`}
                     >
-                      <Icon className={`w-4 h-4 mb-2 ${active ? "text-emerald-600" : "text-slate-400"}`} />
-                      <div className="text-xs font-bold text-slate-900 dark:text-white">{opt.label}</div>
-                      <div className="text-[11px] text-slate-500 mt-0.5">{opt.desc}</div>
+                      <Icon
+                        className={`w-4 h-4 mb-2 ${
+                          active ? "text-emerald-600 dark:text-emerald-400" : "text-zinc-400"
+                        }`}
+                      />
+                      <div className="text-xs font-semibold text-zinc-950 dark:text-zinc-100">{opt.label}</div>
+                      <div className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-0.5">{opt.desc}</div>
                     </button>
                   );
                 })}
               </div>
 
               {targetRole === "recruiter" && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
                   <div>
-                    <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Nama Perusahaan Mitra *</label>
+                    <label className="text-xs font-medium text-zinc-600 dark:text-zinc-400 block mb-1">
+                      Nama Perusahaan Mitra *
+                    </label>
                     <input
                       type="text"
                       value={companyName}
                       onChange={(e) => setCompanyName(e.target.value)}
                       placeholder="Contoh: PT Mandiri Teknologi"
-                      className="w-full mt-1 px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-900 dark:text-white"
+                      className={inputClass}
                     />
                   </div>
                   <div>
-                    <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Sektor Industri</label>
+                    <label className="text-xs font-medium text-zinc-600 dark:text-zinc-400 block mb-1">
+                      Sektor Industri
+                    </label>
                     <input
                       type="text"
                       value={companyIndustry}
                       onChange={(e) => setCompanyIndustry(e.target.value)}
                       placeholder="Contoh: Finansial & Teknologi"
-                      className="w-full mt-1 px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-900 dark:text-white"
+                      className={inputClass}
                     />
                   </div>
                 </div>
               )}
 
               {targetRole === "mentor" && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
                   <div>
-                    <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Headline Mentor</label>
+                    <label className="text-xs font-medium text-zinc-600 dark:text-zinc-400 block mb-1">
+                      Headline Mentor
+                    </label>
                     <input
                       type="text"
                       value={mentorHeadline}
                       onChange={(e) => setMentorHeadline(e.target.value)}
                       placeholder="Contoh: Principal Software Architect"
-                      className="w-full mt-1 px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-900 dark:text-white"
+                      className={inputClass}
                     />
                   </div>
                   <div>
-                    <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Spesialisasi Mentoring</label>
+                    <label className="text-xs font-medium text-zinc-600 dark:text-zinc-400 block mb-1">
+                      Spesialisasi Mentoring
+                    </label>
                     <input
                       type="text"
                       value={mentorSpecialty}
                       onChange={(e) => setMentorSpecialty(e.target.value)}
                       placeholder="Contoh: React, Backend API, System Design"
-                      className="w-full mt-1 px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-900 dark:text-white"
+                      className={inputClass}
                     />
                   </div>
                 </div>
               )}
 
-              <div className="flex items-center justify-between pt-2">
-                <span className="text-xs text-slate-500">
-                  {accountRole === targetRole ? "Portal ini sedang aktif pada akun Anda." : "Klik terapkan untuk mengaktifkan workspace peran."}
+              <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-zinc-200/80 dark:border-zinc-800/80">
+                <span className="text-xs text-zinc-500 dark:text-zinc-400">
+                  {accountRole === targetRole
+                    ? "Portal ini sedang aktif pada akun Anda."
+                    : "Klik terapkan untuk mengaktifkan workspace peran."}
                 </span>
                 <button
                   type="button"
                   disabled={switchingRole}
                   onClick={handleSwitchPortalRole}
-                  className="px-4 py-2 bg-slate-900 dark:bg-emerald-600 hover:bg-slate-800 dark:hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-colors cursor-pointer disabled:opacity-50"
+                  className="h-9 px-4 bg-zinc-950 dark:bg-zinc-100 hover:opacity-90 text-white dark:text-zinc-950 rounded-lg text-xs font-medium transition-opacity cursor-pointer disabled:opacity-50 whitespace-nowrap shrink-0"
                 >
                   {switchingRole ? "Mengaktifkan..." : "Aktifkan Portal Peran"}
                 </button>
               </div>
             </div>
-          </div>
+          </section>
 
           {/* Biodata Form */}
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xs overflow-hidden">
-            <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex items-center gap-2">
-              <User className="w-4 h-4 text-emerald-600" />
-              <h3 className="font-display font-bold text-sm text-slate-900 dark:text-white">Pengaturan Biodata Profil</h3>
+          <section className="bg-white dark:bg-[#111114] border border-zinc-200/90 dark:border-zinc-800/90 rounded-xl overflow-hidden">
+            <div className="px-5 py-4 border-b border-zinc-200/80 dark:border-zinc-800/80 flex items-center gap-2">
+              <User className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+              <h3 className="font-display font-semibold text-sm text-zinc-950 dark:text-zinc-50">
+                Pengaturan Biodata Profil
+              </h3>
             </div>
 
             <form onSubmit={handleSave} className="p-5 space-y-4">
               {validationError && (
-                <div className="p-3 bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-800 rounded-xl text-xs text-rose-700 dark:text-rose-300 font-medium flex items-center gap-2">
+                <div className="p-3 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/60 rounded-lg text-xs text-rose-700 dark:text-rose-300 font-medium flex items-center gap-2">
                   <AlertCircle className="w-4 h-4 text-rose-500 shrink-0" />
                   <span>{validationError}</span>
                 </div>
@@ -411,77 +422,77 @@ export function ProfilView({ profile, onSettingsSaved, showToast }: ProfilViewPr
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-600 dark:text-slate-300">Nama Lengkap</label>
+                  <label className="text-xs font-medium text-zinc-600 dark:text-zinc-400 block">
+                    Nama Lengkap
+                  </label>
                   <div className="relative">
-                    <User className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <User className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
                     <input
                       type="text"
                       value={name}
                       onChange={(e) => setName(e.target.value)}
-                      className="w-full pl-9 pr-3 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:border-emerald-500 text-sm text-slate-900 dark:text-white"
+                      className={`${inputClass} pl-9`}
                     />
                   </div>
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-600 dark:text-slate-300">Alamat Email</label>
+                  <label className="text-xs font-medium text-zinc-600 dark:text-zinc-400 block">
+                    Alamat Email
+                  </label>
                   <div className="relative">
-                    <Mail className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <Mail className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
                     <input
                       type="email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="w-full pl-9 pr-3 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:border-emerald-500 text-sm text-slate-900 dark:text-white"
+                      className={`${inputClass} pl-9`}
                     />
                   </div>
                 </div>
 
                 <div className="space-y-1.5 md:col-span-2">
-                  <label className="text-xs font-bold text-slate-600 dark:text-slate-300">Title / Target Jabatan</label>
+                  <label className="text-xs font-medium text-zinc-600 dark:text-zinc-400 block">
+                    Title / Target Jabatan
+                  </label>
                   <input
                     type="text"
                     value={roleTitle}
                     onChange={(e) => setRoleTitle(e.target.value)}
                     placeholder="Contoh: Frontend Engineer / Mahasiswa Teknik Informatika"
-                    className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:border-emerald-500 text-sm text-slate-900 dark:text-white"
+                    className={inputClass}
                   />
                 </div>
 
                 <div className="space-y-1.5 md:col-span-2">
                   <div className="flex justify-between items-center">
-                    <label className="text-xs font-bold text-slate-600 dark:text-slate-300">Ringkasan Bio</label>
-                    <span className="text-xs text-slate-400 tabular-nums">{bio.length}/250</span>
+                    <label className="text-xs font-medium text-zinc-600 dark:text-zinc-400">
+                      Ringkasan Bio
+                    </label>
+                    <span className="text-xs font-mono text-zinc-400 tabular-nums">{bio.length}/250</span>
                   </div>
                   <textarea
                     value={bio}
                     onChange={(e) => setBio(e.target.value)}
                     rows={3}
                     maxLength={250}
-                    className="w-full p-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:border-emerald-500 text-sm text-slate-900 dark:text-white resize-none"
+                    className="w-full p-3 bg-zinc-50/70 dark:bg-zinc-950/60 border border-zinc-200 dark:border-zinc-800 rounded-lg outline-none focus:border-emerald-500 text-xs sm:text-sm text-zinc-950 dark:text-zinc-100 resize-none leading-relaxed transition-colors"
                   />
                 </div>
               </div>
 
-              <div className="flex justify-end pt-3 border-t border-slate-100 dark:border-slate-800">
+              <div className="flex justify-end pt-3 border-t border-zinc-200/80 dark:border-zinc-800/80">
                 <button
                   type="submit"
                   disabled={saving}
-                  className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-xl text-xs font-bold transition-colors flex items-center gap-2 cursor-pointer"
+                  className="h-9 px-4 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-lg text-xs font-medium transition-colors flex items-center gap-2 cursor-pointer whitespace-nowrap shrink-0"
                 >
-                  {saving ? (
-                    <motion.div
-                      animate={{ rotate: 360 }}
-                      transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
-                      className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full"
-                    />
-                  ) : (
-                    <Save className="w-4 h-4" />
-                  )}
+                  <Save className="w-3.5 h-3.5" />
                   <span>{saving ? "Menyimpan..." : "Simpan Biodata"}</span>
                 </button>
               </div>
             </form>
-          </div>
+          </section>
         </div>
       </div>
     </div>
@@ -489,4 +500,3 @@ export function ProfilView({ profile, onSettingsSaved, showToast }: ProfilViewPr
 }
 
 export default ProfilView;
-

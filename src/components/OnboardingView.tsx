@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { Profile } from "../types";
 import { userApi } from "../api/apiClient";
+import { SkilloraLogo } from "./SkilloraLogo";
 
 interface OnboardingViewProps {
   profile: Profile;
@@ -117,6 +118,13 @@ export function OnboardingView({ profile, onComplete }: OnboardingViewProps) {
         </div>
 
         <div className="flex-1 p-6 sm:p-10 flex flex-col">
+          <div className="mb-6 pb-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between gap-3">
+            <SkilloraLogo variant="full" size="sm" showTagline={true} compactTagline={true} />
+            <span className="text-[11px] font-mono text-slate-400 dark:text-slate-500">
+              Langkah {step} / 3
+            </span>
+          </div>
+
           {errorMsg && (
             <div className="mb-4 p-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-xs font-semibold text-rose-700 dark:text-rose-300">
               {errorMsg}

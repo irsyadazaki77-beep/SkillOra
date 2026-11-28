@@ -204,6 +204,15 @@ export function CommandPalette({
         keywords: "beasiswa sponsor mitra hrd b2b gratis",
         action: go(ROUTES.upgrade),
       },
+      {
+        id: "nav-brand",
+        title: "Identitas Brand & Unduh Logo",
+        subtitle: "Panduan logo Kompas Karier, palet warna, dan unduh aset SVG/PNG",
+        group: "Navigasi Utama",
+        icon: Compass,
+        keywords: "brand logo identitas svg png media kit warna kompas",
+        action: go(ROUTES.brand),
+      },
     ];
 
     if (isMentorOrAdmin) {

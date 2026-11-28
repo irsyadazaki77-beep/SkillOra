@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Sparkles, Brain, Award, BookOpen, Briefcase, Cpu, Lightbulb } from "lucide-react";
+import { Sparkles, Brain, Award, BookOpen, Briefcase, Lightbulb } from "lucide-react";
+import { SkilloraLogoIcon, SKILLORA_BRAND } from "./SkilloraLogo";
 
 interface LoadingScreenProps {
   statusText?: string;
@@ -68,11 +69,9 @@ export function LoadingScreen({ statusText }: LoadingScreenProps) {
           clearInterval(progressInterval);
           return 98;
         }
-        // Random incremental steps to make it look realistic and organic
         const step = Math.floor(Math.random() * 8) + 3;
         const next = Math.min(prev + step, 98);
 
-        // Update stages based on progress
         const matchedStage = STAGES.find(s => next <= s.percent);
         if (matchedStage) {
           setCurrentStage(matchedStage.message);
@@ -93,7 +92,7 @@ export function LoadingScreen({ statusText }: LoadingScreenProps) {
       aria-busy="true" 
       aria-live="polite"
     >
-      {/* High-End Ambient Glowing Orbs */}
+      {/* Ambient Orbs */}
       <motion.div 
         animate={{ 
           x: [0, 40, -20, 0], 
@@ -110,9 +109,8 @@ export function LoadingScreen({ statusText }: LoadingScreenProps) {
           scale: [1, 0.9, 1.1, 1] 
         }} 
         transition={{ repeat: Infinity, duration: 18, ease: "easeInOut", delay: 2 }}
-        className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] bg-gradient-to-tr from-green-600/10 via-emerald-600/5 to-transparent rounded-full blur-[150px] pointer-events-none"
+        className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] bg-gradient-to-tr from-amber-500/10 via-emerald-600/5 to-transparent rounded-full blur-[150px] pointer-events-none"
       />
-      <div className="absolute top-[30%] right-[20%] w-[300px] h-[300px] bg-emerald-500/5 rounded-full blur-[100px] pointer-events-none animate-pulse" />
 
       {/* Decorative Grid Overlay */}
       <div 
@@ -124,55 +122,40 @@ export function LoadingScreen({ statusText }: LoadingScreenProps) {
       />
 
       <div className="relative flex flex-col items-center justify-center z-10 p-6 max-w-md w-full text-center">
-        {/* Futuristic Glowing Loader Logo */}
-        <div className="relative flex items-center justify-center mb-10">
-          {/* External Spinning Tech Ring */}
+        {/* Skillora Career Compass Animated Loader */}
+        <div className="relative flex items-center justify-center mb-9">
           <motion.div 
             animate={{ rotate: 360 }} 
-            transition={{ repeat: Infinity, duration: 4, ease: "linear" }}
-            className="w-28 h-28 border-2 border-dashed border-slate-700/60 rounded-full"
+            transition={{ repeat: Infinity, duration: 14, ease: "linear" }}
+            className="w-28 h-28 border border-dashed border-slate-700/70 rounded-full"
           />
-          
-          {/* Inner Glowing Gradient Ring */}
           <motion.div 
             animate={{ rotate: -360 }} 
-            transition={{ repeat: Infinity, duration: 10, ease: "linear" }}
-            className="absolute w-24 h-24 border-2 border-t-emerald-500 border-r-teal-400 border-b-green-500 border-l-transparent rounded-full shadow-[0_0_25px_rgba(16,185,129,0.25)]"
+            transition={{ repeat: Infinity, duration: 9, ease: "linear" }}
+            className="absolute w-24 h-24 border-2 border-t-[#00B87C] border-r-amber-400/70 border-b-emerald-600/40 border-l-transparent rounded-full shadow-[0_0_24px_rgba(0,184,124,0.22)]"
           />
-
-          {/* Central Pulsating Solid Badge */}
           <motion.div 
-            animate={{ scale: [1, 1.04, 1] }} 
-            transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
-            className="absolute flex items-center justify-center w-16 h-16 bg-gradient-to-br from-emerald-600 via-emerald-700 to-teal-800 rounded-2xl shadow-[inset_0_2px_4px_rgba(255,255,255,0.2),0_10px_25px_rgba(16,185,129,0.4)]"
+            animate={{ scale: [1, 1.05, 1] }} 
+            transition={{ repeat: Infinity, duration: 2.2, ease: "easeInOut" }}
+            className="absolute flex items-center justify-center"
           >
-            {/* Elegant Custom Graduation Cap Logo icon */}
-            <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-white drop-shadow-[0_2px_5px_rgba(0,0,0,0.2)]">
-              <path d="M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z" />
-              <path d="M6 12.5v5a3 3 0 0 0 3 3h6a3 3 0 0 0 3-3v-5" />
-            </svg>
-          </motion.div>
-
-          {/* Sparkly Floating Particles */}
-          <motion.div
-            animate={{ y: [-4, 4, -4], opacity: [0.5, 1, 0.5] }}
-            transition={{ repeat: Infinity, duration: 3, ease: "easeInOut" }}
-            className="absolute -top-1 -right-1 text-emerald-400 filter drop-shadow-[0_0_8px_rgba(16,185,129,0.6)]"
-          >
-            <Sparkles className="w-5 h-5 fill-emerald-400" />
+            <SkilloraLogoIcon size={64} className="drop-shadow-[0_8px_24px_rgba(0,184,124,0.3)]" />
           </motion.div>
         </div>
 
         {/* Brand & Loading Info */}
-        <div className="space-y-1 mb-8">
-          <div className="flex items-center justify-center gap-1.5">
-            <span className="text-xs font-bold tracking-[0.25em] text-emerald-400 uppercase">Premium LMS</span>
-          </div>
-          <h2 className="font-display font-black text-3xl text-white tracking-tight bg-gradient-to-r from-white via-slate-100 to-slate-400 bg-clip-text text-transparent">
-            Skillora
+        <div className="space-y-1.5 mb-8">
+          <p className="text-[11px] font-mono font-bold tracking-[0.2em] text-[#00B87C] uppercase">
+            {SKILLORA_BRAND.shortTagline}
+          </p>
+          <h2 className="font-display font-extrabold text-3xl text-white tracking-tight">
+            Skill<span className="text-[#00B87C]">ora</span>
           </h2>
+          <p className="text-xs text-slate-400 font-medium">
+            {SKILLORA_BRAND.tagline}
+          </p>
           <div className="pt-2 h-5 flex items-center justify-center">
-            <p className="text-xs font-semibold text-slate-400 animate-pulse">
+            <p className="text-xs font-semibold text-slate-300 animate-pulse">
               {statusText || currentStage}
             </p>
           </div>

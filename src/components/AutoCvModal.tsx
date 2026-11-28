@@ -5,6 +5,7 @@ import { Profile } from "../types";
 import { ROUTES } from "../routes";
 import { playSound } from "../utils/sound";
 import { motion } from "motion/react";
+import { SkilloraLogoIcon } from "./SkilloraLogo";
 
 interface AutoCvModalProps {
   profile: Profile;
@@ -146,14 +147,12 @@ ${certifiedItems.map((c: any) => `- **${c.title || c.name}** (ID: \`${c.credenti
         className="bg-white dark:bg-slate-800 rounded-3xl max-w-4xl w-full max-h-[88vh] flex flex-col shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-700"
       >
         {/* Header */}
-        <div className="p-5 bg-slate-900 text-white flex items-center justify-between border-b border-slate-800">
+        <div className="p-5 bg-[#0A1628] text-white flex items-center justify-between border-b border-slate-800">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-emerald-500/20 text-emerald-400 rounded-xl flex items-center justify-center border border-emerald-500/30">
-              <Sparkles className="w-5 h-5" />
-            </div>
+            <SkilloraLogoIcon size={40} />
             <div>
-              <h3 className="font-bold text-base">Pembuat CV ATS Interactive</h3>
-              <p className="text-xs text-slate-300">Sesuaikan profil & ekspor langsung ke format PDF/Teks ATS</p>
+              <h3 className="font-bold text-base">Pembuat CV ATS Skillora</h3>
+              <p className="text-xs text-slate-300">Kompas Kompetensi &amp; Karier · Ekspor langsung ke format PDF/Teks ATS</p>
             </div>
           </div>
           <button aria-label="Aksi X" onClick={onClose} className="p-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white cursor-pointer">

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { QRCodeSVG } from "qrcode.react";
 import { motion } from "framer-motion";
+import { SkilloraLogo, SkilloraLogoIcon, SkilloraCompassSeal } from "./SkilloraLogo";
 
 export function PublicCertificateVerifyView() {
   const { certificateId } = useParams();
@@ -69,15 +70,9 @@ export function PublicCertificateVerifyView() {
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-950 text-slate-200 font-sans selection:bg-amber-500/30 selection:text-amber-200">
-      <header className="px-6 py-4 flex items-center justify-between border-b border-white/5 bg-slate-900/50 backdrop-blur-md sticky top-0 z-50">
+      <header className="px-6 py-4 flex items-center justify-between border-b border-white/5 bg-slate-900/60 backdrop-blur-md sticky top-0 z-50">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-gradient-to-br from-amber-400 to-amber-600 rounded-xl flex items-center justify-center shadow-lg shadow-amber-500/20">
-            <span className="text-xl font-bold text-white">S</span>
-          </div>
-          <div>
-            <h1 className="text-lg font-black tracking-tight text-white leading-tight">SkillOra Academy</h1>
-            <p className="text-xs text-amber-500 font-bold uppercase tracking-wider">Verifikasi Kredensial Gratis</p>
-          </div>
+          <SkilloraLogo variant="full" size="sm" darkMode={true} showTagline={true} compactTagline={true} />
         </div>
         <div className="flex items-center gap-2">
           <a
@@ -117,14 +112,17 @@ export function PublicCertificateVerifyView() {
               
               <div className="relative z-10 w-full h-full p-8 md:p-12 lg:p-16 flex gap-8 md:gap-12">
                 <div className="w-1/3 flex flex-col justify-between border-r border-slate-500/20 pr-8 md:pr-12">
-                  <div className="space-y-6">
-                    <div className="w-16 h-16 bg-gradient-to-br from-amber-400 to-amber-600 rounded-2xl flex items-center justify-center shadow-lg">
-                      <span className="text-3xl font-bold text-white">S</span>
-                    </div>
+                  <div className="space-y-4">
+                    <SkilloraLogoIcon size={60} className="drop-shadow-lg" />
                     <div>
-                      <h2 className="text-xl font-black text-white leading-none">SKILLORA</h2>
-                      <p className="text-xs text-amber-500 font-bold uppercase tracking-widest mt-1">Industrial Tech Academy</p>
+                      <h2 className="text-xl font-black text-white leading-none tracking-tight">
+                        Skill<span className="text-[#00B87C]">ora</span>
+                      </h2>
+                      <p className="text-[11px] text-emerald-400 font-bold uppercase tracking-widest mt-1">
+                        Kompas Kompetensi &amp; Karier
+                      </p>
                     </div>
+                    <SkilloraCompassSeal size={96} label="VERIFIED" sublabel="SKILLORA OFFICIAL" darkMode={true} />
                   </div>
                   
                   <div className="space-y-6">

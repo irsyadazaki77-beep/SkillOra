@@ -15,6 +15,7 @@ import {
 import { cvApi, jobApi } from "../api/apiClient";
 import { CvAtsFeedback, CvDocument, JobVacancy, Profile } from "../types";
 import { playSound } from "../utils/sound";
+import { SkilloraLogoIcon } from "./SkilloraLogo";
 
 interface CvAtsBuilderViewProps {
   profile: Profile;
@@ -180,67 +181,75 @@ export function CvAtsBuilderView({ profile, jobs: propJobs, showToast }: CvAtsBu
     setNewSkill("");
   };
 
+  const inputClass =
+    "w-full h-9 px-3 rounded-lg bg-zinc-50/70 dark:bg-zinc-950/60 border border-zinc-200 dark:border-zinc-800 text-xs text-zinc-950 dark:text-zinc-100 placeholder:text-zinc-400 outline-none focus:border-emerald-500 transition-colors";
+  const textareaClass =
+    "w-full p-3 rounded-lg bg-zinc-50/70 dark:bg-zinc-950/60 border border-zinc-200 dark:border-zinc-800 text-xs text-zinc-950 dark:text-zinc-100 placeholder:text-zinc-400 outline-none focus:border-emerald-500 transition-colors leading-relaxed";
+
   return (
-    <div className="space-y-6 py-2">
-      {/* Top Banner */}
-      <div className="bg-slate-900 text-white rounded-3xl p-6 sm:p-8 border border-slate-800 shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-6 print:hidden">
-        <div className="space-y-2 max-w-2xl">
-          <div className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-blue-400">
-            <FileText className="w-4 h-4" />
-            <span>CV ATS Builder & Audit AI · Gemini 4</span>
-          </div>
-          <h1 className="font-display text-2xl sm:text-3xl font-bold tracking-tight">
+    <div className="space-y-6 pb-16 lg:pb-8">
+      {/* Editorial Header */}
+      <header className="flex flex-col lg:flex-row lg:items-end justify-between gap-5 pb-5 border-b border-zinc-200/90 dark:border-zinc-800/90 print:hidden">
+        <div className="space-y-1.5 max-w-2xl">
+          <p className="text-xs font-medium text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5">
+            <FileText className="w-3.5 h-3.5" />
+            <span>CV ATS Builder &amp; Audit AI</span>
+          </p>
+          <h1 className="font-display text-2xl sm:text-3xl font-semibold text-zinc-950 dark:text-zinc-50 tracking-tight">
             Penyusun CV ATS Terintegrasi HRD
           </h1>
-          <p className="text-sm text-slate-300 leading-relaxed">
-            Bangun CV terstruktur, audit kecocokan kata kunci ATS terhadap lowongan nyata di Bursa Kerja, dan lampirkan langsung saat melamar ke mitra HRD.
+          <p className="text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed">
+            Bangun CV terstruktur, audit kecocokan kata kunci ATS terhadap lowongan mitra, dan lampirkan langsung saat melamar.
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+        <div className="flex flex-wrap items-center gap-2 shrink-0">
           <button
             type="button"
             onClick={handleImportVerifiedProfile}
-            className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-bold text-slate-200 flex items-center gap-1.5 cursor-pointer"
+            className="h-9 px-3.5 rounded-lg bg-white dark:bg-[#111114] hover:bg-zinc-50 dark:hover:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-xs font-medium text-zinc-800 dark:text-zinc-200 flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0 transition-colors"
           >
-            <Award className="w-4 h-4 text-emerald-400" /> Impor Profil Skillora
+            <Award className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+            Impor Profil
+          </button>
+          <button
+            type="button"
+            onClick={() => window.print()}
+            className="h-9 px-3.5 rounded-lg bg-white dark:bg-[#111114] hover:bg-zinc-50 dark:hover:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-xs font-medium text-zinc-800 dark:text-zinc-200 flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0 transition-colors"
+          >
+            <Printer className="w-3.5 h-3.5 text-zinc-500" />
+            Cetak / PDF
           </button>
           <button
             type="button"
             onClick={handleSave}
             disabled={saving}
-            className="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+            className="h-9 px-4 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium flex items-center gap-1.5 cursor-pointer disabled:opacity-50 whitespace-nowrap shrink-0 transition-colors"
           >
-            <Save className="w-4 h-4" /> {saving ? "Menyimpan..." : "Simpan CV"}
-          </button>
-          <button
-            type="button"
-            onClick={() => window.print()}
-            className="px-4 py-2.5 rounded-xl bg-white text-slate-900 hover:bg-slate-100 text-xs font-bold flex items-center gap-1.5 cursor-pointer"
-          >
-            <Printer className="w-4 h-4" /> Cetak / PDF
+            <Save className="w-3.5 h-3.5" />
+            {saving ? "Menyimpan..." : "Simpan CV"}
           </button>
         </div>
-      </div>
+      </header>
 
       {/* Saved CV Selector Strip */}
-      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-4 flex flex-wrap items-center justify-between gap-3 print:hidden">
+      <div className="bg-white dark:bg-[#111114] rounded-xl border border-zinc-200/90 dark:border-zinc-800/90 px-4 py-3 flex flex-wrap items-center justify-between gap-3 print:hidden">
         <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-xs font-bold text-slate-500 uppercase tracking-wider mr-1">
-            Dokumen CV ({savedCvs.length}):
+          <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400 mr-1 tabular-nums">
+            Dokumen tersimpan ({savedCvs.length}):
           </span>
           {loadingList ? (
-            <span className="text-xs text-slate-400">Memuat...</span>
+            <span className="text-xs text-zinc-400">Memuat...</span>
           ) : (
             savedCvs.map((doc) => (
               <button
                 key={doc.id}
                 type="button"
                 onClick={() => handleSelectCv(doc)}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors cursor-pointer tabular-nums ${
                   draft.id === doc.id
-                    ? "bg-slate-900 dark:bg-blue-600 text-white border-slate-900 dark:border-blue-600"
-                    : "bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700"
+                    ? "bg-zinc-950 dark:bg-zinc-100 text-white dark:text-zinc-950 border-zinc-950 dark:border-zinc-100"
+                    : "bg-zinc-50 dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-800"
                 }`}
               >
                 {doc.title} {doc.atsScore ? `(${doc.atsScore})` : ""}
@@ -251,62 +260,63 @@ export function CvAtsBuilderView({ profile, jobs: propJobs, showToast }: CvAtsBu
         <button
           type="button"
           onClick={handleCreateNew}
-          className="px-3 py-1.5 rounded-xl text-xs font-bold text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/30 flex items-center gap-1 cursor-pointer"
+          className="px-3 py-1.5 rounded-lg text-xs font-medium text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 flex items-center gap-1 cursor-pointer whitespace-nowrap shrink-0 transition-colors"
         >
           <Plus className="w-3.5 h-3.5" /> Buat CV Baru
         </button>
       </div>
 
       {/* Main Split Workspace */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* Left: Structured Editor (7 Cols) */}
-        <div className="lg:col-span-7 space-y-5 print:hidden">
-          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 space-y-4">
-            <h2 className="font-display text-base font-bold text-slate-900 dark:text-white">
-              Informasi Utama & Ringkasan
+        <div className="lg:col-span-7 bg-white dark:bg-[#111114] rounded-xl border border-zinc-200/90 dark:border-zinc-800/90 divide-y divide-zinc-200/80 dark:divide-zinc-800/80 print:hidden">
+          {/* Section 1: Summary & Skills */}
+          <div className="p-5 sm:p-6 space-y-4">
+            <h2 className="font-display text-sm font-semibold text-zinc-950 dark:text-zinc-50">
+              Informasi Utama &amp; Ringkasan
             </h2>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="text-xs font-bold text-slate-600 dark:text-slate-300 block mb-1">
+                <label className="text-xs font-medium text-zinc-600 dark:text-zinc-400 block mb-1.5">
                   Judul Dokumen CV
                 </label>
                 <input
                   type="text"
                   value={draft.title}
                   onChange={(e) => setDraft({ ...draft, title: e.target.value })}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-medium text-slate-900 dark:text-white"
+                  className={inputClass}
                 />
               </div>
               <div>
-                <label className="text-xs font-bold text-slate-600 dark:text-slate-300 block mb-1">
+                <label className="text-xs font-medium text-zinc-600 dark:text-zinc-400 block mb-1.5">
                   Target Posisi / Role
                 </label>
                 <input
                   type="text"
                   value={draft.targetRole}
                   onChange={(e) => setDraft({ ...draft, targetRole: e.target.value })}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-medium text-slate-900 dark:text-white"
+                  className={inputClass}
                 />
               </div>
             </div>
 
             <div>
-              <label className="text-xs font-bold text-slate-600 dark:text-slate-300 block mb-1">
-                Ringkasan Profesional (Summary)
+              <label className="text-xs font-medium text-zinc-600 dark:text-zinc-400 block mb-1.5">
+                Ringkasan Profesional
               </label>
               <textarea
                 rows={3}
                 value={draft.summary}
                 onChange={(e) => setDraft({ ...draft, summary: e.target.value })}
-                className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-medium text-slate-900 dark:text-white"
+                className={textareaClass}
               />
             </div>
 
             {/* Skills */}
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-slate-600 dark:text-slate-300 block">
-                Keahlian Teknis & Kata Kunci ATS
+            <div className="space-y-2.5">
+              <label className="text-xs font-medium text-zinc-600 dark:text-zinc-400 block">
+                Keahlian Teknis &amp; Kata Kunci ATS
               </label>
               <div className="flex gap-2">
                 <input
@@ -315,21 +325,21 @@ export function CvAtsBuilderView({ profile, jobs: propJobs, showToast }: CvAtsBu
                   onChange={(e) => setNewSkill(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addSkillTag())}
                   placeholder="Tambah skill (mis. React, PostgreSQL, Financial Modeling)..."
-                  className="flex-1 px-3.5 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white"
+                  className={`flex-1 ${inputClass}`}
                 />
                 <button
                   type="button"
                   onClick={addSkillTag}
-                  className="px-4 py-2 bg-slate-900 dark:bg-slate-700 text-white rounded-xl text-xs font-bold cursor-pointer"
+                  className="h-9 px-3.5 bg-zinc-950 dark:bg-zinc-100 text-white dark:text-zinc-950 rounded-lg text-xs font-medium cursor-pointer whitespace-nowrap shrink-0 hover:opacity-90 transition-opacity"
                 >
                   Tambah
                 </button>
               </div>
-              <div className="flex flex-wrap gap-1.5 pt-1">
+              <div className="flex flex-wrap gap-1.5 pt-0.5">
                 {draft.skills.map((sk) => (
                   <span
                     key={sk}
-                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs font-medium border border-slate-200 dark:border-slate-700"
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-zinc-100 dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 text-xs font-medium border border-zinc-200/80 dark:border-zinc-800"
                   >
                     {sk}
                     <button
@@ -340,7 +350,7 @@ export function CvAtsBuilderView({ profile, jobs: propJobs, showToast }: CvAtsBu
                           skills: prev.skills.filter((item) => item !== sk),
                         }))
                       }
-                      className="text-slate-400 hover:text-rose-500 cursor-pointer"
+                      className="text-zinc-400 hover:text-rose-500 cursor-pointer"
                       aria-label={`Hapus ${sk}`}
                     >
                       ×
@@ -351,11 +361,11 @@ export function CvAtsBuilderView({ profile, jobs: propJobs, showToast }: CvAtsBu
             </div>
           </div>
 
-          {/* Experiences */}
-          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="font-display text-base font-bold text-slate-900 dark:text-white">
-                Pengalaman Kerja / Organisasi
+          {/* Section 2: Experiences */}
+          <div className="p-5 sm:p-6 space-y-4">
+            <div className="flex items-center justify-between gap-2">
+              <h2 className="font-display text-sm font-semibold text-zinc-950 dark:text-zinc-50">
+                Pengalaman Kerja &amp; Organisasi
               </h2>
               <button
                 type="button"
@@ -368,7 +378,7 @@ export function CvAtsBuilderView({ profile, jobs: propJobs, showToast }: CvAtsBu
                     ],
                   }))
                 }
-                className="text-xs font-bold text-blue-600 hover:underline flex items-center gap-1 cursor-pointer"
+                className="text-xs font-medium text-emerald-700 dark:text-emerald-400 hover:underline flex items-center gap-1 cursor-pointer whitespace-nowrap shrink-0"
               >
                 <Plus className="w-3.5 h-3.5" /> Tambah Pengalaman
               </button>
@@ -378,10 +388,12 @@ export function CvAtsBuilderView({ profile, jobs: propJobs, showToast }: CvAtsBu
               {draft.experiences.map((exp, idx) => (
                 <div
                   key={idx}
-                  className="p-4 rounded-xl bg-slate-50/70 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800 space-y-3"
+                  className="p-4 rounded-xl bg-zinc-50/70 dark:bg-zinc-950/40 border border-zinc-200/80 dark:border-zinc-800/80 space-y-3"
                 >
                   <div className="flex items-center justify-between gap-2">
-                    <span className="text-xs font-bold text-slate-500">Pengalaman #{idx + 1}</span>
+                    <span className="text-xs font-medium text-zinc-500 font-mono tabular-nums">
+                      Pengalaman #{idx + 1}
+                    </span>
                     {draft.experiences.length > 1 && (
                       <button
                         type="button"
@@ -391,7 +403,8 @@ export function CvAtsBuilderView({ profile, jobs: propJobs, showToast }: CvAtsBu
                             experiences: prev.experiences.filter((_, i) => i !== idx),
                           }))
                         }
-                        className="text-rose-500 hover:text-rose-700 p-1 cursor-pointer"
+                        aria-label="Hapus pengalaman"
+                        className="text-zinc-400 hover:text-rose-600 p-1 cursor-pointer transition-colors"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
@@ -407,7 +420,7 @@ export function CvAtsBuilderView({ profile, jobs: propJobs, showToast }: CvAtsBu
                         updated[idx] = { ...exp, role: e.target.value };
                         setDraft({ ...draft, experiences: updated });
                       }}
-                      className="px-3 py-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs"
+                      className={inputClass}
                     />
                     <input
                       type="text"
@@ -418,7 +431,7 @@ export function CvAtsBuilderView({ profile, jobs: propJobs, showToast }: CvAtsBu
                         updated[idx] = { ...exp, company: e.target.value };
                         setDraft({ ...draft, experiences: updated });
                       }}
-                      className="px-3 py-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs"
+                      className={inputClass}
                     />
                     <input
                       type="text"
@@ -429,7 +442,7 @@ export function CvAtsBuilderView({ profile, jobs: propJobs, showToast }: CvAtsBu
                         updated[idx] = { ...exp, period: e.target.value };
                         setDraft({ ...draft, experiences: updated });
                       }}
-                      className="px-3 py-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs"
+                      className={inputClass}
                     />
                   </div>
                   <textarea
@@ -444,18 +457,18 @@ export function CvAtsBuilderView({ profile, jobs: propJobs, showToast }: CvAtsBu
                       };
                       setDraft({ ...draft, experiences: updated });
                     }}
-                    className="w-full px-3 py-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs"
+                    className={textareaClass}
                   />
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Education & Projects */}
-          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="font-display text-base font-bold text-slate-900 dark:text-white">
-                Pendidikan & Proyek Unggulan
+          {/* Section 3: Education & Projects */}
+          <div className="p-5 sm:p-6 space-y-4">
+            <div className="flex items-center justify-between gap-2">
+              <h2 className="font-display text-sm font-semibold text-zinc-950 dark:text-zinc-50">
+                Pendidikan &amp; Proyek Unggulan
               </h2>
               <button
                 type="button"
@@ -465,7 +478,7 @@ export function CvAtsBuilderView({ profile, jobs: propJobs, showToast }: CvAtsBu
                     projects: [...prev.projects, { name: "", link: "", impact: "" }],
                   }))
                 }
-                className="text-xs font-bold text-blue-600 hover:underline flex items-center gap-1 cursor-pointer"
+                className="text-xs font-medium text-emerald-700 dark:text-emerald-400 hover:underline flex items-center gap-1 cursor-pointer whitespace-nowrap shrink-0"
               >
                 <Plus className="w-3.5 h-3.5" /> Tambah Proyek
               </button>
@@ -474,7 +487,7 @@ export function CvAtsBuilderView({ profile, jobs: propJobs, showToast }: CvAtsBu
             {draft.education.map((edu, idx) => (
               <div
                 key={idx}
-                className="grid grid-cols-1 sm:grid-cols-4 gap-2.5 p-3 rounded-xl bg-slate-50/70 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800"
+                className="grid grid-cols-1 sm:grid-cols-4 gap-2.5 p-3.5 rounded-xl bg-zinc-50/70 dark:bg-zinc-950/40 border border-zinc-200/80 dark:border-zinc-800/80"
               >
                 <input
                   type="text"
@@ -485,7 +498,7 @@ export function CvAtsBuilderView({ profile, jobs: propJobs, showToast }: CvAtsBu
                     next[idx] = { ...edu, school: e.target.value };
                     setDraft({ ...draft, education: next });
                   }}
-                  className="px-3 py-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs"
+                  className={inputClass}
                 />
                 <input
                   type="text"
@@ -496,7 +509,7 @@ export function CvAtsBuilderView({ profile, jobs: propJobs, showToast }: CvAtsBu
                     next[idx] = { ...edu, degree: e.target.value };
                     setDraft({ ...draft, education: next });
                   }}
-                  className="px-3 py-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs"
+                  className={inputClass}
                 />
                 <input
                   type="text"
@@ -507,7 +520,7 @@ export function CvAtsBuilderView({ profile, jobs: propJobs, showToast }: CvAtsBu
                     next[idx] = { ...edu, year: e.target.value };
                     setDraft({ ...draft, education: next });
                   }}
-                  className="px-3 py-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs"
+                  className={inputClass}
                 />
                 <input
                   type="text"
@@ -518,16 +531,16 @@ export function CvAtsBuilderView({ profile, jobs: propJobs, showToast }: CvAtsBu
                     next[idx] = { ...edu, gpa: e.target.value };
                     setDraft({ ...draft, education: next });
                   }}
-                  className="px-3 py-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs"
+                  className={inputClass}
                 />
               </div>
             ))}
 
-            <div className="space-y-2.5 pt-2">
+            <div className="space-y-2.5 pt-1">
               {draft.projects.map((proj, idx) => (
                 <div
                   key={idx}
-                  className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 p-3 rounded-xl bg-slate-50/70 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800"
+                  className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 p-3.5 rounded-xl bg-zinc-50/70 dark:bg-zinc-950/40 border border-zinc-200/80 dark:border-zinc-800/80"
                 >
                   <input
                     type="text"
@@ -538,7 +551,7 @@ export function CvAtsBuilderView({ profile, jobs: propJobs, showToast }: CvAtsBu
                       next[idx] = { ...proj, name: e.target.value };
                       setDraft({ ...draft, projects: next });
                     }}
-                    className="px-3 py-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs"
+                    className={inputClass}
                   />
                   <input
                     type="text"
@@ -549,7 +562,7 @@ export function CvAtsBuilderView({ profile, jobs: propJobs, showToast }: CvAtsBu
                       next[idx] = { ...proj, link: e.target.value };
                       setDraft({ ...draft, projects: next });
                     }}
-                    className="px-3 py-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs"
+                    className={inputClass}
                   />
                   <input
                     type="text"
@@ -560,7 +573,7 @@ export function CvAtsBuilderView({ profile, jobs: propJobs, showToast }: CvAtsBu
                       next[idx] = { ...proj, impact: e.target.value };
                       setDraft({ ...draft, projects: next });
                     }}
-                    className="px-3 py-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs"
+                    className={inputClass}
                   />
                 </div>
               ))}
@@ -571,27 +584,28 @@ export function CvAtsBuilderView({ profile, jobs: propJobs, showToast }: CvAtsBu
         {/* Right: AI ATS Audit & Printable Sheet (5 Cols) */}
         <div className="lg:col-span-5 space-y-5">
           {/* AI Audit Panel */}
-          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 space-y-4 print:hidden">
-            <div className="flex items-center justify-between">
-              <h2 className="font-display text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-indigo-600" /> Audit ATS Gemini AI
+          <div className="bg-white dark:bg-[#111114] rounded-xl border border-zinc-200/90 dark:border-zinc-800/90 p-5 space-y-4 print:hidden">
+            <div className="flex items-center justify-between gap-2">
+              <h2 className="font-display text-sm font-semibold text-zinc-950 dark:text-zinc-50 flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                Audit ATS Otomatis
               </h2>
               {feedback && (
-                <span className="font-display text-xl font-bold text-emerald-600 tabular-nums">
+                <span className="font-mono text-lg font-semibold text-emerald-700 dark:text-emerald-400 tabular-nums">
                   {feedback.atsScore}/100
                 </span>
               )}
             </div>
 
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-slate-600 dark:text-slate-300 flex items-center gap-1.5">
-                <Briefcase className="w-3.5 h-3.5 text-slate-400" />
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-zinc-600 dark:text-zinc-400 flex items-center gap-1.5">
+                <Briefcase className="w-3.5 h-3.5 text-zinc-400" />
                 <span>Target Lowongan Mitra (Opsional)</span>
               </label>
               <select
                 value={selectedJobId}
                 onChange={(e) => setSelectedJobId(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-medium text-slate-900 dark:text-white"
+                className={inputClass}
               >
                 <option value="">Umum — Sesuai Target Role ({draft.targetRole})</option>
                 {jobsList.map((j) => (
@@ -606,34 +620,27 @@ export function CvAtsBuilderView({ profile, jobs: propJobs, showToast }: CvAtsBu
               type="button"
               onClick={handleAnalyze}
               disabled={analyzing}
-              className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-bold text-xs rounded-xl flex items-center justify-center gap-2 cursor-pointer"
+              className="w-full h-9 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-medium text-xs rounded-lg flex items-center justify-center gap-2 cursor-pointer transition-colors"
             >
-              <Wand2 className="w-4 h-4" />
-              <span>{analyzing ? "Menganalisis Kata Kunci & Dampak..." : "Audit & Optimasi CV Sekarang"}</span>
+              <Wand2 className="w-3.5 h-3.5" />
+              <span>{analyzing ? "Menganalisis Kata Kunci..." : "Audit & Optimasi CV"}</span>
             </button>
 
             {feedback && (
-              <div className="space-y-4 pt-2 border-t border-slate-100 dark:border-slate-800 text-xs">
+              <div className="space-y-4 pt-3 border-t border-zinc-200/80 dark:border-zinc-800/80 text-xs">
                 <div>
-                  <p className="font-bold text-emerald-600 flex items-center gap-1 mb-1.5">
-                    <CheckCircle2 className="w-3.5 h-3.5" /> Kata Kunci Cocok ({feedback.keywordMatches.length})
+                  <p className="font-medium text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5 mb-1.5 tabular-nums">
+                    <CheckCircle2 className="w-3.5 h-3.5" /> Kata kunci cocok ({feedback.keywordMatches.length})
                   </p>
-                  <div className="flex flex-wrap gap-1.5">
-                    {feedback.keywordMatches.map((kw) => (
-                      <span
-                        key={kw}
-                        className="px-2 py-0.5 rounded bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 font-medium"
-                      >
-                        {kw}
-                      </span>
-                    ))}
-                  </div>
+                  <p className="text-zinc-600 dark:text-zinc-400 leading-relaxed">
+                    {feedback.keywordMatches.join(" · ")}
+                  </p>
                 </div>
 
                 {feedback.missingKeywords.length > 0 && (
                   <div>
-                    <p className="font-bold text-amber-600 flex items-center gap-1 mb-1.5">
-                      <AlertTriangle className="w-3.5 h-3.5" /> Kata Kunci Disarankan (Klik untuk Tambah)
+                    <p className="font-medium text-amber-700 dark:text-amber-400 flex items-center gap-1.5 mb-2">
+                      <AlertTriangle className="w-3.5 h-3.5" /> Kata kunci disarankan (klik untuk tambah)
                     </p>
                     <div className="flex flex-wrap gap-1.5">
                       {feedback.missingKeywords.map((kw) => (
@@ -646,7 +653,7 @@ export function CvAtsBuilderView({ profile, jobs: propJobs, showToast }: CvAtsBu
                               showToast?.(`"${kw}" ditambahkan ke daftar skill CV.`, "info");
                             }
                           }}
-                          className="px-2 py-0.5 rounded bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800 font-medium hover:bg-amber-100 cursor-pointer"
+                          className="px-2 py-1 rounded-md bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-300 border border-amber-200/80 dark:border-amber-800/60 font-medium hover:bg-amber-100 dark:hover:bg-amber-950/50 cursor-pointer transition-colors"
                         >
                           + {kw}
                         </button>
@@ -655,10 +662,10 @@ export function CvAtsBuilderView({ profile, jobs: propJobs, showToast }: CvAtsBu
                   </div>
                 )}
 
-                <div className="p-3 rounded-xl bg-indigo-50/70 dark:bg-indigo-950/30 border border-indigo-200 dark:border-indigo-800 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="font-bold text-indigo-800 dark:text-indigo-200">
-                      Saran Ringkasan AI Siap Pakai
+                <div className="p-3.5 rounded-lg bg-zinc-50/80 dark:bg-zinc-950/50 border border-zinc-200/80 dark:border-zinc-800/80 space-y-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-semibold text-zinc-900 dark:text-zinc-100">
+                      Saran Ringkasan Siap Pakai
                     </span>
                     <button
                       type="button"
@@ -666,21 +673,21 @@ export function CvAtsBuilderView({ profile, jobs: propJobs, showToast }: CvAtsBu
                         setDraft((prev) => ({ ...prev, summary: feedback.improvedSummary }));
                         showToast?.("Ringkasan AI diterapkan ke CV.", "success");
                       }}
-                      className="font-bold text-indigo-600 hover:underline cursor-pointer"
+                      className="font-medium text-emerald-700 dark:text-emerald-400 hover:underline cursor-pointer"
                     >
                       Terapkan
                     </button>
                   </div>
-                  <p className="text-slate-700 dark:text-slate-300 leading-relaxed">
+                  <p className="text-zinc-600 dark:text-zinc-400 leading-relaxed">
                     {feedback.improvedSummary}
                   </p>
                 </div>
 
                 <div>
-                  <p className="font-bold text-slate-800 dark:text-slate-200 mb-1">
+                  <p className="font-semibold text-zinc-900 dark:text-zinc-100 mb-1.5">
                     Rekomendasi Perbaikan Poin Pengalaman
                   </p>
-                  <ul className="space-y-1 text-slate-600 dark:text-slate-400 list-disc pl-4">
+                  <ul className="space-y-1 text-zinc-600 dark:text-zinc-400 list-disc pl-4">
                     {feedback.bulletImprovements.map((tip, i) => (
                       <li key={i}>{tip}</li>
                     ))}
@@ -691,37 +698,54 @@ export function CvAtsBuilderView({ profile, jobs: propJobs, showToast }: CvAtsBu
           </div>
 
           {/* Live Printable ATS Preview */}
-          <div className="bg-white text-slate-900 rounded-2xl border border-slate-200 p-6 sm:p-8 shadow-sm space-y-4 print:border-0 print:shadow-none print:p-0">
-            <div className="border-b-2 border-slate-900 pb-3">
-              <h2 className="font-display text-xl font-bold uppercase tracking-tight">
-                {profile.name}
-              </h2>
-              <p className="text-xs font-semibold text-slate-600">
-                {draft.targetRole} · {profile.email || "kandidat@skillora.app"} · Terverifikasi Skillora Level {profile.level}
-              </p>
+          <div className="bg-white text-zinc-900 rounded-xl border border-zinc-200/90 p-6 sm:p-7 space-y-4 print:border-0 print:shadow-none print:p-0">
+            <div className="border-b-2 border-zinc-900 pb-3 flex items-start justify-between gap-4">
+              <div>
+                <h2 className="font-display text-lg font-bold tracking-tight text-zinc-950">
+                  {profile.name}
+                </h2>
+                <p className="text-xs font-medium text-zinc-600 mt-0.5">
+                  {draft.targetRole} · {profile.email || "kandidat@skillora.app"} · Level {profile.level}
+                </p>
+              </div>
+              <div className="flex items-center gap-2 shrink-0 pt-0.5">
+                <SkilloraLogoIcon size={26} />
+                <div className="text-right leading-tight hidden sm:block">
+                  <span className="block text-[10px] font-bold tracking-tight text-zinc-950">
+                    Skill<span className="text-emerald-600">ora</span> Verified
+                  </span>
+                  <span className="block text-[9px] font-mono text-zinc-500">ATS Standard</span>
+                </div>
+              </div>
             </div>
 
             <div className="space-y-1">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500">Ringkasan</h3>
-              <p className="text-xs leading-relaxed text-slate-800">{draft.summary}</p>
+              <h3 className="text-[11px] font-semibold text-zinc-500 border-b border-zinc-200 pb-0.5">
+                Ringkasan
+              </h3>
+              <p className="text-xs leading-relaxed text-zinc-800 pt-0.5">{draft.summary}</p>
             </div>
 
             <div className="space-y-1">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500">Keahlian</h3>
-              <p className="text-xs text-slate-800">{draft.skills.join(" • ")}</p>
+              <h3 className="text-[11px] font-semibold text-zinc-500 border-b border-zinc-200 pb-0.5">
+                Keahlian
+              </h3>
+              <p className="text-xs text-zinc-800 pt-0.5">{draft.skills.join(" · ")}</p>
             </div>
 
             <div className="space-y-2">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500">Pengalaman</h3>
+              <h3 className="text-[11px] font-semibold text-zinc-500 border-b border-zinc-200 pb-0.5">
+                Pengalaman
+              </h3>
               {draft.experiences.map((exp, i) => (
-                <div key={i} className="space-y-1 text-xs">
-                  <div className="flex justify-between font-bold text-slate-900">
+                <div key={i} className="space-y-1 text-xs pt-0.5">
+                  <div className="flex justify-between gap-2 font-semibold text-zinc-900">
                     <span>
                       {exp.role || "Peran"} — {exp.company || "Instansi"}
                     </span>
-                    <span className="text-slate-500">{exp.period}</span>
+                    <span className="text-zinc-500 font-mono tabular-nums shrink-0">{exp.period}</span>
                   </div>
-                  <ul className="list-disc pl-4 space-y-0.5 text-slate-700">
+                  <ul className="list-disc pl-4 space-y-0.5 text-zinc-700">
                     {(exp.bullets || []).filter(Boolean).map((b, j) => (
                       <li key={j}>{b}</li>
                     ))}
@@ -731,25 +755,28 @@ export function CvAtsBuilderView({ profile, jobs: propJobs, showToast }: CvAtsBu
             </div>
 
             <div className="space-y-1.5">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500">Pendidikan</h3>
+              <h3 className="text-[11px] font-semibold text-zinc-500 border-b border-zinc-200 pb-0.5">
+                Pendidikan
+              </h3>
               {draft.education.map((edu, i) => (
-                <div key={i} className="flex justify-between text-xs text-slate-800">
+                <div key={i} className="flex justify-between gap-2 text-xs text-zinc-800 pt-0.5">
                   <span>
-                    <strong>{edu.school}</strong> — {edu.degree} {edu.gpa ? `(IPK ${edu.gpa})` : ""}
+                    <strong className="font-semibold">{edu.school}</strong> — {edu.degree}{" "}
+                    {edu.gpa ? `(IPK ${edu.gpa})` : ""}
                   </span>
-                  <span className="text-slate-500">{edu.year}</span>
+                  <span className="text-zinc-500 font-mono tabular-nums shrink-0">{edu.year}</span>
                 </div>
               ))}
             </div>
 
             {draft.projects.length > 0 && (
               <div className="space-y-1.5">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500">
-                  Proyek & Sertifikasi
+                <h3 className="text-[11px] font-semibold text-zinc-500 border-b border-zinc-200 pb-0.5">
+                  Proyek &amp; Sertifikasi
                 </h3>
                 {draft.projects.map((p, i) => (
-                  <div key={i} className="text-xs text-slate-800">
-                    <strong>{p.name}</strong> — {p.impact}
+                  <div key={i} className="text-xs text-zinc-800 pt-0.5">
+                    <strong className="font-semibold">{p.name}</strong> — {p.impact}
                   </div>
                 ))}
               </div>

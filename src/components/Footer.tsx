@@ -9,14 +9,11 @@ export function Footer() {
       <div className="max-w-[1400px] mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
         {/* Brand Mission Summary */}
         <div className="lg:col-span-4 space-y-4 text-center lg:text-left">
-          <div className="flex items-center gap-2.5 justify-center lg:justify-start">
-            <SkilloraLogo variant="full" size="md" darkMode={true} />
-            <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-semibold uppercase tracking-wider bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
-              100% Gratis
-            </span>
+          <div className="flex items-center gap-3 justify-center lg:justify-start">
+            <SkilloraLogo variant="full" size="md" darkMode={true} showTagline={true} compactTagline={true} />
           </div>
           <p className="leading-relaxed text-zinc-400 text-xs sm:text-sm max-w-md mx-auto lg:mx-0">
-            Platform pembelajaran industri, simulasi karier AI, dan sertifikasi portofolio terbuka bagi seluruh pembelajar tanpa biaya langganan pelajar.
+            Navigasi Kompetensi &amp; Akselerator Karier Industri. Pelatihan 2026, simulasi seleksi BUMN/CPNS, dan sertifikasi portofolio terbuka tanpa biaya.
           </p>
           <div className="flex flex-wrap items-center justify-center lg:justify-start gap-3 pt-1 text-[11px] font-mono text-zinc-500">
             <span className="inline-flex items-center gap-1.5">
@@ -70,12 +67,12 @@ export function Footer() {
 
           <div>
             <span className="font-display text-xs font-bold uppercase tracking-wider text-zinc-200 block mb-3">
-              Dampak &amp; Bantuan
+              Dampak &amp; Brand
             </span>
             <ul className="space-y-2.5 text-xs font-medium text-zinc-400">
+              <li><Link to={ROUTES.brand} className="hover:text-emerald-400 transition-colors">Identitas Brand &amp; Logo</Link></li>
               <li><Link to={ROUTES.upgrade} className="hover:text-emerald-400 transition-colors inline-flex items-center gap-1"><Sparkles className="w-3 h-3 text-emerald-400" /> Sponsor &amp; HRD</Link></li>
               <li><Link to={ROUTES.career.scholarship} className="hover:text-emerald-400 transition-colors">Pusat Beasiswa</Link></li>
-              <li><Link to={ROUTES.career.mentoring} className="hover:text-emerald-400 transition-colors">Mentoring 1-on-1</Link></li>
               <li><Link to={ROUTES.faq} className="hover:text-emerald-400 transition-colors">Pusat Bantuan (FAQ)</Link></li>
             </ul>
           </div>
@@ -83,8 +80,9 @@ export function Footer() {
       </div>
 
       <div className="max-w-[1400px] mx-auto border-t border-zinc-800/80 pt-6 mt-8 flex flex-col sm:flex-row justify-between items-center gap-3 text-xs text-zinc-500">
-        <p>© 2026 SkillOra Platform Edukasi &amp; Karier Terbuka.</p>
+        <p>© 2026 Skillora — Navigasi Kompetensi &amp; Akselerator Karier Industri.</p>
         <div className="flex items-center gap-4">
+          <Link to={ROUTES.brand} className="hover:text-emerald-400 transition-colors">Media Kit &amp; Logo</Link>
           <Link to={ROUTES.faq} className="hover:text-zinc-300 transition-colors">Ketentuan</Link>
           <span className="flex items-center gap-1.5 text-zinc-400">
             <Shield className="w-3.5 h-3.5 text-emerald-500" /> Didukung Mitra &amp; Beasiswa Terbuka

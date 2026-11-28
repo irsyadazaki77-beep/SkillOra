@@ -255,18 +255,18 @@ export function KatalogKursusView({ courses, profile, onBookmarkToggle }: Katalo
   };
 
   return (
-    <div className="w-full py-1 sm:py-2 space-y-5 relative z-10">
-      {/* Header */}
-      <header className="flex flex-col md:flex-row md:items-end md:justify-between gap-3 border-b border-zinc-200 dark:border-zinc-800 pb-4">
-        <div className="space-y-1">
-          <p className="text-xs font-mono uppercase tracking-wider text-emerald-700 dark:text-emerald-400 font-semibold">
-            {courses.length} Pelatihan · 100% Gratis Tanpa Paywall · Pra-Tes · Modul · Lab AI · Sertifikasi
+    <div className="w-full space-y-6 relative z-10">
+      {/* Editorial Header */}
+      <header className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 border-b border-zinc-200/80 dark:border-zinc-800/80 pb-5">
+        <div className="space-y-1 max-w-2xl">
+          <p className="text-xs font-medium text-emerald-700 dark:text-emerald-400 tabular-nums">
+            {courses.length} pelatihan industri · terbuka gratis
           </p>
-          <h1 className="text-2xl sm:text-3xl font-display font-bold tracking-tight text-zinc-950 dark:text-white">
+          <h1 className="text-2xl sm:text-[28px] font-display font-bold tracking-tight text-zinc-950 dark:text-zinc-50 text-balance">
             Katalog Pelatihan Industri
           </h1>
-          <p className="text-zinc-600 dark:text-zinc-400 text-sm max-w-2xl">
-            Setiap pelatihan terbuka gratis lengkap dengan Pra-Tes Diagnostik, materi video &amp; kode, Flashcard SM-2, studi kasus berevaluasi AI, dan sertifikat terverifikasi.
+          <p className="text-zinc-500 dark:text-zinc-400 text-sm leading-relaxed">
+            Setiap pelatihan dilengkapi pra-tes diagnostik, materi terstruktur, flashcard, studi kasus berevaluasi AI, dan sertifikat terverifikasi.
           </p>
         </div>
 
@@ -274,10 +274,10 @@ export function KatalogKursusView({ courses, profile, onBookmarkToggle }: Katalo
           <button
             type="button"
             onClick={() => setShowOnlyEnrolled(!showOnlyEnrolled)}
-            className={`px-3 py-2 rounded-lg border text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer whitespace-nowrap ${
+            className={`h-8 px-3 rounded-lg border text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer whitespace-nowrap tabular-nums ${
               showOnlyEnrolled
-                ? "bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-900/50 text-emerald-700 dark:text-emerald-300"
-                : "bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800"
+                ? "bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-900/60 text-emerald-700 dark:text-emerald-300"
+                : "bg-white dark:bg-[#111114] border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-900"
             }`}
           >
             <CheckCircle2 className="w-3.5 h-3.5" />
@@ -287,49 +287,49 @@ export function KatalogKursusView({ courses, profile, onBookmarkToggle }: Katalo
           <button
             type="button"
             onClick={() => setShowOnlyBookmarked(!showOnlyBookmarked)}
-            className={`px-3 py-2 rounded-lg border text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer whitespace-nowrap ${
+            className={`h-8 px-3 rounded-lg border text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer whitespace-nowrap tabular-nums ${
               showOnlyBookmarked
-                ? "bg-rose-50 dark:bg-rose-950/30 border-rose-200 dark:border-rose-900/50 text-rose-700 dark:text-rose-300"
-                : "bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800"
+                ? "bg-rose-50 dark:bg-rose-950/40 border-rose-200 dark:border-rose-900/60 text-rose-700 dark:text-rose-300"
+                : "bg-white dark:bg-[#111114] border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-900"
             }`}
           >
             <Heart className={`w-3.5 h-3.5 ${showOnlyBookmarked ? "fill-rose-500 text-rose-500" : ""}`} />
             <span>Tersimpan ({bookmarkedCourses.length})</span>
           </button>
 
-          <div className="flex items-center bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-0.5">
+          <div className="flex items-center bg-zinc-100 dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 rounded-lg p-0.5">
             <button
               type="button"
               onClick={() => setLayout("grid")}
               className={`p-1.5 rounded-md transition-colors cursor-pointer ${
                 layout === "grid"
-                  ? "bg-white dark:bg-zinc-800 text-zinc-950 dark:text-white"
+                  ? "bg-white dark:bg-zinc-800 text-zinc-950 dark:text-white shadow-2xs"
                   : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200"
               }`}
               title="Tampilan Grid"
               aria-label="Tampilan Grid"
             >
-              <Grid className="w-4 h-4" />
+              <Grid className="w-3.5 h-3.5" />
             </button>
             <button
               type="button"
               onClick={() => setLayout("list")}
               className={`p-1.5 rounded-md transition-colors cursor-pointer ${
                 layout === "list"
-                  ? "bg-white dark:bg-zinc-800 text-zinc-950 dark:text-white"
+                  ? "bg-white dark:bg-zinc-800 text-zinc-950 dark:text-white shadow-2xs"
                   : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200"
               }`}
               title="Tampilan List"
               aria-label="Tampilan List"
             >
-              <List className="w-4 h-4" />
+              <List className="w-3.5 h-3.5" />
             </button>
           </div>
         </div>
       </header>
 
-      {/* Category Tabs */}
-      <div className="flex items-center gap-1.5 overflow-x-auto pb-1 hide-scrollbar">
+      {/* Segmented Category Strip */}
+      <div className="inline-flex items-center p-1 bg-zinc-100/90 dark:bg-zinc-900 rounded-lg border border-zinc-200/80 dark:border-zinc-800 overflow-x-auto max-w-full hide-scrollbar">
         {categories.map((cat) => {
           const isSelected = selectedCategory === cat;
           const count = categoryCounts[cat] || 0;
@@ -338,37 +338,39 @@ export function KatalogKursusView({ courses, profile, onBookmarkToggle }: Katalo
               key={cat}
               type="button"
               onClick={() => setSelectedCategory(cat)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap shrink-0 transition-colors cursor-pointer flex items-center gap-1.5 ${
+              className={`px-3 py-1.5 rounded-md text-xs font-medium whitespace-nowrap shrink-0 transition-colors cursor-pointer flex items-center gap-1.5 ${
                 isSelected
-                  ? "bg-zinc-950 dark:bg-zinc-100 text-white dark:text-zinc-950"
-                  : "bg-white dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700"
+                  ? "bg-white dark:bg-zinc-800 text-zinc-950 dark:text-white font-semibold shadow-2xs"
+                  : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200"
               }`}
             >
               <span>{cat}</span>
-              <span className="font-mono text-[11px] opacity-75 tabular-nums">{count}</span>
+              <span className="font-mono text-[11px] text-zinc-400 dark:text-zinc-500 tabular-nums">
+                {count}
+              </span>
             </button>
           );
         })}
       </div>
 
       {/* Filter & Search Toolbar */}
-      <div className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-3.5 space-y-3">
+      <div className="bg-white dark:bg-[#111114] rounded-xl border border-zinc-200/90 dark:border-zinc-800/90 p-4 space-y-3">
         <div className="flex flex-col sm:flex-row gap-2.5 items-stretch sm:items-center justify-between">
           <div className="relative flex-1">
-            <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400" />
+            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
             <input
               aria-label="Cari pelatihan, topik, kompetensi, atau mitra"
               type="text"
               placeholder="Cari pelatihan, topik, kompetensi, atau mitra..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-10 pr-9 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg focus:border-emerald-500 outline-none transition-colors placeholder:text-zinc-400 text-xs sm:text-sm text-zinc-950 dark:text-white"
+              className="w-full h-9 pl-9 pr-9 bg-zinc-50/70 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg focus:border-emerald-600 dark:focus:border-emerald-500 outline-none transition-colors placeholder:text-zinc-400 text-[13px] text-zinc-950 dark:text-white"
             />
             {search && (
               <button
                 type="button"
                 onClick={() => setSearch("")}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 p-0.5 cursor-pointer"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 p-0.5 cursor-pointer"
                 aria-label="Hapus pencarian"
               >
                 <X className="w-3.5 h-3.5" />
@@ -381,11 +383,11 @@ export function KatalogKursusView({ courses, profile, onBookmarkToggle }: Katalo
               aria-label="Filter tingkat kesulitan"
               value={selectedDifficulty}
               onChange={(e) => setSelectedDifficulty(e.target.value)}
-              className="px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs font-semibold text-zinc-700 dark:text-zinc-200 outline-none focus:border-emerald-500 cursor-pointer"
+              className="h-9 px-3 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs font-medium text-zinc-700 dark:text-zinc-200 outline-none focus:border-emerald-600 cursor-pointer"
             >
               {difficulties.map((diff) => (
                 <option key={diff} value={diff}>
-                  {diff === "Semua" ? "Semua Tingkat" : diff}
+                  {diff === "Semua" ? "Semua tingkat" : diff}
                 </option>
               ))}
             </select>
@@ -394,12 +396,12 @@ export function KatalogKursusView({ courses, profile, onBookmarkToggle }: Katalo
               aria-label="Filter status belajar"
               value={selectedStatus}
               onChange={(e) => setSelectedStatus(e.target.value as any)}
-              className="px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs font-semibold text-zinc-700 dark:text-zinc-200 outline-none focus:border-emerald-500 cursor-pointer"
+              className="h-9 px-3 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs font-medium text-zinc-700 dark:text-zinc-200 outline-none focus:border-emerald-600 cursor-pointer"
             >
-              <option value="Semua">Semua Status</option>
-              <option value="Terdaftar">Sudah Terdaftar</option>
-              <option value="Sedang Dipelajari">Sedang Dipelajari</option>
-              <option value="Belum Dimulai">Belum Dimulai</option>
+              <option value="Semua">Semua status</option>
+              <option value="Terdaftar">Sudah terdaftar</option>
+              <option value="Sedang Dipelajari">Sedang dipelajari</option>
+              <option value="Belum Dimulai">Belum dimulai</option>
               <option value="Selesai">Selesai (100%)</option>
             </select>
 
@@ -407,26 +409,26 @@ export function KatalogKursusView({ courses, profile, onBookmarkToggle }: Katalo
               aria-label="Urutkan pelatihan"
               value={selectedSort}
               onChange={(e) => setSelectedSort(e.target.value as any)}
-              className="px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs font-semibold text-zinc-700 dark:text-zinc-200 outline-none focus:border-emerald-500 cursor-pointer"
+              className="h-9 px-3 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs font-medium text-zinc-700 dark:text-zinc-200 outline-none focus:border-emerald-600 cursor-pointer"
             >
               <option value="Populer">Terpopuler</option>
               <option value="Terbaru">Terbaru</option>
-              <option value="Durasi">Durasi Terpendek</option>
+              <option value="Durasi">Durasi terpendek</option>
             </select>
           </div>
         </div>
 
-        <div className="flex items-center justify-between text-xs text-zinc-500 dark:text-zinc-400 pt-1 border-t border-zinc-100 dark:border-zinc-800">
-          <span className="font-mono tabular-nums">
-            Menampilkan <strong className="text-zinc-950 dark:text-white">{filteredCourses.length}</strong> dari {courses.length} pelatihan
+        <div className="flex items-center justify-between text-xs text-zinc-500 dark:text-zinc-400 pt-2.5 border-t border-zinc-100 dark:border-zinc-800/80">
+          <span className="tabular-nums">
+            Menampilkan <strong className="text-zinc-950 dark:text-white font-semibold">{filteredCourses.length}</strong> dari {courses.length} pelatihan
           </span>
           {hasActiveFilters && (
             <button
               type="button"
               onClick={handleResetFilters}
-              className="text-xs font-semibold text-emerald-700 dark:text-emerald-400 hover:underline cursor-pointer"
+              className="text-xs font-medium text-emerald-700 dark:text-emerald-400 hover:underline cursor-pointer"
             >
-              Reset Filter
+              Reset filter
             </button>
           )}
         </div>
@@ -435,61 +437,62 @@ export function KatalogKursusView({ courses, profile, onBookmarkToggle }: Katalo
       {/* Curated Career Learning Paths */}
       {careerPaths.length > 0 && !hasActiveFilters && (
         <section aria-label="Jalur Karier Terstruktur" className="space-y-3">
-          <div className="flex items-center justify-between gap-2">
-            <h2 className="font-display font-bold text-sm sm:text-base text-zinc-950 dark:text-white flex items-center gap-2">
-              <Compass className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-              <span>Jalur Karier Terstruktur (100% Gratis)</span>
-            </h2>
-            <span className="text-[11px] font-mono text-zinc-500 dark:text-zinc-400">
-              Urutan belajar dari nol hingga siap kerja
-            </span>
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-1">
+            <div>
+              <h2 className="font-display font-semibold text-base text-zinc-950 dark:text-zinc-50 flex items-center gap-2">
+                <Compass className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                <span>Jalur Karier Terstruktur</span>
+              </h2>
+              <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                Urutan kurikulum terarah dari fondasi hingga sertifikasi spesialisasi.
+              </p>
+            </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
+          <div className="bg-white dark:bg-[#111114] border border-zinc-200/90 dark:border-zinc-800/90 rounded-xl overflow-hidden grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-zinc-200/80 dark:divide-zinc-800/80">
             {careerPaths.map((path) => (
-              <div
-                key={path.slug}
-                className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-4 flex flex-col justify-between gap-3"
-              >
+              <div key={path.slug} className="p-5 flex flex-col justify-between gap-4">
                 <div className="space-y-1.5">
-                  <div className="flex items-center justify-between text-[11px] font-mono text-emerald-700 dark:text-emerald-400 font-semibold">
-                    <span>{path.courses.length} Kursus · {path.totalModules} Modul</span>
-                    <span className="inline-flex items-center gap-1">
+                  <div className="flex items-center justify-between text-xs text-zinc-500 dark:text-zinc-400 tabular-nums">
+                    <span>
+                      {path.courses.length} kursus · {path.totalModules} modul
+                    </span>
+                    <span className="font-mono font-medium text-emerald-700 dark:text-emerald-400 inline-flex items-center gap-1">
                       {path.progressPercent === 100 && <Award className="w-3.5 h-3.5 text-amber-500" />}
                       {path.progressPercent}%
                     </span>
                   </div>
-                  <h3 className="font-display font-bold text-sm text-zinc-950 dark:text-white leading-snug">
+                  <h3 className="font-display font-semibold text-[15px] text-zinc-950 dark:text-white leading-snug">
                     {path.title}
                   </h3>
-                  <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed">
+                  <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">
                     {path.description}
                   </p>
                 </div>
 
-                <div className="space-y-2.5 pt-1">
-                  <div className="w-full h-1.5 bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden">
+                <div className="space-y-3">
+                  <div className="w-full h-1 bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden">
                     <div
-                      className="h-full bg-emerald-600 rounded-full transition-all duration-300"
+                      className="h-full bg-emerald-600 dark:bg-emerald-500 rounded-full transition-all duration-300"
                       style={{ width: `${path.progressPercent}%` }}
                     />
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex items-center gap-2">
                     <button
                       type="button"
                       disabled={path.allEnrolled || enrollingPathSlug === path.slug}
                       onClick={() => handleEnrollPath(path.slug)}
-                      className={`px-3 py-2 rounded-lg text-xs font-semibold border transition-colors cursor-pointer ${
+                      className={`h-8 px-2.5 rounded-lg text-xs font-medium border transition-colors cursor-pointer whitespace-nowrap ${
                         path.allEnrolled
-                          ? "bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 cursor-default"
-                          : "border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-800"
+                          ? "bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-900/60 text-emerald-700 dark:text-emerald-300 cursor-default"
+                          : "border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-900"
                       }`}
                     >
                       {path.allEnrolled
-                        ? "Terdaftar ✓"
+                        ? "Terdaftar"
                         : enrollingPathSlug === path.slug
-                          ? "..."
-                          : "Daftar Jalur"}
+                        ? "..."
+                        : "Daftar"}
                     </button>
                     <button
                       type="button"
@@ -497,16 +500,18 @@ export function KatalogKursusView({ courses, profile, onBookmarkToggle }: Katalo
                         setPathNotice(null);
                         setSelectedPath(path);
                       }}
-                      className="px-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 text-xs font-semibold text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-800 cursor-pointer"
+                      className="h-8 px-2.5 rounded-lg border border-zinc-200 dark:border-zinc-800 text-xs font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-900 cursor-pointer whitespace-nowrap"
                     >
                       Silabus
                     </button>
                     <button
                       type="button"
-                      onClick={() => navigate(`/belajar/lms?courseId=${encodeURIComponent(path.firstCourseId)}`)}
-                      className="flex-1 py-2 px-3 rounded-lg bg-zinc-950 dark:bg-zinc-100 text-white dark:text-zinc-950 text-xs font-semibold flex items-center justify-center gap-1.5 hover:opacity-90 transition-opacity cursor-pointer"
+                      onClick={() =>
+                        navigate(`/belajar/lms?courseId=${encodeURIComponent(path.firstCourseId)}`)
+                      }
+                      className="flex-1 h-8 px-3 rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-950 text-xs font-medium flex items-center justify-center gap-1.5 hover:opacity-90 transition-opacity cursor-pointer whitespace-nowrap"
                     >
-                      <span>Mulai di LMS</span>
+                      <span>Mulai</span>
                       <ArrowRight className="w-3.5 h-3.5" />
                     </button>
                   </div>
@@ -519,17 +524,23 @@ export function KatalogKursusView({ courses, profile, onBookmarkToggle }: Katalo
 
       {/* Modal Silabus Jalur Karier & Klaim Sertifikat Spesialisasi */}
       {selectedPath && (
-        <div role="dialog" aria-modal="true" className="fixed inset-0 bg-zinc-950/70 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl max-w-xl w-full p-6 space-y-5 shadow-2xl max-h-[88vh] overflow-y-auto">
-            <div className="flex items-start justify-between gap-3 border-b border-zinc-200 dark:border-zinc-800 pb-3.5">
-              <div>
-                <p className="text-[11px] font-mono uppercase tracking-wider text-emerald-600 dark:text-emerald-400 font-semibold">
-                  Spesialisasi Terbuka 100% Gratis · {selectedPath.targetRole}
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 bg-zinc-950/60 backdrop-blur-xs z-50 flex items-center justify-center p-4"
+        >
+          <div className="bg-white dark:bg-[#111114] border border-zinc-200 dark:border-zinc-800 rounded-xl max-w-xl w-full p-6 space-y-5 shadow-2xl max-h-[88vh] overflow-y-auto">
+            <div className="flex items-start justify-between gap-3 border-b border-zinc-200/80 dark:border-zinc-800 pb-4">
+              <div className="space-y-1">
+                <p className="text-xs font-medium text-emerald-700 dark:text-emerald-400">
+                  Jalur spesialisasi · {selectedPath.targetRole}
                 </p>
-                <h3 className="font-display font-bold text-lg text-zinc-950 dark:text-white mt-0.5">
+                <h3 className="font-display font-bold text-lg text-zinc-950 dark:text-white">
                   {selectedPath.title}
                 </h3>
-                <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">{selectedPath.description}</p>
+                <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">
+                  {selectedPath.description}
+                </p>
               </div>
               <button
                 type="button"
@@ -541,22 +552,22 @@ export function KatalogKursusView({ courses, profile, onBookmarkToggle }: Katalo
               </button>
             </div>
 
-            <div className="space-y-2.5">
+            <div className="divide-y divide-zinc-100 dark:divide-zinc-800/80 border border-zinc-200/80 dark:border-zinc-800 rounded-xl overflow-hidden">
               {selectedPath.courses.map((c, idx) => {
                 const done = c.lessonsCount > 0 && c.completedLessonsCount >= c.lessonsCount;
                 return (
                   <div
                     key={c.id}
-                    className="p-3.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50/70 dark:bg-zinc-950/40 flex items-center justify-between gap-3"
+                    className="p-3.5 bg-white dark:bg-[#111114] flex items-center justify-between gap-3"
                   >
                     <div className="min-w-0">
-                      <p className="text-[11px] font-mono text-zinc-500">
+                      <p className="text-[11px] text-zinc-500 dark:text-zinc-400 tabular-nums">
                         Tahap {idx + 1} · {c.difficulty} · {c.duration}
                       </p>
-                      <h4 className="text-xs sm:text-sm font-semibold text-zinc-950 dark:text-white truncate">
+                      <h4 className="text-[13px] font-semibold text-zinc-950 dark:text-white truncate">
                         {c.title}
                       </h4>
-                      <p className="text-[11px] text-zinc-500 font-mono">
+                      <p className="text-[11px] text-zinc-500 font-mono tabular-nums">
                         {c.completedLessonsCount}/{c.lessonsCount} modul selesai
                       </p>
                     </div>
@@ -566,13 +577,13 @@ export function KatalogKursusView({ courses, profile, onBookmarkToggle }: Katalo
                         setSelectedPath(null);
                         navigate(`/belajar/lms?courseId=${encodeURIComponent(c.id)}`);
                       }}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold shrink-0 cursor-pointer ${
+                      className={`h-8 px-3 rounded-lg text-xs font-medium shrink-0 cursor-pointer whitespace-nowrap ${
                         done
-                          ? "bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800"
-                          : "bg-zinc-950 dark:bg-zinc-100 text-white dark:text-zinc-950"
+                          ? "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-900/60"
+                          : "bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-950"
                       }`}
                     >
-                      {done ? "Selesai ✓" : "Buka Kelas"}
+                      {done ? "Selesai" : "Buka kelas"}
                     </button>
                   </div>
                 );
@@ -580,14 +591,17 @@ export function KatalogKursusView({ courses, profile, onBookmarkToggle }: Katalo
             </div>
 
             {pathNotice && (
-              <p className="text-xs font-medium text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 px-3 py-2 rounded-xl">
+              <p className="text-xs font-medium text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 px-3.5 py-2.5 rounded-lg">
                 {pathNotice}
               </p>
             )}
 
-            <div className="pt-2 border-t border-zinc-200 dark:border-zinc-800 flex flex-wrap items-center justify-between gap-2">
-              <span className="text-xs font-mono text-zinc-500">
-                Progres Spesialisasi: <strong className="text-zinc-950 dark:text-white">{selectedPath.progressPercent}%</strong>
+            <div className="pt-3 border-t border-zinc-200/80 dark:border-zinc-800 flex flex-wrap items-center justify-between gap-2">
+              <span className="text-xs text-zinc-500 tabular-nums">
+                Progres spesialisasi:{" "}
+                <strong className="font-mono text-zinc-950 dark:text-white">
+                  {selectedPath.progressPercent}%
+                </strong>
               </span>
               {selectedPath.specializationCertId ? (
                 <div className="flex items-center gap-2">

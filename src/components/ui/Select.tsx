@@ -14,17 +14,7 @@ export interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElemen
 }
 
 export const Select = forwardRef<HTMLSelectElement, SelectProps>(function Select(
-  {
-    label,
-    helperText,
-    error,
-    options,
-    children,
-    className = "",
-    disabled,
-    id,
-    ...props
-  },
+  { label, helperText, error, options, children, className = "", disabled, id, ...props },
   ref
 ) {
   const selectId = id || (label ? label.toLowerCase().replace(/\s+/g, "-") : undefined);
@@ -32,10 +22,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(function Select
   return (
     <div className="w-full flex flex-col space-y-1.5 text-left">
       {label && (
-        <label
-          htmlFor={selectId}
-          className="text-xs font-semibold text-slate-700 dark:text-slate-300"
-        >
+        <label htmlFor={selectId} className="text-xs font-medium text-zinc-700 dark:text-zinc-300">
           {label}
         </label>
       )}
@@ -45,10 +32,10 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(function Select
           ref={ref}
           id={selectId}
           disabled={disabled}
-          className={`w-full h-10 appearance-none rounded-xl bg-white dark:bg-slate-900 border text-xs sm:text-sm text-slate-900 dark:text-slate-100 pl-3.5 pr-9 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 disabled:bg-slate-50 dark:disabled:bg-slate-800/50 disabled:cursor-not-allowed cursor-pointer ${
+          className={`w-full h-9 appearance-none rounded-lg bg-white dark:bg-[#111114] border text-[13px] text-zinc-950 dark:text-zinc-100 pl-3 pr-8 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/40 focus-visible:border-emerald-600 dark:focus-visible:border-emerald-500 disabled:bg-zinc-50 dark:disabled:bg-zinc-900/50 disabled:cursor-not-allowed cursor-pointer ${
             error
-              ? "border-rose-400 dark:border-rose-600 focus-visible:ring-rose-500"
-              : "border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600"
+              ? "border-rose-400 dark:border-rose-600 focus-visible:ring-rose-500/30"
+              : "border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700"
           } ${className}`}
           {...props}
         >
@@ -61,19 +48,15 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(function Select
             : children}
         </select>
 
-        <div className="absolute right-3 text-slate-400 dark:text-slate-500 pointer-events-none flex items-center justify-center">
+        <div className="absolute right-2.5 text-zinc-400 dark:text-zinc-500 pointer-events-none flex items-center justify-center">
           <ChevronDown className="w-4 h-4" />
         </div>
       </div>
 
       {error ? (
-        <p className="text-xs font-medium text-rose-600 dark:text-rose-400 leading-tight">
-          {error}
-        </p>
+        <p className="text-xs font-medium text-rose-600 dark:text-rose-400 leading-tight">{error}</p>
       ) : helperText ? (
-        <p className="text-xs font-normal text-slate-500 dark:text-slate-400 leading-tight">
-          {helperText}
-        </p>
+        <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-tight">{helperText}</p>
       ) : null}
     </div>
   );

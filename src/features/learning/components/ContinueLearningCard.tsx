@@ -1,9 +1,7 @@
 import React from "react";
-import { PlayCircle, BookOpen, ChevronRight, Award, CheckCircle2, Clock } from "lucide-react";
+import { Play, Award, CheckCircle2, ArrowRight } from "lucide-react";
 import { Course, Lesson } from "../../../types";
-import { Card } from "../../../components/ui/Card";
 import { Button } from "../../../components/ui/Button";
-import { Badge } from "../../../components/ui/Badge";
 import { ProgressBar } from "../../../components/ui/ProgressBar";
 import defaultCourseImg from "../../../assets/images/course_tech_engineering_1794974031663.jpg";
 import { resolveCourseImage } from "../../../utils/resolveAsset";
@@ -37,35 +35,40 @@ export function ContinueLearningCard({
 
   const progress = getCourseProgress(primaryActiveCourse);
   const isCompleted = progress === 100;
-  const completedLessonsCount = primaryActiveCourse.lessons?.filter(l => l.completed).length || 0;
+  const completedLessonsCount = primaryActiveCourse.lessons?.filter((l) => l.completed).length || 0;
   const totalLessonsCount = primaryActiveCourse.lessons?.length || 0;
 
   return (
-    <Card variant="default" padding="md" className="space-y-4" aria-labelledby="continue-learning-heading">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 border-b border-slate-100 dark:border-slate-800/80 pb-3">
+    <section
+      aria-labelledby="continue-learning-heading"
+      className="bg-white dark:bg-[#111114] border border-zinc-200/90 dark:border-zinc-800/90 rounded-xl overflow-hidden"
+    >
+      {/* Top Bar of Focal Card */}
+      <div className="px-5 py-3.5 border-b border-zinc-200/70 dark:border-zinc-800/80 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
-            <PlayCircle className="w-4 h-4" />
-          </div>
-          <div>
-            <h2 id="continue-learning-heading" className="font-display font-bold text-base sm:text-lg text-slate-900 dark:text-white">
-              {isCompleted ? "Kursus Telah Selesai" : "Lanjutkan Pembelajaran"}
-            </h2>
-          </div>
+          <h2
+            id="continue-learning-heading"
+            className="font-display text-sm font-semibold text-zinc-950 dark:text-zinc-50"
+          >
+            {isCompleted ? "Kursus diselesaikan" : "Lanjutkan belajar"}
+          </h2>
+          <span className="text-xs text-zinc-400">·</span>
+          <span className="text-xs font-mono tabular-nums text-emerald-700 dark:text-emerald-400 font-medium">
+            {progress}% selesai
+          </span>
         </div>
 
-        {/* Course Switcher Pills if multiple active */}
         {activeCourses.length > 1 && (
-          <div className="flex items-center gap-1.5 overflow-x-auto hide-scrollbar">
-            <span className="text-xs text-slate-400 font-medium mr-1 hidden sm:inline">Pilih Kursus:</span>
+          <div className="flex items-center gap-1 p-0.5 bg-zinc-100 dark:bg-zinc-900 rounded-lg border border-zinc-200/70 dark:border-zinc-800 overflow-x-auto hide-scrollbar">
             {activeCourses.map((c, idx) => (
               <button
                 key={c.id}
+                type="button"
                 onClick={() => setSelectedActiveCourseIndex(idx)}
-                className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors cursor-pointer whitespace-nowrap tabular-nums ${
                   selectedActiveCourseIndex === idx
-                    ? "bg-emerald-600 text-white shadow-xs"
-                    : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700"
+                    ? "bg-white dark:bg-zinc-800 text-zinc-950 dark:text-white font-semibold shadow-2xs"
+                    : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200"
                 }`}
               >
                 {c.title.split(" ")[0]} ({getCourseProgress(c)}%)
@@ -76,26 +79,21 @@ export function ContinueLearningCard({
       </div>
 
       {isCompleted ? (
-        /* Completed Course State */
-        <div className="p-4 sm:p-5 rounded-xl bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-200/70 dark:border-emerald-800/50 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-3.5">
-            <div className="w-12 h-12 rounded-2xl bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 flex items-center justify-center shrink-0">
-              <Award className="w-6 h-6" />
+        <div className="p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="space-y-1.5 min-w-0">
+            <div className="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-700 dark:text-emerald-400">
+              <CheckCircle2 className="w-3.5 h-3.5" />
+              <span>Semua {totalLessonsCount} materi selesai</span>
             </div>
-            <div>
-              <div className="inline-flex items-center gap-1 text-xs font-bold text-emerald-700 dark:text-emerald-400 mb-0.5">
-                <CheckCircle2 className="w-3.5 h-3.5" /> 100% Selesai
-              </div>
-              <h3 className="font-display font-bold text-base text-slate-900 dark:text-white">
-                {primaryActiveCourse.title}
-              </h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                Selamat! Kamu telah menyelesaikan semua {totalLessonsCount} materi pembelajaran.
-              </p>
-            </div>
+            <h3 className="font-display text-lg font-bold text-zinc-950 dark:text-white tracking-tight">
+              {primaryActiveCourse.title}
+            </h3>
+            <p className="text-xs sm:text-[13px] text-zinc-500 dark:text-zinc-400">
+              Lanjutkan ke pengajuan proyek portofolio untuk menerbitkan sertifikat kompetensi terverifikasi.
+            </p>
           </div>
 
-          <div className="flex items-center gap-2 w-full sm:w-auto shrink-0">
+          <div className="flex items-center gap-2 shrink-0">
             {onNavigateToSertifikasi && (
               <Button
                 variant="primary"
@@ -106,118 +104,97 @@ export function ContinueLearningCard({
                 Klaim Sertifikat
               </Button>
             )}
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={onNavigateToKatalog}
-            >
-              Pilih Kursus Baru
+            <Button variant="outline" size="sm" onClick={onNavigateToKatalog}>
+              Jelajahi Katalog
             </Button>
           </div>
         </div>
       ) : (
-        /* Active Ongoing Course Card */
-        <div className="flex flex-col md:flex-row gap-4 items-stretch p-4 rounded-xl bg-slate-50/70 dark:bg-slate-800/40 border border-slate-200/70 dark:border-slate-800/80">
-          {/* Thumbnail */}
-          <div 
+        /* Single-Elevation Split Layout (No Cards-Within-Cards) */
+        <div className="p-5 sm:p-6 grid grid-cols-1 md:grid-cols-12 gap-5 items-stretch">
+          <div
             onClick={() => onNavigateToCourse(primaryActiveCourse.id)}
-            className="w-full md:w-48 h-32 md:h-auto rounded-xl bg-slate-200 dark:bg-slate-800 overflow-hidden relative shrink-0 cursor-pointer group shadow-xs"
+            className="md:col-span-5 rounded-lg overflow-hidden bg-zinc-100 dark:bg-zinc-900 border border-zinc-200/70 dark:border-zinc-800 cursor-pointer group aspect-[16/10] md:aspect-auto md:min-h-[176px]"
           >
             <img
               src={resolveCourseImage(primaryActiveCourse.image)}
               alt={primaryActiveCourse.title}
+              referrerPolicy="no-referrer"
               onError={(e) => {
                 (e.currentTarget as HTMLImageElement).src = defaultCourseImg;
               }}
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+              className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-300"
               loading="lazy"
             />
-            <div className="absolute top-2 left-2 px-2 py-0.5 rounded-md bg-slate-900/80 backdrop-blur-xs text-white text-xs font-bold">
-              {primaryActiveCourse.category}
-            </div>
           </div>
-          
-          {/* Content Details */}
-          <div className="flex-1 flex flex-col justify-between space-y-3">
-            <div>
-              <div className="flex flex-wrap items-center gap-2 mb-1.5">
-                <Badge variant="primary" size="sm">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse mr-1" />
-                  Sedang Berjalan
-                </Badge>
-                <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-                  Tingkat: {primaryActiveCourse.difficulty || "Pemula"}
+
+          <div className="md:col-span-7 flex flex-col justify-between gap-4 min-w-0">
+            <div className="space-y-2">
+              <div className="flex flex-wrap items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400">
+                <span className="font-medium text-emerald-700 dark:text-emerald-400">
+                  {primaryActiveCourse.category}
                 </span>
-                <span className="text-xs text-slate-400 hidden sm:inline">&bull;</span>
-                <span className="text-xs text-slate-500 dark:text-slate-400 font-medium flex items-center gap-1">
-                  <Clock className="w-3 h-3 text-slate-400" />
-                  {primaryActiveCourse.duration || "4 Jam"}
-                </span>
+                <span aria-hidden="true">·</span>
+                <span>{primaryActiveCourse.difficulty || "Pemula"}</span>
+                <span aria-hidden="true">·</span>
+                <span>{primaryActiveCourse.duration || "4 Jam"}</span>
               </div>
 
-              <h3 
+              <h3
                 onClick={() => onNavigateToCourse(primaryActiveCourse.id)}
-                className="font-display font-bold text-base sm:text-lg text-slate-900 dark:text-white hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors line-clamp-1 cursor-pointer"
+                className="font-display text-lg sm:text-xl font-bold text-zinc-950 dark:text-white tracking-tight hover:text-emerald-700 dark:hover:text-emerald-400 transition-colors cursor-pointer line-clamp-2"
               >
                 {primaryActiveCourse.title}
               </h3>
-              
-              {/* Active Next Lesson */}
-              <div className="mt-1.5 flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-300 font-medium">
-                <BookOpen className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                <span>Materi Berikutnya:</span>
-                <span className="text-slate-900 dark:text-white font-semibold truncate max-w-sm">
+
+              <p className="text-xs sm:text-[13px] text-zinc-500 dark:text-zinc-400 truncate">
+                Materi berikutnya:{" "}
+                <span className="text-zinc-900 dark:text-zinc-200 font-medium">
                   {activeLesson?.title || "Materi Pertama"}
                 </span>
-              </div>
-            </div>
-            
-            {/* Progress Bar with ratio */}
-            <div className="space-y-1.5">
-              <div className="flex justify-between text-xs font-semibold">
-                <span className="text-slate-500 dark:text-slate-400">
-                  Progres Belajar ({progress}%)
-                </span>
-                <span className="text-emerald-600 dark:text-emerald-400 font-bold">
-                  {completedLessonsCount} / {totalLessonsCount} Bab Selesai
-                </span>
-              </div>
-              
-              <ProgressBar
-                value={progress}
-                variant="primary"
-                size="sm"
-              />
+              </p>
             </div>
 
-            {/* CTAs */}
-            <div className="pt-1 flex flex-wrap items-center gap-2.5">
-              <Button
-                variant="primary"
-                size="sm"
-                onClick={() => {
-                  if (activeLesson) {
-                    onNavigateToLesson(primaryActiveCourse.id, activeLesson.id);
-                  } else {
-                    onNavigateToCourse(primaryActiveCourse.id);
-                  }
-                }}
-                leftIcon={<PlayCircle className="w-4 h-4" />}
-              >
-                {activeLesson ? `Lanjutkan: ${activeLesson.title.slice(0, 24)}...` : "Lanjutkan Belajar"}
-              </Button>
+            <div className="space-y-4">
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-zinc-500 dark:text-zinc-400">Progres modul</span>
+                  <span className="font-mono tabular-nums font-medium text-zinc-900 dark:text-zinc-100">
+                    {completedLessonsCount} / {totalLessonsCount} bab
+                  </span>
+                </div>
+                <ProgressBar value={progress} variant="primary" size="sm" />
+              </div>
 
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => onNavigateToCourse(primaryActiveCourse.id)}
-              >
-                Buka Silabus
-              </Button>
+              <div className="flex flex-wrap items-center gap-2.5">
+                <Button
+                  variant="primary"
+                  size="md"
+                  onClick={() => {
+                    if (activeLesson) {
+                      onNavigateToLesson(primaryActiveCourse.id, activeLesson.id);
+                    } else {
+                      onNavigateToCourse(primaryActiveCourse.id);
+                    }
+                  }}
+                  leftIcon={<Play className="w-3.5 h-3.5 fill-current" />}
+                >
+                  Lanjutkan Materi
+                </Button>
+
+                <Button
+                  variant="outline"
+                  size="md"
+                  onClick={() => onNavigateToCourse(primaryActiveCourse.id)}
+                  rightIcon={<ArrowRight className="w-3.5 h-3.5" />}
+                >
+                  Lihat Silabus
+                </Button>
+              </div>
             </div>
           </div>
         </div>
       )}
-    </Card>
+    </section>
   );
 }

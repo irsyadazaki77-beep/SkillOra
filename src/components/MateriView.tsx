@@ -59,11 +59,11 @@ function InlineKnowledgeCheckCard({
   const isCorrect = answered && selectedOption === check.answerIndex;
 
   return (
-    <div className="my-6 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50/80 dark:bg-zinc-950/70 p-4 sm:p-5 space-y-3.5">
+    <div className="my-6 rounded-xl border border-zinc-200/90 dark:border-zinc-800/90 bg-zinc-50/70 dark:bg-zinc-950/60 p-4 sm:p-5 space-y-3.5">
       <div className="flex items-center justify-between gap-2">
-        <span className="text-[11px] font-mono uppercase tracking-wider font-semibold text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5">
+        <span className="text-xs font-medium text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5">
           <HelpCircle className="w-3.5 h-3.5" />
-          Cek Paham {index + 1}
+          Cek paham {index + 1}
         </span>
         {answered && (
           <span
@@ -516,29 +516,29 @@ export function MateriView({
   return (
     <div className="w-full pb-20 lg:pb-12 space-y-5">
       {/* Top Course Player Action Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-3 bg-white dark:bg-zinc-900 px-4 py-3 rounded-xl border border-zinc-200 dark:border-zinc-800">
+      <div className="flex flex-wrap items-center justify-between gap-3 bg-white dark:bg-[#111114] px-4 py-2.5 rounded-xl border border-zinc-200/90 dark:border-zinc-800/90">
         <div className="flex items-center gap-1.5 text-xs font-medium text-zinc-500 dark:text-zinc-400 overflow-x-auto whitespace-nowrap min-w-0">
-          <Link to="/belajar/katalog" className="hover:text-emerald-600 dark:hover:text-emerald-400">
+          <Link to="/belajar/katalog" className="hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors">
             Katalog
           </Link>
           <ChevronRight className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
           <Link
             to={`/belajar/kursus/${course.id}`}
-            className="hover:text-emerald-600 dark:hover:text-emerald-400 truncate max-w-[160px] sm:max-w-xs"
+            className="hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors truncate max-w-[160px] sm:max-w-xs"
           >
             {course.title}
           </Link>
           <ChevronRight className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
-          <span className="text-zinc-950 dark:text-white font-semibold font-mono tabular-nums">
+          <span className="text-zinc-950 dark:text-zinc-100 font-semibold font-mono tabular-nums">
             Sesi {lessonIndex + 1}/{course.lessons.length}
           </span>
         </div>
 
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-1.5 shrink-0">
           <button
             type="button"
             onClick={() => setShowMobileSidebar(true)}
-            className="lg:hidden px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 text-xs font-semibold text-zinc-700 dark:text-zinc-200 flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
+            className="lg:hidden h-8 px-2.5 rounded-lg border border-zinc-200 dark:border-zinc-800 text-xs font-medium text-zinc-700 dark:text-zinc-200 flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0"
           >
             <Menu className="w-3.5 h-3.5" />
             Silabus
@@ -547,7 +547,7 @@ export function MateriView({
           <button
             type="button"
             onClick={() => setShowFlashcardDrawer(true)}
-            className="px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 hover:border-emerald-500/60 text-xs font-semibold text-zinc-800 dark:text-zinc-200 flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
+            className="h-8 px-2.5 rounded-lg border border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 text-xs font-medium text-zinc-700 dark:text-zinc-200 flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0 transition-colors"
           >
             <Layers className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
             <span className="hidden sm:inline">Flashcard</span>
@@ -562,20 +562,20 @@ export function MateriView({
                   lessonTitle: lesson.title,
                 })
               }
-              className="px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 hover:border-emerald-500/60 text-xs font-semibold text-zinc-800 dark:text-zinc-200 flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
+              className="h-8 px-2.5 rounded-lg border border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 text-xs font-medium text-zinc-700 dark:text-zinc-200 flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0 transition-colors"
             >
               <Bot className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-              <span className="hidden sm:inline">Tanya Copilot</span>
+              <span className="hidden sm:inline">Tanya AI</span>
             </button>
           )}
 
           <button
             type="button"
             onClick={() => setShowNotesDrawer(true)}
-            className={`px-3 py-1.5 rounded-lg border text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer whitespace-nowrap ${
+            className={`h-8 px-2.5 rounded-lg border text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer whitespace-nowrap shrink-0 ${
               noteContent.trim()
-                ? "border-emerald-500/50 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300"
-                : "border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800"
+                ? "border-emerald-500/40 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300"
+                : "border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-900"
             }`}
           >
             <StickyNote className="w-3.5 h-3.5" />
@@ -585,10 +585,10 @@ export function MateriView({
           <button
             type="button"
             onClick={handleToggleBookmark}
-            className={`p-1.5 sm:px-3 sm:py-1.5 rounded-lg border text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer whitespace-nowrap ${
+            className={`h-8 px-2.5 rounded-lg border text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer whitespace-nowrap shrink-0 ${
               isBookmarked
                 ? "border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300"
-                : "border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800"
+                : "border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-900"
             }`}
             aria-label={isBookmarked ? "Hapus dari bookmark" : "Simpan materi"}
           >
@@ -602,7 +602,7 @@ export function MateriView({
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* LEFT SYLLABUS SIDEBAR */}
         <aside className="hidden lg:block lg:col-span-4 lg:sticky lg:top-4">
-          <div className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-4 space-y-4">
+          <div className="bg-white dark:bg-[#111114] rounded-xl border border-zinc-200/90 dark:border-zinc-800/90 p-4 space-y-4">
             <div className="space-y-1.5">
               <div className="flex items-center justify-between text-xs">
                 <span className="font-semibold text-zinc-900 dark:text-zinc-100">Silabus Kursus</span>
@@ -679,52 +679,52 @@ export function MateriView({
 
         {/* RIGHT EDITORIAL READING CANVAS */}
         <article className="lg:col-span-8 space-y-5">
-          <div className="bg-white dark:bg-zinc-900 rounded-xl p-6 sm:p-8 border border-zinc-200 dark:border-zinc-800 space-y-6">
+          <div className="bg-white dark:bg-[#111114] rounded-xl p-6 sm:p-8 border border-zinc-200/90 dark:border-zinc-800/90 space-y-6">
             {/* Clean Unboxed Metadata Header */}
-            <header className="space-y-2 pb-5 border-b border-zinc-200 dark:border-zinc-800">
+            <header className="space-y-2 pb-5 border-b border-zinc-200/80 dark:border-zinc-800/80">
               <div className="flex flex-wrap items-center gap-2 text-xs font-mono tabular-nums text-zinc-500 dark:text-zinc-400">
                 <span>Sesi {lessonIndex + 1} dari {course.lessons.length}</span>
-                <span>·</span>
+                <span className="text-zinc-300 dark:text-zinc-700">·</span>
                 <span className="inline-flex items-center gap-1">
                   <Clock className="w-3.5 h-3.5" />
                   {lesson.estimatedMinutes || 15} menit baca
                 </span>
                 {inlineChecks.length > 0 && (
                   <>
-                    <span>·</span>
+                    <span className="text-zinc-300 dark:text-zinc-700">·</span>
                     <span className="text-zinc-700 dark:text-zinc-300">
-                      Cek Paham {answeredChecksCount}/{inlineChecks.length}
+                      Cek paham {answeredChecksCount}/{inlineChecks.length}
                       {answeredChecksCount > 0 ? ` (${correctChecksCount} benar)` : ""}
                     </span>
                   </>
                 )}
                 {lesson.xp && (
                   <>
-                    <span>·</span>
+                    <span className="text-zinc-300 dark:text-zinc-700">·</span>
                     <span className="text-emerald-600 dark:text-emerald-400 font-semibold">+{lesson.xp} XP</span>
                   </>
                 )}
                 {lesson.completed && (
                   <>
-                    <span>·</span>
+                    <span className="text-zinc-300 dark:text-zinc-700">·</span>
                     <span className="text-emerald-600 dark:text-emerald-400 font-semibold">Selesai</span>
                   </>
                 )}
               </div>
 
-              <h1 className="text-2xl sm:text-3xl font-bold font-display text-zinc-950 dark:text-white tracking-tight leading-snug">
+              <h1 className="text-2xl sm:text-3xl font-semibold font-display text-zinc-950 dark:text-zinc-50 tracking-tight leading-snug">
                 {lesson.title}
               </h1>
             </header>
 
             {/* Learning Objectives */}
             {lesson.learningObjectives && lesson.learningObjectives.length > 0 && (
-              <div className="p-4 rounded-xl bg-zinc-50 dark:bg-zinc-950/60 border border-zinc-200 dark:border-zinc-800 space-y-2.5">
-                <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-600 dark:text-zinc-400 flex items-center gap-1.5">
+              <div className="p-4 rounded-xl bg-zinc-50/70 dark:bg-zinc-950/50 border border-zinc-200/80 dark:border-zinc-800/80 space-y-2.5">
+                <h3 className="text-xs font-semibold text-zinc-800 dark:text-zinc-200 flex items-center gap-1.5">
                   <Lightbulb className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                  Target Pembelajaran Sesi Ini
+                  Target pembelajaran sesi ini
                 </h3>
-                <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-zinc-700 dark:text-zinc-300">
+                <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-zinc-600 dark:text-zinc-400">
                   {lesson.learningObjectives.map((obj, idx) => (
                     <li key={idx} className="flex items-start gap-2">
                       <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
@@ -895,20 +895,20 @@ export function MateriView({
               )}
 
               {lesson.transcript && (
-                <div className="p-4 rounded-xl bg-zinc-50 dark:bg-zinc-950/60 border border-zinc-200 dark:border-zinc-800 space-y-1.5 mt-4">
-                  <h4 className="text-xs font-semibold uppercase tracking-wider text-zinc-500">
-                    Catatan Instruktur
+                <div className="p-4 rounded-xl bg-zinc-50/70 dark:bg-zinc-950/50 border border-zinc-200/80 dark:border-zinc-800/80 space-y-1.5 mt-4">
+                  <h4 className="text-xs font-semibold text-zinc-800 dark:text-zinc-200">
+                    Catatan instruktur
                   </h4>
-                  <p className="text-xs text-zinc-600 dark:text-zinc-300 leading-relaxed">{lesson.transcript}</p>
+                  <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed">{lesson.transcript}</p>
                 </div>
               )}
             </div>
 
             {/* Quick Flashcard Reminder Strip */}
             {lesson.flashcards && lesson.flashcards.length > 0 && (
-              <div className="p-4 rounded-xl bg-zinc-50 dark:bg-zinc-950/60 border border-zinc-200 dark:border-zinc-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="p-4 rounded-xl bg-zinc-50/70 dark:bg-zinc-950/50 border border-zinc-200/80 dark:border-zinc-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div className="space-y-0.5">
-                  <p className="text-xs font-semibold text-zinc-950 dark:text-white flex items-center gap-1.5">
+                  <p className="text-xs font-semibold text-zinc-950 dark:text-zinc-100 flex items-center gap-1.5">
                     <Layers className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                     {lesson.flashcards.length} Flashcard Konsep Kunci Tersedia
                   </p>
@@ -929,8 +929,8 @@ export function MateriView({
 
             {/* References */}
             {lesson.sources && lesson.sources.length > 0 && (
-              <div className="pt-5 border-t border-zinc-200 dark:border-zinc-800 space-y-3">
-                <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-500 flex items-center gap-1.5">
+              <div className="pt-5 border-t border-zinc-200/80 dark:border-zinc-800/80 space-y-3">
+                <h3 className="text-xs font-semibold text-zinc-700 dark:text-zinc-300 flex items-center gap-1.5">
                   <BookOpen className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                   Referensi & Dokumentasi
                 </h3>
@@ -941,7 +941,7 @@ export function MateriView({
                       href={source.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center justify-between gap-2 p-3 rounded-lg border border-zinc-200 dark:border-zinc-800 hover:border-emerald-500/60 transition-colors text-xs"
+                      className="flex items-center justify-between gap-2 p-3 rounded-lg border border-zinc-200/80 dark:border-zinc-800/80 hover:border-emerald-500/60 transition-colors text-xs"
                     >
                       <span className="flex items-center gap-2 min-w-0">
                         <FileText className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
@@ -956,7 +956,7 @@ export function MateriView({
           </div>
 
           {/* Bottom Navigation Bar */}
-          <div className="bg-white dark:bg-zinc-900 rounded-xl p-4 border border-zinc-200 dark:border-zinc-800 flex flex-col sm:flex-row items-center justify-between gap-3">
+          <div className="bg-white dark:bg-[#111114] rounded-xl p-4 border border-zinc-200/90 dark:border-zinc-800/90 flex flex-col sm:flex-row items-center justify-between gap-3">
             <Button
               variant="secondary"
               size="md"
@@ -968,13 +968,13 @@ export function MateriView({
             </Button>
 
             <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
-              <button
-                type="button"
+              <Button
+                variant="secondary"
+                size="md"
                 onClick={() => navigate(`/belajar/kursus/${course.id}`)}
-                className="px-3.5 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 text-xs font-semibold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800 cursor-pointer whitespace-nowrap"
               >
                 Hub 4 Tahap
-              </button>
+              </Button>
               <Button
                 variant="primary"
                 size="md"

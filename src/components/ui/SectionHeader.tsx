@@ -16,18 +16,16 @@ export function SectionHeader({
   className = "",
 }: SectionHeaderProps) {
   return (
-    <div
-      className={`flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3.5 sm:mb-4 ${className}`}
-    >
+    <div className={`flex flex-col sm:flex-row sm:items-end justify-between gap-2 mb-4 ${className}`}>
       <div className="space-y-0.5 min-w-0">
         <div className="flex items-center gap-2">
-          <h2 className="font-display text-base sm:text-lg font-bold text-slate-900 dark:text-white tracking-tight">
+          <h2 className="font-display text-base sm:text-[17px] font-semibold text-zinc-950 dark:text-zinc-50 tracking-tight">
             {title}
           </h2>
           {badge}
         </div>
         {description && (
-          <p className="text-xs text-slate-500 dark:text-slate-400 font-medium truncate sm:whitespace-normal">
+          <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">
             {description}
           </p>
         )}

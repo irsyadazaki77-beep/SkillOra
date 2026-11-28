@@ -230,54 +230,57 @@ export function InteractiveLabView({
     return (
       <div className="space-y-4 pb-4">
         {/* Top Workspace Bar */}
-        <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-zinc-200 dark:border-zinc-800">
+        <div className="flex flex-wrap items-center justify-between gap-3 pb-3.5 border-b border-zinc-200/90 dark:border-zinc-800/90">
           <div className="flex items-center gap-3 min-w-0">
             <button
+              type="button"
               onClick={() => navigate("/lab")}
-              className="p-1.5 rounded-lg border border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-900 cursor-pointer shrink-0"
+              className="h-8 w-8 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#111114] text-zinc-600 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-900 flex items-center justify-center cursor-pointer shrink-0 transition-colors"
               aria-label="Kembali ke daftar lab"
             >
               <ArrowLeft className="w-4 h-4" />
             </button>
             <div className="min-w-0">
-              <div className="flex items-center gap-2 text-[11px] font-mono text-zinc-500 dark:text-zinc-400">
-                <span className="uppercase">{activeLab.track}</span>
-                <span>·</span>
+              <div className="flex items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400 tabular-nums">
+                <span className="font-medium text-zinc-700 dark:text-zinc-300">{activeLab.track}</span>
+                <span className="text-zinc-300 dark:text-zinc-700">·</span>
                 <span>{activeLab.difficulty}</span>
-                <span>·</span>
-                <span>{activeLab.estimatedMinutes} mnt</span>
-                <span>·</span>
-                <span className="text-emerald-600 dark:text-emerald-400 font-semibold">
+                <span className="text-zinc-300 dark:text-zinc-700">·</span>
+                <span className="font-mono">{activeLab.estimatedMinutes} mnt</span>
+                <span className="text-zinc-300 dark:text-zinc-700">·</span>
+                <span className="font-mono text-emerald-700 dark:text-emerald-400 font-medium">
                   +{activeLab.xpReward} XP
                 </span>
               </div>
-              <h1 className="font-display text-lg sm:text-xl font-bold text-zinc-950 dark:text-white truncate">
+              <h1 className="font-display text-lg sm:text-xl font-semibold text-zinc-950 dark:text-zinc-50 truncate">
                 {activeLab.title}
               </h1>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 shrink-0">
             {onOpenCopilot && (
               <button
+                type="button"
                 onClick={() =>
                   onOpenCopilot({
                     labTitle: activeLab.title,
                     codeSnippet: code,
                   })
                 }
-                className="px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:border-emerald-500/60 text-xs font-semibold text-zinc-800 dark:text-zinc-200 flex items-center gap-1.5 cursor-pointer"
+                className="h-8 px-3 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#111114] hover:border-zinc-300 dark:hover:border-zinc-700 text-xs font-medium text-zinc-800 dark:text-zinc-200 flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0 transition-colors"
               >
                 <Bot className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                Tanya Copilot
+                Tanya AI
               </button>
             )}
             <button
+              type="button"
               onClick={() => {
                 setCode(activeLab.starterCode);
                 setTestResults(null);
               }}
-              className="px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-zinc-50 dark:hover:bg-zinc-800 text-xs font-medium text-zinc-600 dark:text-zinc-300 flex items-center gap-1.5 cursor-pointer"
+              className="h-8 px-3 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#111114] hover:bg-zinc-50 dark:hover:bg-zinc-900 text-xs font-medium text-zinc-600 dark:text-zinc-300 flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0 transition-colors"
             >
               <RotateCcw className="w-3.5 h-3.5" />
               Reset
@@ -314,9 +317,9 @@ export function InteractiveLabView({
         {/* 2-Zone Split Workspace */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
           {/* LEFT ZONE: Brief, Rubric, Hints, History */}
-          <div className={`${mobilePane === "brief" ? "block" : "hidden lg:block"} lg:col-span-5 lg:sticky lg:top-4 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-hidden`}>
-            {/* Segmented Tab Strip */}
-            <div className="flex border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50/70 dark:bg-zinc-950/40 px-2 pt-2 gap-1">
+          <div className={`${mobilePane === "brief" ? "block" : "hidden lg:block"} lg:col-span-5 lg:sticky lg:top-4 bg-white dark:bg-[#111114] border border-zinc-200/90 dark:border-zinc-800/90 rounded-xl overflow-hidden`}>
+            {/* Underline Tab Strip */}
+            <div className="flex border-b border-zinc-200/80 dark:border-zinc-800/80 bg-zinc-50/60 dark:bg-zinc-950/30 px-2 pt-1.5 gap-1">
               {[
                 { id: "brief", label: "Brief Kasus" },
                 { id: "rubric", label: "Rubrik & Uji" },
@@ -324,10 +327,11 @@ export function InteractiveLabView({
               ].map((t) => (
                 <button
                   key={t.id}
+                  type="button"
                   onClick={() => setLeftTab(t.id as any)}
-                  className={`px-3 py-2 text-xs font-semibold border-b-2 transition-colors cursor-pointer ${
+                  className={`px-3 py-2 text-xs font-medium border-b-2 transition-colors cursor-pointer tabular-nums ${
                     leftTab === t.id
-                      ? "border-emerald-600 text-zinc-950 dark:text-white"
+                      ? "border-emerald-600 text-zinc-950 dark:text-zinc-50"
                       : "border-transparent text-zinc-500 hover:text-zinc-800 dark:text-zinc-400"
                   }`}
                 >
@@ -345,11 +349,11 @@ export function InteractiveLabView({
 
                   {/* Skills Verified */}
                   {activeLab.skills.length > 0 && (
-                    <div className="pt-4 border-t border-zinc-200 dark:border-zinc-800">
-                      <p className="text-[11px] font-semibold uppercase tracking-wider text-zinc-400 mb-1.5">
-                        Kompetensi Terverifikasi
+                    <div className="pt-4 border-t border-zinc-200/80 dark:border-zinc-800/80">
+                      <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1">
+                        Kompetensi terverifikasi
                       </p>
-                      <p className="text-xs font-medium text-zinc-700 dark:text-zinc-300">
+                      <p className="text-xs font-medium text-zinc-800 dark:text-zinc-200">
                         {activeLab.skills.join(" · ")}
                       </p>
                     </div>
@@ -357,18 +361,19 @@ export function InteractiveLabView({
 
                   {/* Progressive Hints */}
                   {activeLab.hints.length > 0 && (
-                    <div className="pt-4 border-t border-zinc-200 dark:border-zinc-800 space-y-2.5">
+                    <div className="pt-4 border-t border-zinc-200/80 dark:border-zinc-800/80 space-y-2.5">
                       <div className="flex items-center justify-between">
-                        <span className="text-xs font-semibold text-zinc-800 dark:text-zinc-200 flex items-center gap-1.5">
+                        <span className="text-xs font-semibold text-zinc-800 dark:text-zinc-200 flex items-center gap-1.5 tabular-nums">
                           <Lightbulb className="w-3.5 h-3.5 text-amber-500" />
-                          Petunjuk Bertahap ({revealedHints}/{activeLab.hints.length})
+                          Petunjuk bertahap ({revealedHints}/{activeLab.hints.length})
                         </span>
                         {revealedHints < activeLab.hints.length && (
                           <button
+                            type="button"
                             onClick={() => setRevealedHints((h) => Math.min(activeLab.hints.length, h + 1))}
-                            className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:underline cursor-pointer"
+                            className="text-xs font-medium text-emerald-700 dark:text-emerald-400 hover:underline cursor-pointer"
                           >
-                            Buka Petunjuk #{revealedHints + 1}
+                            Buka petunjuk #{revealedHints + 1}
                           </button>
                         )}
                       </div>
@@ -377,7 +382,7 @@ export function InteractiveLabView({
                           {activeLab.hints.slice(0, revealedHints).map((hint, i) => (
                             <li
                               key={i}
-                              className="text-xs text-zinc-600 dark:text-zinc-300 bg-zinc-50 dark:bg-zinc-950/60 border border-zinc-200 dark:border-zinc-800 rounded-lg p-3"
+                              className="text-xs text-zinc-600 dark:text-zinc-300 bg-zinc-50/70 dark:bg-zinc-950/50 border border-zinc-200/80 dark:border-zinc-800/80 rounded-lg p-3"
                             >
                               <span className="font-mono text-[11px] text-zinc-400 mr-2">#{i + 1}</span>
                               {hint}
@@ -393,15 +398,15 @@ export function InteractiveLabView({
               {leftTab === "rubric" && (
                 <div className="space-y-5">
                   <div className="space-y-2.5">
-                    <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-400">
-                      Bobot Penilaian Rubrik AI (Lulus ≥ 75)
+                    <h3 className="text-xs font-medium text-zinc-500 dark:text-zinc-400">
+                      Bobot penilaian rubrik AI (lulus ≥ 75)
                     </h3>
-                    <div className="divide-y divide-zinc-200 dark:divide-zinc-800 border border-zinc-200 dark:border-zinc-800 rounded-lg">
+                    <div className="divide-y divide-zinc-200/80 dark:divide-zinc-800/80 border border-zinc-200/80 dark:border-zinc-800/80 rounded-lg">
                       {activeLab.rubricCriteria.map((rc, i) => (
                         <div key={i} className="p-3 space-y-1">
                           <div className="flex items-center justify-between text-xs">
                             <span className="font-semibold text-zinc-900 dark:text-zinc-100">{rc.title}</span>
-                            <span className="font-mono tabular-nums text-emerald-600 dark:text-emerald-400 font-semibold">
+                            <span className="font-mono tabular-nums text-emerald-700 dark:text-emerald-400 font-semibold">
                               {rc.weight}%
                             </span>
                           </div>
@@ -413,8 +418,8 @@ export function InteractiveLabView({
 
                   {activeLab.testCases.length > 0 && (
                     <div className="space-y-2.5">
-                      <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-400">
-                        Skenario Uji Otomatis ({activeLab.testCases.length})
+                      <h3 className="text-xs font-medium text-zinc-500 dark:text-zinc-400 tabular-nums">
+                        Skenario uji otomatis ({activeLab.testCases.length})
                       </h3>
                       <div className="space-y-2">
                         {activeLab.testCases.map((tc, i) => (
@@ -483,8 +488,8 @@ export function InteractiveLabView({
           {/* RIGHT ZONE: Code / Case Editor + Test Output + AI Rubric Scorecard */}
           <div className={`${mobilePane === "editor" ? "block" : "hidden lg:block"} lg:col-span-7 space-y-4`}>
             {/* Editor Container */}
-            <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-hidden">
-              <div className="px-4 py-2.5 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950/60 flex items-center justify-between gap-2">
+            <div className="bg-white dark:bg-[#111114] border border-zinc-200/90 dark:border-zinc-800/90 rounded-xl overflow-hidden">
+              <div className="px-4 py-2.5 border-b border-zinc-200/80 dark:border-zinc-800/80 bg-zinc-50/70 dark:bg-zinc-950/40 flex items-center justify-between gap-2">
                 <span className="text-xs font-mono text-zinc-500 dark:text-zinc-400 flex items-center gap-1.5">
                   <Code2 className="w-3.5 h-3.5" />
                   {activeLab.language === "javascript"
@@ -499,7 +504,7 @@ export function InteractiveLabView({
                     <button
                       type="button"
                       onClick={() => setShowLivePreview((p) => !p)}
-                      className="px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-xs font-semibold text-zinc-800 dark:text-zinc-200 cursor-pointer"
+                      className="h-8 px-3 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#111114] hover:bg-zinc-50 dark:hover:bg-zinc-900 text-xs font-medium text-zinc-800 dark:text-zinc-200 cursor-pointer whitespace-nowrap shrink-0 transition-colors"
                     >
                       {showLivePreview ? "Tutup Preview" : "Live Preview"}
                     </button>
@@ -507,9 +512,10 @@ export function InteractiveLabView({
 
                   {canRunSandbox && (
                     <button
+                      type="button"
                       onClick={handleRunTests}
                       disabled={runningSandbox}
-                      className="px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-50 text-xs font-semibold text-zinc-800 dark:text-zinc-200 flex items-center gap-1.5 cursor-pointer"
+                      className="h-8 px-3 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#111114] hover:bg-zinc-50 dark:hover:bg-zinc-900 disabled:opacity-50 text-xs font-medium text-zinc-800 dark:text-zinc-200 flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0 transition-colors"
                     >
                       <Play className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                       {runningSandbox ? "Menjalankan..." : activeLab.language === "sql" ? "Preview SQL" : "Jalankan Uji"}
@@ -517,9 +523,10 @@ export function InteractiveLabView({
                   )}
 
                   <button
+                    type="button"
                     onClick={handleEvaluateAi}
                     disabled={evaluating}
-                    className="px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 text-white text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+                    className="h-8 px-3.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 text-white text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer whitespace-nowrap shrink-0"
                   >
                     <Sparkles className="w-3.5 h-3.5" />
                     {evaluating ? "Mengevaluasi..." : "Evaluasi AI"}
@@ -537,8 +544,8 @@ export function InteractiveLabView({
             </div>
 
             {showLivePreview && activeLab.track.toLowerCase().includes("frontend") && (
-              <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-hidden">
-                <div className="px-4 py-2 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950/60 text-xs font-semibold text-zinc-600 dark:text-zinc-300">
+              <div className="bg-white dark:bg-[#111114] border border-zinc-200/90 dark:border-zinc-800/90 rounded-xl overflow-hidden">
+                <div className="px-4 py-2 border-b border-zinc-200/80 dark:border-zinc-800/80 bg-zinc-50/70 dark:bg-zinc-950/40 text-xs font-medium text-zinc-600 dark:text-zinc-300">
                   Live Frontend Preview (Sandboxed Iframe)
                 </div>
                 <iframe
@@ -552,10 +559,10 @@ export function InteractiveLabView({
 
             {/* Client Sandbox Test Runner Output */}
             {testResults && (
-              <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-4 space-y-3">
+              <div className="bg-white dark:bg-[#111114] border border-zinc-200/90 dark:border-zinc-800/90 rounded-xl p-4 space-y-3">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-                    Hasil Eksekusi Web Worker Sandbox
+                  <h3 className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
+                    Hasil eksekusi Web Worker sandbox
                   </h3>
                   <span className="text-xs font-mono font-semibold tabular-nums text-zinc-900 dark:text-zinc-100">
                     {testResults.filter((t) => t.passed).length}/{testResults.length} Lulus
@@ -566,7 +573,7 @@ export function InteractiveLabView({
                     {sandboxLogs.join("\n")}
                   </pre>
                 )}
-                <div className="divide-y divide-zinc-200 dark:divide-zinc-800 border border-zinc-200 dark:border-zinc-800 rounded-lg">
+                <div className="divide-y divide-zinc-200/80 dark:divide-zinc-800/80 border border-zinc-200/80 dark:border-zinc-800/80 rounded-lg">
                   {testResults.map((res, idx) => (
                     <div key={idx} className="p-3 flex items-start gap-2.5 text-xs">
                       {res.passed ? (
@@ -588,23 +595,23 @@ export function InteractiveLabView({
 
             {/* In-Browser SQL Preview Table */}
             {sqlPreview && (
-              <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-4 space-y-3">
+              <div className="bg-white dark:bg-[#111114] border border-zinc-200/90 dark:border-zinc-800/90 rounded-xl p-4 space-y-3">
                 <div className="flex items-center justify-between gap-2">
-                  <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+                  <h3 className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
                     SQL Sandbox Preview
                   </h3>
-                  <span className={`text-xs font-semibold ${sqlPreview.valid ? "text-emerald-600" : "text-rose-500"}`}>
+                  <span className={`text-xs font-medium ${sqlPreview.valid ? "text-emerald-600 dark:text-emerald-400" : "text-rose-500"}`}>
                     {sqlPreview.valid ? "Query Valid" : "Perlu Perbaikan"}
                   </span>
                 </div>
-                <p className="text-xs text-zinc-600 dark:text-zinc-300">{sqlPreview.message}</p>
+                <p className="text-xs text-zinc-600 dark:text-zinc-400">{sqlPreview.message}</p>
                 {sqlPreview.valid && sqlPreview.rows.length > 0 && (
-                  <div className="overflow-x-auto rounded-lg border border-zinc-200 dark:border-zinc-800">
-                    <table className="w-full text-left text-[11px] font-mono">
-                      <thead className="bg-zinc-50 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200">
+                  <div className="overflow-x-auto rounded-lg border border-zinc-200/80 dark:border-zinc-800/80">
+                    <table className="w-full text-left text-[11px] font-mono tabular-nums">
+                      <thead className="bg-zinc-50 dark:bg-zinc-900 text-zinc-700 dark:text-zinc-200">
                         <tr>
                           {sqlPreview.columns.map((col) => (
-                            <th key={col} className="px-3 py-2 border-b border-zinc-200 dark:border-zinc-700">{col}</th>
+                            <th key={col} className="px-3 py-2 border-b border-zinc-200/80 dark:border-zinc-800">{col}</th>
                           ))}
                         </tr>
                       </thead>
@@ -625,13 +632,13 @@ export function InteractiveLabView({
 
             {/* AI Rubric Scorecard */}
             {latestEvaluation && (
-              <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-5 space-y-5">
-                <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-zinc-200 dark:border-zinc-800">
+              <div className="bg-white dark:bg-[#111114] border border-zinc-200/90 dark:border-zinc-800/90 rounded-xl p-5 space-y-5">
+                <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-zinc-200/80 dark:border-zinc-800/80">
                   <div>
-                    <p className="text-[11px] font-semibold uppercase tracking-wider text-zinc-400">
-                      Laporan Evaluasi Rubrik AI
+                    <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400">
+                      Laporan evaluasi rubrik AI
                     </p>
-                    <p className="text-xs text-zinc-600 dark:text-zinc-300 mt-1 max-w-xl leading-relaxed">
+                    <p className="text-xs text-zinc-700 dark:text-zinc-300 mt-1 max-w-xl leading-relaxed">
                       {latestEvaluation.aiFeedback}
                     </p>
                   </div>
@@ -728,69 +735,75 @@ export function InteractiveLabView({
   return (
     <div className="space-y-6 pb-16 lg:pb-8">
       {/* Editorial Header Banner */}
-      <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-hidden grid grid-cols-1 lg:grid-cols-12">
-        <div className="lg:col-span-7 p-6 sm:p-8 flex flex-col justify-between space-y-5">
-          <div className="space-y-2.5">
-            <p className="text-[11px] font-mono uppercase tracking-wider text-emerald-600 dark:text-emerald-400 font-semibold">
-              Flagship Skillora 2.0 · Interactive Coding & Case Lab
+      <div className="bg-white dark:bg-[#111114] border border-zinc-200/90 dark:border-zinc-800/90 rounded-xl overflow-hidden grid grid-cols-1 lg:grid-cols-12">
+        <div className="lg:col-span-7 p-6 sm:p-7 flex flex-col justify-between space-y-5">
+          <div className="space-y-2">
+            <p className="text-xs font-medium text-emerald-700 dark:text-emerald-400">
+              Interactive Coding &amp; Case Lab
             </p>
-            <h1 className="font-display text-2xl sm:text-3xl font-bold text-zinc-950 dark:text-white tracking-tight leading-tight">
+            <h1 className="font-display text-2xl sm:text-3xl font-semibold text-zinc-950 dark:text-zinc-50 tracking-tight leading-tight">
               Uji Keterampilan Nyata di Sandbox Industri dengan Audit Rubrik AI
             </h1>
             <p className="text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed max-w-xl">
-              Kerjakan tantangan Frontend, Backend & SQL, Data Analytics, hingga studi kasus BUMN. Lulus lab otomatis memverifikasi skill dan menambah skor Talent Match di portofolio publik Anda.
+              Kerjakan tantangan Frontend, Backend &amp; SQL, Data Analytics, hingga studi kasus BUMN untuk memverifikasi skill dan meningkatkan Talent Match Anda.
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-6 pt-2 text-xs text-zinc-600 dark:text-zinc-400">
+          <div className="flex flex-wrap items-center gap-6 pt-2 text-xs text-zinc-500 dark:text-zinc-400">
             <div>
-              <span className="font-mono text-lg font-bold tabular-nums text-zinc-950 dark:text-white block">
+              <span className="font-mono text-lg font-semibold tabular-nums text-zinc-950 dark:text-zinc-50 block">
                 {completedCount}/{challenges.length}
               </span>
-              <span>Lab Terverifikasi</span>
+              <span>Lab terverifikasi</span>
             </div>
             <div className="h-8 w-px bg-zinc-200 dark:bg-zinc-800" />
             <div>
-              <span className="font-mono text-lg font-bold tabular-nums text-zinc-950 dark:text-white block">
+              <span className="font-mono text-lg font-semibold tabular-nums text-zinc-950 dark:text-zinc-50 block">
                 ≥ 75
               </span>
-              <span>Ambang Lulus Rubrik</span>
+              <span>Ambang lulus rubrik</span>
             </div>
             <div className="h-8 w-px bg-zinc-200 dark:bg-zinc-800" />
             <div>
-              <span className="font-mono text-lg font-bold tabular-nums text-emerald-600 dark:text-emerald-400 block">
+              <span className="font-mono text-lg font-semibold tabular-nums text-emerald-700 dark:text-emerald-400 block">
                 +5%
               </span>
-              <span>Bonus Talent Match / Lab</span>
+              <span>Bonus Talent Match</span>
             </div>
           </div>
         </div>
 
-        <div className="lg:col-span-5 relative min-h-[190px] bg-zinc-950">
+        <div className="lg:col-span-5 relative min-h-[190px] bg-zinc-950 border-t lg:border-t-0 lg:border-l border-zinc-200/80 dark:border-zinc-800/80">
           <img
             src={resolveCourseImage("editorial_coding_lab_1795521088285.jpg")}
             alt="Workspace Interactive Coding Lab Skillora"
             className="w-full h-full object-cover opacity-90"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-zinc-950/60 via-transparent to-transparent" />
         </div>
       </div>
 
       {/* Segmented Track Filter */}
-      <div className="flex items-center gap-1.5 overflow-x-auto pb-1 hide-scrollbar">
-        {TRACK_TABS.map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setTrackFilter(tab.id)}
-            className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-colors whitespace-nowrap cursor-pointer ${
-              trackFilter === tab.id
-                ? "bg-zinc-950 dark:bg-zinc-100 text-white dark:text-zinc-950"
-                : "bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800"
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
+      <div className="flex items-center gap-1 overflow-x-auto border-b border-zinc-200/90 dark:border-zinc-800/90 hide-scrollbar">
+        {TRACK_TABS.map((tab) => {
+          const isActive = trackFilter === tab.id;
+          return (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => setTrackFilter(tab.id)}
+              className={`relative px-3.5 py-2.5 text-xs font-medium transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+                isActive
+                  ? "text-zinc-950 dark:text-zinc-50"
+                  : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200"
+              }`}
+            >
+              {tab.label}
+              {isActive && (
+                <span className="absolute inset-x-0 bottom-0 h-0.5 bg-emerald-600 dark:bg-emerald-500 rounded-full" />
+              )}
+            </button>
+          );
+        })}
       </div>
 
       {/* Challenges Grid */}
@@ -799,7 +812,7 @@ export function InteractiveLabView({
           {[1, 2, 3].map((i) => (
             <div
               key={i}
-              className="h-52 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 animate-pulse"
+              className="h-52 rounded-xl border border-zinc-200/90 dark:border-zinc-800/90 bg-white dark:bg-[#111114] animate-pulse"
             />
           ))}
         </div>
@@ -809,25 +822,27 @@ export function InteractiveLabView({
             <div
               key={lab.id}
               onClick={() => navigate(`/lab/${lab.id}`)}
-              className="group bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 hover:border-emerald-500/70 rounded-xl p-5 flex flex-col justify-between gap-4 transition-colors cursor-pointer"
+              className="group bg-white dark:bg-[#111114] border border-zinc-200/90 dark:border-zinc-800/90 hover:border-zinc-300 dark:hover:border-zinc-700 rounded-xl p-5 flex flex-col justify-between gap-4 transition-colors cursor-pointer"
             >
               <div className="space-y-2.5">
-                <div className="flex items-center justify-between text-[11px] font-mono text-zinc-500 dark:text-zinc-400">
-                  <span className="uppercase">{lab.track} · {lab.difficulty}</span>
+                <div className="flex items-center justify-between text-xs text-zinc-500 dark:text-zinc-400 tabular-nums">
+                  <span className="font-medium text-zinc-600 dark:text-zinc-400">
+                    {lab.track} · {lab.difficulty}
+                  </span>
                   {lab.passed ? (
-                    <span className="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
+                    <span className="font-mono text-emerald-700 dark:text-emerald-400 font-semibold flex items-center gap-1">
                       <CheckCircle2 className="w-3.5 h-3.5" />
                       {lab.bestScore}/100
                     </span>
                   ) : (
-                    <span className="flex items-center gap-1">
+                    <span className="font-mono flex items-center gap-1">
                       <Clock className="w-3 h-3" />
                       {lab.estimatedMinutes}m
                     </span>
                   )}
                 </div>
 
-                <h2 className="font-display text-base font-bold text-zinc-950 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors leading-snug">
+                <h2 className="font-display text-base font-semibold text-zinc-950 dark:text-zinc-50 group-hover:text-emerald-700 dark:group-hover:text-emerald-400 transition-colors leading-snug">
                   {lab.title}
                 </h2>
 
@@ -836,11 +851,11 @@ export function InteractiveLabView({
                 </p>
               </div>
 
-              <div className="pt-3 border-t border-zinc-100 dark:border-zinc-800 flex items-center justify-between text-xs">
-                <span className="font-mono text-[11px] text-zinc-500 dark:text-zinc-400">
+              <div className="pt-3 border-t border-zinc-200/80 dark:border-zinc-800/80 flex items-center justify-between text-xs">
+                <span className="font-mono text-zinc-500 dark:text-zinc-400 tabular-nums">
                   +{lab.xpReward} XP · +{lab.gemsReward} Gems
                 </span>
-                <span className="font-semibold text-zinc-900 dark:text-zinc-100 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 inline-flex items-center gap-1">
+                <span className="font-medium text-zinc-900 dark:text-zinc-100 group-hover:text-emerald-700 dark:group-hover:text-emerald-400 inline-flex items-center gap-1 transition-colors">
                   {lab.passed ? "Kerjakan Ulang" : "Mulai Lab"}
                   <ChevronRight className="w-3.5 h-3.5" />
                 </span>

@@ -289,67 +289,71 @@ export function ArenaView({ profile, onProfileUpdate, showToast }: ArenaViewProp
   return (
     <div className="space-y-6 pb-16 lg:pb-8">
       {/* Editorial Header */}
-      <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-hidden grid grid-cols-1 lg:grid-cols-12">
-        <div className="lg:col-span-7 p-6 sm:p-8 flex flex-col justify-between space-y-4">
+      <div className="bg-white dark:bg-[#111114] border border-zinc-200/90 dark:border-zinc-800/90 rounded-xl overflow-hidden grid grid-cols-1 lg:grid-cols-12">
+        <div className="lg:col-span-7 p-6 sm:p-7 flex flex-col justify-between space-y-4">
           <div className="space-y-2">
-            <p className="text-[11px] font-mono uppercase tracking-wider text-emerald-600 dark:text-emerald-400 font-semibold">
-              Arena Kompetitif & Tryout Nasional
+            <p className="text-xs font-medium text-emerald-700 dark:text-emerald-400">
+              Arena Kompetitif &amp; Tryout Nasional
             </p>
-            <h1 className="font-display text-2xl sm:text-3xl font-bold text-zinc-950 dark:text-white tracking-tight">
-              Battle Quiz Real-Time, Tryout Akbar & Liga Mingguan
+            <h1 className="font-display text-2xl sm:text-3xl font-semibold text-zinc-950 dark:text-zinc-50 tracking-tight">
+              Battle Quiz Real-Time, Tryout Akbar &amp; Liga Mingguan
             </h1>
             <p className="text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed max-w-xl">
-              Uji kecepatan berpikir dalam duel tersinkronisasi WebSocket, kerjakan simulasi Tryout berbatas waktu dengan persentil nasional, dan naikkan divisi Liga Mingguan Anda.
+              Uji kecepatan berpikir dalam duel WebSocket, kerjakan simulasi Tryout berbatas waktu dengan persentil nasional, dan naikkan divisi Liga Mingguan.
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-5 text-xs text-zinc-600 dark:text-zinc-400">
+          <div className="flex flex-wrap items-center gap-6 text-xs text-zinc-500 dark:text-zinc-400">
             <div>
-              <span className="font-mono text-base font-bold uppercase text-zinc-950 dark:text-white block">
+              <span className="font-mono text-base font-semibold capitalize text-zinc-950 dark:text-zinc-50 block">
                 {profile.leagueTier || "Bronze"}
               </span>
-              <span>Divisi Liga Anda</span>
+              <span>Divisi liga Anda</span>
             </div>
             <div className="h-7 w-px bg-zinc-200 dark:bg-zinc-800" />
             <div>
-              <span className="font-mono text-base font-bold tabular-nums text-emerald-600 dark:text-emerald-400 block">
-                {profile.weeklyXp || 0} XP
+              <span className="font-mono text-base font-semibold tabular-nums text-emerald-700 dark:text-emerald-400 block">
+                {(profile.weeklyXp || 0).toLocaleString("id-ID")} XP
               </span>
-              <span>Perolehan Pekan Ini</span>
+              <span>Perolehan pekan ini</span>
             </div>
           </div>
         </div>
 
-        <div className="lg:col-span-5 relative min-h-[180px] bg-zinc-950">
+        <div className="lg:col-span-5 relative min-h-[180px] bg-zinc-950 border-t lg:border-t-0 lg:border-l border-zinc-200/80 dark:border-zinc-800/80">
           <img
             src={resolveCourseImage("editorial_career_arena_1795521082924.jpg")}
             alt="Arena Kompetitif Skillora"
             className="w-full h-full object-cover opacity-90"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-zinc-950/60 via-transparent to-transparent" />
         </div>
       </div>
 
-      {/* Segmented Navigation Tabs */}
-      <div className="flex items-center gap-1.5 border-b border-zinc-200 dark:border-zinc-800 pb-3 overflow-x-auto hide-scrollbar">
+      {/* Linear Underline Navigation Tabs */}
+      <div className="flex items-center gap-1 border-b border-zinc-200/90 dark:border-zinc-800/90 overflow-x-auto hide-scrollbar">
         {[
           { id: "battle", label: "Battle Quiz Real-Time", icon: Swords },
           { id: "tryout", label: "Tryout Akbar", icon: Timer },
           { id: "league", label: "Liga Mingguan", icon: Trophy },
         ].map((t) => {
           const Icon = t.icon;
+          const isActive = activeTab === t.id;
           return (
             <button
               key={t.id}
+              type="button"
               onClick={() => setActiveTab(t.id as any)}
-              className={`px-4 py-2 rounded-lg text-xs font-semibold flex items-center gap-2 transition-colors whitespace-nowrap cursor-pointer ${
-                activeTab === t.id
-                  ? "bg-zinc-950 dark:bg-zinc-100 text-white dark:text-zinc-950"
-                  : "bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800"
+              className={`relative px-3.5 py-2.5 text-xs font-medium flex items-center gap-1.5 transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+                isActive
+                  ? "text-zinc-950 dark:text-zinc-50"
+                  : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200"
               }`}
             >
-              <Icon className="w-3.5 h-3.5" />
+              <Icon className={`w-3.5 h-3.5 ${isActive ? "text-emerald-600 dark:text-emerald-400" : ""}`} />
               {t.label}
+              {isActive && (
+                <span className="absolute inset-x-0 bottom-0 h-0.5 bg-emerald-600 dark:bg-emerald-500 rounded-full" />
+              )}
             </button>
           );
         })}
@@ -378,23 +382,24 @@ export function ArenaView({ profile, onProfileUpdate, showToast }: ArenaViewProp
           {!roomState ? (
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
               {/* Create or Join Room */}
-              <div className="lg:col-span-7 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6 space-y-6">
+              <div className="lg:col-span-7 bg-white dark:bg-[#111114] border border-zinc-200/90 dark:border-zinc-800/90 rounded-xl p-6 space-y-6">
                 <div className="space-y-3">
-                  <h2 className="font-display text-lg font-bold text-zinc-950 dark:text-white">
+                  <h2 className="font-display text-base font-semibold text-zinc-950 dark:text-zinc-50">
                     Buat Ruang Duel Baru
                   </h2>
                   <p className="text-xs text-zinc-500 dark:text-zinc-400">
                     Undang teman dengan kode 6 karakter atau langsung mulai Sprint Solo berbatas waktu 15 detik/soal.
                   </p>
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex flex-wrap gap-1.5">
                     {BATTLE_TOPICS.map((topic) => (
                       <button
                         key={topic}
+                        type="button"
                         onClick={() => setSelectedTopic(topic)}
                         className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors cursor-pointer ${
                           selectedTopic === topic
-                            ? "border-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 font-semibold"
-                            : "border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800"
+                            ? "border-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300"
+                            : "border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-900"
                         }`}
                       >
                         {topic}
@@ -402,17 +407,18 @@ export function ArenaView({ profile, onProfileUpdate, showToast }: ArenaViewProp
                     ))}
                   </div>
                   <button
+                    type="button"
                     disabled={!wsConnected}
                     onClick={() => sendWs({ type: "room:create", topic: selectedTopic })}
-                    className="px-4 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-xs font-semibold inline-flex items-center gap-2 cursor-pointer"
+                    className="h-9 px-4 rounded-lg bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-xs font-medium inline-flex items-center gap-2 cursor-pointer transition-colors"
                   >
-                    <Swords className="w-4 h-4" />
-                    Buat Ruang & Dapatkan Kode
+                    <Swords className="w-3.5 h-3.5" />
+                    Buat Ruang &amp; Dapatkan Kode
                   </button>
                 </div>
 
-                <div className="pt-5 border-t border-zinc-200 dark:border-zinc-800 space-y-3">
-                  <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+                <div className="pt-5 border-t border-zinc-200/80 dark:border-zinc-800/80 space-y-3">
+                  <h3 className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">
                     Gabung dengan Kode Ruang
                   </h3>
                   <div className="flex gap-2 max-w-sm">
@@ -422,12 +428,13 @@ export function ArenaView({ profile, onProfileUpdate, showToast }: ArenaViewProp
                       value={joinCode}
                       onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
                       placeholder="Contoh: K7P9QA"
-                      className="flex-1 px-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 font-mono text-sm uppercase tracking-widest text-zinc-950 dark:text-white focus:outline-none focus:border-emerald-500"
+                      className="flex-1 h-9 px-3 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 font-mono text-sm uppercase tracking-widest text-zinc-950 dark:text-zinc-100 focus:outline-none focus:border-emerald-500"
                     />
                     <button
+                      type="button"
                       disabled={!wsConnected || joinCode.trim().length < 4}
                       onClick={() => sendWs({ type: "room:join", roomCode: joinCode.trim() })}
-                      className="px-4 py-2 rounded-lg bg-zinc-950 dark:bg-zinc-100 text-white dark:text-zinc-950 text-xs font-semibold disabled:opacity-50 cursor-pointer"
+                      className="h-9 px-4 rounded-lg bg-zinc-950 dark:bg-zinc-100 text-white dark:text-zinc-950 text-xs font-medium disabled:opacity-50 cursor-pointer"
                     >
                       Gabung
                     </button>
@@ -436,17 +443,17 @@ export function ArenaView({ profile, onProfileUpdate, showToast }: ArenaViewProp
               </div>
 
               {/* Public Lobbies & Recent Matches */}
-              <div className="lg:col-span-5 space-y-4">
-                <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-5 space-y-3">
-                  <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-                    Lobi Terbuka Saat Ini ({publicLobbies.length})
+              <div className="lg:col-span-5 bg-white dark:bg-[#111114] border border-zinc-200/90 dark:border-zinc-800/90 rounded-xl divide-y divide-zinc-200/80 dark:divide-zinc-800/80">
+                <div className="p-5 space-y-3">
+                  <h3 className="text-xs font-semibold text-zinc-700 dark:text-zinc-300 tabular-nums">
+                    Lobi terbuka saat ini ({publicLobbies.length})
                   </h3>
                   {publicLobbies.length === 0 ? (
-                    <p className="text-xs text-zinc-500 dark:text-zinc-400 py-3">
+                    <p className="text-xs text-zinc-500 dark:text-zinc-400 py-2">
                       Belum ada lobi terbuka. Buat ruang baru di samping untuk memulai.
                     </p>
                   ) : (
-                    <div className="divide-y divide-zinc-200 dark:divide-zinc-800">
+                    <div className="divide-y divide-zinc-200/80 dark:divide-zinc-800/80">
                       {publicLobbies.map((r) => (
                         <div key={r.roomCode} className="py-2.5 flex items-center justify-between gap-2">
                           <div>
@@ -458,8 +465,9 @@ export function ArenaView({ profile, onProfileUpdate, showToast }: ArenaViewProp
                             </p>
                           </div>
                           <button
+                            type="button"
                             onClick={() => sendWs({ type: "room:join", roomCode: r.roomCode })}
-                            className="px-3 py-1 rounded-lg border border-zinc-200 dark:border-zinc-700 text-xs font-semibold hover:border-emerald-500 cursor-pointer"
+                            className="px-3 py-1 rounded-lg border border-zinc-200 dark:border-zinc-800 text-xs font-medium hover:border-emerald-500 cursor-pointer transition-colors"
                           >
                             Masuk
                           </button>
@@ -470,11 +478,11 @@ export function ArenaView({ profile, onProfileUpdate, showToast }: ArenaViewProp
                 </div>
 
                 {recentMatches.length > 0 && (
-                  <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-5 space-y-3">
-                    <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-                      Riwayat Pertandingan Terakhir
+                  <div className="p-5 space-y-3">
+                    <h3 className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
+                      Riwayat pertandingan terakhir
                     </h3>
-                    <div className="divide-y divide-zinc-200 dark:divide-zinc-800">
+                    <div className="divide-y divide-zinc-200/80 dark:divide-zinc-800/80">
                       {recentMatches.slice(0, 5).map((m) => (
                         <div key={m.id} className="py-2 flex items-center justify-between text-xs">
                           <div className="min-w-0">
@@ -485,7 +493,7 @@ export function ArenaView({ profile, onProfileUpdate, showToast }: ArenaViewProp
                               Ruang {m.roomCode} · {m.participants?.length || 1} pemain
                             </p>
                           </div>
-                          <span className="font-mono text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+                          <span className="font-mono text-xs font-semibold tabular-nums text-emerald-700 dark:text-emerald-400">
                             {m.participants?.[0]?.score || 0} pts
                           </span>
                         </div>
@@ -702,13 +710,13 @@ export function ArenaView({ profile, onProfileUpdate, showToast }: ArenaViewProp
                 {tryouts.map((pkg) => (
                   <div
                     key={pkg.id}
-                    className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-5 flex flex-col justify-between gap-4"
+                    className="bg-white dark:bg-[#111114] border border-zinc-200/90 dark:border-zinc-800/90 rounded-xl p-5 flex flex-col justify-between gap-4"
                   >
                     <div className="space-y-2">
-                      <p className="text-[11px] font-mono text-zinc-500 dark:text-zinc-400">
-                        {pkg.category} · {pkg.questionCount} Soal · {pkg.durationMinutes} Menit
+                      <p className="text-xs font-mono text-zinc-500 dark:text-zinc-400 tabular-nums">
+                        {pkg.category} · {pkg.questionCount} soal · {pkg.durationMinutes} mnt
                       </p>
-                      <h3 className="font-display text-base font-bold text-zinc-950 dark:text-white leading-snug">
+                      <h3 className="font-display text-base font-semibold text-zinc-950 dark:text-zinc-50 leading-snug">
                         {pkg.title}
                       </h3>
                       <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed">
@@ -716,18 +724,19 @@ export function ArenaView({ profile, onProfileUpdate, showToast }: ArenaViewProp
                       </p>
                     </div>
 
-                    <div className="space-y-3 pt-3 border-t border-zinc-100 dark:border-zinc-800">
+                    <div className="space-y-3 pt-3 border-t border-zinc-200/80 dark:border-zinc-800/80">
                       {pkg.lastAttempt && (
-                        <div className="flex items-center justify-between text-xs font-mono text-zinc-600 dark:text-zinc-300">
+                        <div className="flex items-center justify-between text-xs font-mono tabular-nums text-zinc-600 dark:text-zinc-300">
                           <span>Terakhir: {pkg.lastAttempt.score}/100</span>
-                          <span className="text-emerald-600 dark:text-emerald-400">
+                          <span className="text-emerald-700 dark:text-emerald-400 font-medium">
                             Persentil {pkg.lastAttempt.percentile}%
                           </span>
                         </div>
                       )}
                       <button
+                        type="button"
                         onClick={() => handleStartTryout(pkg)}
-                        className="w-full py-2 rounded-lg bg-zinc-950 dark:bg-zinc-100 hover:opacity-90 text-white dark:text-zinc-950 text-xs font-semibold cursor-pointer"
+                        className="w-full h-9 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium cursor-pointer transition-colors"
                       >
                         {pkg.lastAttempt ? "Ulangi Tryout Akbar" : "Mulai Tryout Akbar"}
                       </button>

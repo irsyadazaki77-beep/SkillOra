@@ -1,5 +1,4 @@
 import React from "react";
-import { Badge } from "./Badge";
 
 export interface PageHeaderProps {
   title: React.ReactNode;
@@ -24,32 +23,30 @@ export function PageHeader({
 }: PageHeaderProps) {
   return (
     <header
-      className={`flex flex-col md:flex-row md:items-center justify-between gap-3.5 pb-4 sm:pb-5 border-b border-zinc-200/80 dark:border-zinc-800/80 mb-5 sm:mb-6 ${className}`}
+      className={`flex flex-col md:flex-row md:items-end justify-between gap-4 pb-5 border-b border-zinc-200/80 dark:border-zinc-800/80 mb-6 ${className}`}
     >
-      <div className="space-y-1.5 min-w-0 max-w-3xl">
-        {breadcrumbs && <div className="mb-1 text-xs">{breadcrumbs}</div>}
+      <div className="space-y-1.5 min-w-0 max-w-2xl">
+        {breadcrumbs && <div className="text-xs text-zinc-500 dark:text-zinc-400">{breadcrumbs}</div>}
 
         {badge && (
-          <div className="inline-flex items-center">
-            <Badge variant={badge.variant || "primary"} size="sm" icon={badge.icon}>
-              {badge.text}
-            </Badge>
-          </div>
+          <p className="text-xs font-medium text-emerald-700 dark:text-emerald-400 tracking-tight">
+            {badge.text}
+          </p>
         )}
 
-        <h1 className="font-display font-bold text-xl sm:text-2xl lg:text-3xl tracking-tight text-zinc-950 dark:text-white leading-tight">
+        <h1 className="font-display font-bold text-2xl sm:text-[28px] tracking-tight text-zinc-950 dark:text-zinc-50 leading-tight text-balance">
           {title}
         </h1>
 
         {subtitle && (
-          <p className="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400 font-medium leading-relaxed">
+          <p className="text-sm text-zinc-500 dark:text-zinc-400 leading-relaxed">
             {subtitle}
           </p>
         )}
       </div>
 
       {actions && (
-        <div className="flex flex-wrap items-center gap-2 shrink-0 pt-1 md:pt-0">
+        <div className="flex flex-wrap items-center gap-2 shrink-0">
           {actions}
         </div>
       )}

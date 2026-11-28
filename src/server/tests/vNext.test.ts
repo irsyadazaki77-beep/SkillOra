@@ -22,6 +22,7 @@ import {
   enrichQuestionWithOptionAnalysis,
 } from "../data/curriculum2026Upgrade.js";
 import { buildFrontendPreviewHtml, runSqlSandboxPreview } from "../../utils/sandboxRunner.js";
+import { SKILLORA_BRAND, getSkilloraLogoSvgString } from "../../components/SkilloraLogo.js";
 
 vi.mock("../../lib/firebase-admin.js", () => ({
   adminAuth: {
@@ -439,5 +440,33 @@ describe("SkillOra vNext 5-Pillar Tests", () => {
     );
     expect(enrichedQ.explanation).toContain('Mengapa Opsi B ("Opsi B benar") Tepat:');
     expect(enrichedQ.explanation).toContain("Bedah Opsi Pengecoh:");
+  });
+
+  it("Brand Identity & SVG Logo Generator: generates valid standalone SVG assets for all variants and themes", () => {
+    expect(SKILLORA_BRAND.name).toBe("Skillora");
+    expect(SKILLORA_BRAND.tagline).toContain("Navigasi Kompetensi");
+    expect(SKILLORA_BRAND.colors.navy).toBe("#0A1628");
+    expect(SKILLORA_BRAND.colors.emerald).toBe("#00B87C");
+    expect(SKILLORA_BRAND.colors.gold).toBe("#F59E0B");
+
+    const fullLight = getSkilloraLogoSvgString({ variant: "full", theme: "light", includeTagline: true });
+    expect(fullLight).toContain("<svg");
+    expect(fullLight).toContain("</svg>");
+    expect(fullLight).toContain("#0A1628");
+    expect(fullLight).toContain("NAVIGASI KOMPETENSI");
+
+    const fullDark = getSkilloraLogoSvgString({ variant: "full", theme: "dark", includeTagline: true });
+    expect(fullDark).toContain("#FFFFFF");
+
+    const iconSvg = getSkilloraLogoSvgString({ variant: "icon" });
+    expect(iconSvg).toContain('viewBox="0 0 200 200"');
+
+    const sealSvg = getSkilloraLogoSvgString({ variant: "seal" });
+    expect(sealSvg).toContain("SKILLORA COMPASS");
+    expect(sealSvg).toContain("VERIFIED");
+
+    const wordmarkSvg = getSkilloraLogoSvgString({ variant: "wordmark", theme: "light", includeTagline: false });
+    expect(wordmarkSvg).toContain("Skill");
+    expect(wordmarkSvg).toContain("ora");
   });
 });
